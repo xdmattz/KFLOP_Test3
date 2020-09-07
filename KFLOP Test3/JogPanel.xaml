@@ -1,0 +1,62 @@
+﻿<UserControl x:Class="KFLOP_Test3.JogPanel"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:local="clr-namespace:KFLOP_Test3"
+             mc:Ignorable="d" Height="300" Width="350">
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="55"/>
+            <RowDefinition Height="35"/>
+            <RowDefinition Height="35"/>
+            <RowDefinition Height="35"/>
+            <RowDefinition Height="35"/>
+            <RowDefinition Height="35"/>
+            <RowDefinition Height="35"/>
+            <RowDefinition Height="35"/>
+
+        </Grid.RowDefinitions>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="85"/>
+            <ColumnDefinition Width="35"/>
+            <ColumnDefinition Width="35"/>
+            <ColumnDefinition Width="35"/>
+            <ColumnDefinition Width="35"/>
+            <ColumnDefinition Width="35"/>
+        </Grid.ColumnDefinitions>
+
+        <Button x:Name="btnXp" Content="+X" Grid.Row="3" Grid.Column="3" PreviewMouseDown="btnXp_PreviewMouseDown" PreviewMouseUp="btnXp_PreviewMouseUp"/>
+        <Button x:Name="btnXn" Content="-X" Grid.Row="3" Grid.Column="1" PreviewMouseDown="btnXn_PreviewMouseDown" PreviewMouseUp="btnXn_PreviewMouseUp" />
+        <Button x:Name="btnYn" Content="-Y" Grid.Row="4" Grid.Column="2" PreviewMouseDown="btnYn_PreviewMouseDown" PreviewMouseUp="btnYn_PreviewMouseUp" />
+        <Button x:Name="btnYp" Content="+Y" Grid.Row="2" Grid.Column="2" PreviewMouseDown="btnYp_PreviewMouseDown" PreviewMouseUp="btnYp_PreviewMouseUp" />
+        <Button x:Name="btnZp" Content="+Z" Grid.Row="1" Grid.Column="4" PreviewMouseDown="btnZp_PreviewMouseDown" PreviewMouseUp="btnZp_PreviewMouseUp" />
+        <Button x:Name="btnZn" Content="-Z" Grid.Row="2" Grid.Column="4" PreviewMouseDown="btnZn_PreviewMouseDown" PreviewMouseUp="btnZn_PreviewMouseUp" />
+        <Button x:Name="btnAp" Content="+A" Grid.Row="5" Grid.Column="4" PreviewMouseDown="btnAp_PreviewMouseDown" PreviewMouseUp="btnAp_PreviewMouseUp" />
+        <Button x:Name="btnAn" Content="-A" Grid.Row="5" Grid.Column="3" PreviewMouseDown="btnAn_PreviewMouseDown" PreviewMouseUp="btnAn_PreviewMouseUp" />
+        <Button x:Name="btnBp" Content="+B" Grid.Row="6" Grid.Column="4" PreviewMouseDown="btnBp_PreviewMouseDown" PreviewMouseUp="btnBp_PreviewMouseUp" />
+        <Button x:Name="btnBn" Content="-B" Grid.Row="6" Grid.Column="3" PreviewMouseDown="btnBn_PreviewMouseDown" PreviewMouseUp="btnBn_PreviewMouseUp" />
+        <Button x:Name="btnCp" Content="+C" Grid.Row="7" Grid.Column="4" PreviewMouseDown="btnCp_PreviewMouseDown" PreviewMouseUp="btnCp_PreviewMouseUp" />
+        <Button x:Name="btnCn" Content="-C" Grid.Row="7" Grid.Column="3" PreviewMouseDown="btnCn_PreviewMouseDown" PreviewMouseUp="btnCn_PreviewMouseUp" />
+
+        <StackPanel x:Name="RadBtnStackPanel" Grid.Row="0" Grid.RowSpan="4" Grid.Column="0" Grid.ColumnSpan="1" HorizontalAlignment="Left"  Margin="5,5,0,0"  VerticalAlignment="Top" PreviewKeyDown="RadBtnStackPanel_PreviewKeyDown" PreviewKeyUp="RadBtnStackPanel_PreviewKeyUp" 
+                    >
+            <Label FontWeight="Bold">
+                Jog Action
+            </Label>
+            <RadioButton Checked="JogActionRB_Checked" GroupName="JogActionGrp" >Continuous</RadioButton>
+            <RadioButton Checked="JogActionRB_Checked" GroupName="JogActionGrp" >0.0001</RadioButton>
+            <RadioButton Checked="JogActionRB_Checked" GroupName="JogActionGrp" >0.001</RadioButton>
+            <RadioButton Checked="JogActionRB_Checked" GroupName="JogActionGrp" >0.01</RadioButton>
+            <RadioButton Checked="JogActionRB_Checked" GroupName="JogActionGrp" >0.1</RadioButton>
+            <RadioButton Checked="JogActionRB_Checked" GroupName="JogActionGrp" >1.0</RadioButton>
+            <RadioButton Checked="JogActionRB_Checked" GroupName="JogActionGrp" >10.0</RadioButton>
+
+        </StackPanel>
+        <Label x:Name="TestLabel"  Content="Label" Grid.Column="3" Grid.ColumnSpan="3" HorizontalAlignment="Left"  VerticalAlignment="Top" Width="186" Margin="0,0,-78,0"/>
+        <Button x:Name="btnJogInit" Content="Init Jog" HorizontalAlignment="Left" Grid.Row="7" VerticalAlignment="Top" Width="46" Height="25" IsCancel="True" Click="btnJogInit_Click"/>
+        <Button x:Name="btnKbdJog" Content="Keyboard Jog" HorizontalAlignment="Left" Margin="0,3,0,0" Grid.Row="6" VerticalAlignment="Top" Width="86" Height="27" Click="btnKbdJog_Click"/>
+
+
+    </Grid>
+</UserControl>

@@ -1,0 +1,77 @@
+﻿<Window x:Class="KFLOP_Test3.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:avalonEdit="http://icsharpcode.net/sharpdevelop/avalonedit"
+        
+        xmlns:local="clr-namespace:KFLOP_Test3"
+        mc:Ignorable="d"
+        Title="MainWindow" Height="826" Width="850" Closed="Window_Closed">
+    <!--  this is a comment -->
+    <Grid Height="780" VerticalAlignment="Top">
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="597*"/>
+            <ColumnDefinition Width="20*"/>
+        </Grid.ColumnDefinitions>
+        <Button x:Name="BtnGetBoard" Content="Get Board" HorizontalAlignment="Left" Margin="34,10,0,0" VerticalAlignment="Top" Width="75" Click="BtnGetBoard_Click"/>
+        <Button x:Name="BtnCProgram" Content="C Program" HorizontalAlignment="Left" Margin="240,10,0,0" VerticalAlignment="Top" Width="75" Click="BtnCProgram_Click"/>
+        <Button x:Name="btnSaveJ" Content="Parameters" HorizontalAlignment="Left" Margin="331,10,0,0" VerticalAlignment="Top" Width="75" Click="btnSaveJ_Click"/>
+        <Button x:Name="btnOpenJ" Content="Load JSON" HorizontalAlignment="Left" Margin="421,10,0,0" VerticalAlignment="Top" Width="75" Click="btnOpenJ_Click"/>
+        <Button x:Name="btnConfig" Content="Config" HorizontalAlignment="Left" Margin="142,10,0,0" VerticalAlignment="Top" Width="75" Click="btnConfig_Click"/>
+        <Button x:Name="btnGCode" Content="Load GCode" HorizontalAlignment="Left" Margin="34,42,0,0" VerticalAlignment="Top" Width="75" Click="btnGCode_Click"/>
+        <Button x:Name="btnCycleStart" Content="Cycle Start" HorizontalAlignment="Left" Margin="71,710,0,0" VerticalAlignment="Top" Width="75" Click="btnCycleStart_Click" />
+        <Button x:Name="btnFeedHold" Content="Feed Hold" HorizontalAlignment="Left" Margin="184,710,0,0" VerticalAlignment="Top" Width="75" Click="btnFeedHold_Click"/>
+        <Button x:Name="btnRev" Content="&lt;&lt;" HorizontalAlignment="Left" Margin="184,710,0,0" VerticalAlignment="Top" Width="33" PreviewMouseDown="btnRev_PreviewMouseDown" PreviewMouseUp="btnFR_PreviewMouseUp"  />
+        <Button x:Name="btnFwd" Content="&gt;&gt;" HorizontalAlignment="Left" Margin="225,710,0,0" VerticalAlignment="Top" Width="33" PreviewMouseDown="btnFwd_PreviewMouseDown" PreviewMouseUp="btnFR_PreviewMouseUp" />
+        <Button x:Name="btnHalt" Content="Halt" HorizontalAlignment="Left" Margin="299,710,0,0" VerticalAlignment="Top" Width="75" RenderTransformOrigin="0.5,0.5" Click="btnHalt_Click" />
+        <Button x:Name="btnSingleStep" Content="Single Step" HorizontalAlignment="Left" VerticalAlignment="Top" Width="75" Margin="414,710,0,0" Click="btnSingleStep_Click" />
+
+        <TextBox x:Name="tbGCodeFile" HorizontalAlignment="Left" Height="23" Margin="142,41,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="173"/>
+        <TextBlock x:Name="DROX" HorizontalAlignment="Left" Margin="644,56,0,0" TextWrapping="Wrap" Text="0.0000" VerticalAlignment="Top" FontSize="36" Width="161" RenderTransformOrigin="0.5,0.5"/>
+        <Label Content="X:" Margin="0,51,176,0" VerticalAlignment="Top" HorizontalAlignment="Right" FontSize="36" Width="45"/>
+        <TextBlock x:Name="DROY" HorizontalAlignment="Left" Margin="644,109,0,0" TextWrapping="Wrap" Text="0.0000" VerticalAlignment="Top" FontSize="36" Width="161"/>
+        <Label Content="Y:" Margin="0,109,176,0" VerticalAlignment="Top" HorizontalAlignment="Right" FontSize="36" Width="44"/>
+        <TextBlock x:Name="DROZ" HorizontalAlignment="Left" Margin="644,167,0,0" TextWrapping="Wrap" Text="0.0000" VerticalAlignment="Top" FontSize="36" Width="161"/>
+        <Label Content="Z:" Margin="0,167,176,0" VerticalAlignment="Top" HorizontalAlignment="Right" FontSize="36" Width="44"/>
+
+
+        <avalonEdit:TextEditor x:Name="GCodeView" FontFamily="Consolas" FontSize="12" IsReadOnly="True" Margin="34,69,287,453">
+
+        </avalonEdit:TextEditor>
+        <Button x:Name="btnProgHalt" Content="Prog Halt" HorizontalAlignment="Left" Margin="558,16,0,0" VerticalAlignment="Top" Width="74" Click="btnProgHalt_Click"/>
+        <TextBox x:Name="tbStatus" HorizontalAlignment="Left" Height="23" Margin="576,379,0,0" TextWrapping="Wrap" Text="TextBox" VerticalAlignment="Top" Width="120"/>
+        <TextBox x:Name="tbLineNo" HorizontalAlignment="Left" Height="23" Margin="576,407,0,0" TextWrapping="Wrap" Text="TextBox" VerticalAlignment="Top" Width="120"/>
+        <TextBox x:Name="tbSeq" HorizontalAlignment="Left" Height="23" Margin="576,435,0,0" TextWrapping="Wrap" Text="TextBox" VerticalAlignment="Top" Width="120"/>
+        <TextBox x:Name="tbErr" HorizontalAlignment="Left" Height="23" Margin="576,463,0,0" TextWrapping="Wrap" Text="TextBox" VerticalAlignment="Top" Width="120"/>
+        <CheckBox x:Name="cbSimulate" Content="Simulate" HorizontalAlignment="Left" Margin="576,248,0,0" VerticalAlignment="Top"/>
+        <TextBlock x:Name="tbExTime" HorizontalAlignment="Left" Margin="576,506,0,0" TextWrapping="Wrap" Text="TextBlock" VerticalAlignment="Top" RenderTransformOrigin="0.76,-0.844"/>
+        <Button x:Name="btnConsole" Content="Console" HorizontalAlignment="Left" Margin="331,40,0,0" VerticalAlignment="Top" Width="75" Click="btnConsole_Click"/>
+        <TabControl x:Name="tcMainTab" HorizontalAlignment="Left" Height="373" Margin="34,332,0,0" VerticalAlignment="Top" Width="494">
+            <TabItem Header="Jog">
+                <Grid Background="#FFE5E5E5" Margin="0" >
+                    <!-- Add the Jog Panel here -->
+                    <local:JogPanel x:Name="JogPanel1"  Margin="10,5" >
+
+                    </local:JogPanel>
+
+                </Grid>
+            </TabItem>
+            <TabItem Header="Status" HorizontalAlignment="Right" Width="61">
+                Status Stuff goes here
+                <!--      <Grid Background="#FFE5E5E5">
+                    
+                </Grid>-->
+            </TabItem>
+            <TabItem Header="Probing">
+                Probing stuff goes here
+            </TabItem>
+            <TabItem Header="Tools">
+                Tool Management goes here
+            </TabItem>
+        </TabControl>
+        
+
+
+    </Grid>
+</Window>
