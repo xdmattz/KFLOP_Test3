@@ -189,6 +189,7 @@ namespace KFLOP_Test3
             { Dir = "-"; }
             TestLabel.Content = String.Format("Axis {0} {1} Mouse Down", Dir, Axis);
             JogWriteLineException(String.Format("Jog{0}={1}{2}",Axis,Dir,20000));
+
             Jogging = true;
         }
         

@@ -39,7 +39,7 @@
         <avalonEdit:TextEditor x:Name="GCodeView" FontFamily="Consolas" FontSize="12" IsReadOnly="True" Margin="34,69,287,453">
 
         </avalonEdit:TextEditor>
-        <Button x:Name="btnProgHalt" Content="Prog Halt" HorizontalAlignment="Left" Margin="558,16,0,0" VerticalAlignment="Top" Width="74" Click="btnProgHalt_Click"/>
+        <Button x:Name="btnProgHalt" Content="Prog Halt" HorizontalAlignment="Left" Margin="517,10,0,0" VerticalAlignment="Top" Width="74" Click="btnProgHalt_Click"/>
         <TextBox x:Name="tbStatus" HorizontalAlignment="Left" Height="23" Margin="576,379,0,0" TextWrapping="Wrap" Text="TextBox" VerticalAlignment="Top" Width="120"/>
         <TextBox x:Name="tbLineNo" HorizontalAlignment="Left" Height="23" Margin="576,407,0,0" TextWrapping="Wrap" Text="TextBox" VerticalAlignment="Top" Width="120"/>
         <TextBox x:Name="tbSeq" HorizontalAlignment="Left" Height="23" Margin="576,435,0,0" TextWrapping="Wrap" Text="TextBox" VerticalAlignment="Top" Width="120"/>
@@ -70,7 +70,8 @@
                 Tool Management goes here
             </TabItem>
         </TabControl>
-        
+        <Button Content="Thread3" HorizontalAlignment="Left" Margin="612,10,0,0" VerticalAlignment="Top" Width="75" Click="Button_Click"/>
+
 
 
     </Grid>

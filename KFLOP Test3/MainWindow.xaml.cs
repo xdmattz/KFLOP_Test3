@@ -213,6 +213,14 @@ namespace KFLOP_Test3
                             DROY.Text = String.Format("{0:F4}", y);
                             DROZ.Text = String.Format("{0:F4}", z);
 
+                            // manage the current line number for the gcode listing
+                            if(ExecutionInProgress)
+                            {
+                                CurrentLineNo = KM.CoordMotion.Interpreter.SetupParams.CurrentLine;
+                                GCodeView_GotoLine(CurrentLineNo);
+                            }
+                            //else { CurrentLineNo = 1; }
+
                         }
                         catch (DMException)  // in case disconnect in the middle of reading status
                         {
@@ -285,6 +293,12 @@ namespace KFLOP_Test3
             MessageBox.Show(msg);
         }
 
+        private int MCode8Callback(int code)
+        {
+            MessageBox.Show(String.Format("Code = {0}", code));
+            return 0;
+        }
+
         #region GCode Interrpreter callback handlers
         //static 
         public void Interpreter_InterpreterCompleted(int status, int lineno, int sequence_number, string err)
@@ -342,8 +356,8 @@ namespace KFLOP_Test3
             tbLineNo.Text = lineno.ToString();
             tbErr.Text = msg;
             // go to that line in the viewer
-            CurrentLineNo = lineno;
-            GCodeView_GotoLine(lineno);
+        //    CurrentLineNo = lineno;
+        //    GCodeView_GotoLine(lineno);
 
         }
         #endregion
@@ -361,9 +375,67 @@ namespace KFLOP_Test3
             KM.CoordMotion.Interpreter.InterpreterStatusUpdated += new KMotion_dotNet.KM_Interpreter.KM_GCodeInterpreterStatusHandler(InterpStatus);
 
             // Other interpreter callbacks.
-           // KM.CoordMotion.Interpreter.
+            KM.CoordMotion.Interpreter.InterpreterUserMCodeCallbackRequested += new KM_Interpreter.KM_GCodeInterpreterUserMcodeCallbackHandler(MCode8Callback);
+            // KM.CoordMotion.Interpreter.
+            SetMCodeHandlers();
         }
 
+        #endregion
+
+        #region MCODE Handlers
+        private void SetMCodeHandlers()
+        {
+            KM_Interpreter KMI;
+
+            // testing all the possible MCode Actions
+
+            KMI = KM.CoordMotion.Interpreter;   // just for convinecne so I don't have to type so much...
+
+            // MCode Action 1 - Set a bit high or low
+            // the bit to  set is in the first agument, the state of the bit is in the second
+            // Set M100 and M101 to set and clear bit 160 on the KFLOP Board - 160 - Kanalog output
+            KMI.SetMcodeAction(21, MCODE_TYPE.M_Action_Setbit, 160, 1, 0, 0, 0, "");  // this should set the LED
+            KMI.SetMcodeAction(22, MCODE_TYPE.M_Action_Setbit, 160, 0, 0, 0, 0, "");  // this should clear the LED
+
+            // MCode Action 2 - Set two bits high or low
+            // set M102 and M103 to set/clear bits 162 and 163. LEDs on these two pins should be opposite
+            KMI.SetMcodeAction(23, MCODE_TYPE.M_Action_SetTwoBits, 162, 1, 163, 0, 0, ""); // set bit 162, clear bit 163
+            KMI.SetMcodeAction(24, MCODE_TYPE.M_Action_SetTwoBits, 162, 0, 163, 1, 0, ""); // set bit 162, clear bit 163
+
+            // MCode Action 3 - Set a DAC value on the Kanalog interface
+            // DAC#, Scale, Offset, Min, Max
+            // M104 set DAC3 offset to 600
+            KMI.SetMcodeAction(25, MCODE_TYPE.M_Action_DAC, 3, 1, 600, -2000, 2000, "");
+            // M105 set DAC3 offset to -600
+            KMI.SetMcodeAction(26, MCODE_TYPE.M_Action_DAC, 3, 1, -600, -2000, 2000, "");
+            // M106 set DAC3 offset to 0
+            KMI.SetMcodeAction(26, MCODE_TYPE.M_Action_DAC, 3, 1, 0, -2000, 2000, "");
+
+            // MCode Action 4 - Run a user C program on the KFLOP board 
+            // Set M110 to run thread 3 code which has been preloaded.
+            KMI.SetMcodeAction(31, MCODE_TYPE.M_Action_Program, 3, 0, 0, 0, 0, "");
+            // Set M111 to run thread 3 code which has been preloaded.
+            KMI.SetMcodeAction(32, MCODE_TYPE.M_Action_Program, 3, 0, 0, 0, 0, "");
+            // Set M112 to run thread 3 code which has been preloaded.
+            KMI.SetMcodeAction(33, MCODE_TYPE.M_Action_Program, 3, 0, 0, 0, 0, "");
+            // MCode Action 5 - Run a user C program on the KFLOP board and wait for it to finish
+
+            // MCode Action 6 - Run a user C program on the KFLOP board, wait for it to finish and resync the position
+
+            // MCode Action 7 - Run a PC Program
+            // the name of the program to run is in the last (string) argument.
+            KMI.SetMcodeAction(7, MCODE_TYPE.M_Action_Program_PC, 0, 0, 0, 0, 0, "C:\\KMotion435c\\PC VCS\\MessageBoxTest2.exe");
+
+            // MCode Action 8 - Callback to a user function in this app
+            // M8 code should call the MCode8Callback function with something.
+            KMI.SetMcodeAction(8, MCODE_TYPE.M_Action_Callback, 0, 0, 0, 0, 0, "");
+
+
+            // MCode Action 9 - Wait until a bit on the KFLOP board is set/cleared.
+            // wait for bit 1040 (extended IO from Konnect) to go to 1
+            KMI.SetMcodeAction(9, MCODE_TYPE.M_Action_Waitbit, 1040, 1, 0, 0, 0, "");
+
+        }
         #endregion
 
         #region // Interpreter setup functions
@@ -580,7 +652,7 @@ namespace KFLOP_Test3
                 {
                     KM.CoordMotion.IsSimulation = false;    // don't forget clear when not checked!
                 }
-                ExecutionInProgress = true;
+                ExecutionInProgress = true; // set here but not cleared until the InterpreterCompleted callback
                 KM.CoordMotion.Abort();     // make sure that everything is cleared
                 KM.CoordMotion.ClearAbort();
                 try
@@ -704,8 +776,24 @@ namespace KFLOP_Test3
         }
 
 
+
         #endregion
 
-
+        private void Button_Click(object sender, RoutedEventArgs e)
+        {
+            // open a windows dialog to read in the cprogram
+            var openFileDlg = new OpenFileDialog();
+            if (openFileDlg.ShowDialog() == true)
+            {
+               try
+                {
+                    KM.ExecuteProgram(3, openFileDlg.FileName, true);
+                }
+                catch (DMException ex)
+                {
+                    MessageBox.Show("Unable to execute C Program in KFLOP\r\r" + ex.InnerException.Message);
+                }
+            }
+        }
     }
 }
