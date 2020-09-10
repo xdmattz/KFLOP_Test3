@@ -418,7 +418,13 @@ namespace KFLOP_Test3
             KMI.SetMcodeAction(32, MCODE_TYPE.M_Action_Program, 3, 0, 0, 0, 0, "");
             // Set M112 to run thread 3 code which has been preloaded.
             KMI.SetMcodeAction(33, MCODE_TYPE.M_Action_Program, 3, 0, 0, 0, 0, "");
+            // Set S to run thread 3 code which is preloaded with variable in userdata 99
+            KMI.SetMcodeAction(10, MCODE_TYPE.M_Action_Program, 3, 99, 0, 0, 0, "");
+
             // MCode Action 5 - Run a user C program on the KFLOP board and wait for it to finish
+            // set M119 to run thread 3 code which has be preloaded, pass the code name in persist.UserData[100]
+            KMI.SetMcodeAction(40, MCODE_TYPE.M_Action_Program_wait, 3, 100, 0, 0, 0, "");
+
 
             // MCode Action 6 - Run a user C program on the KFLOP board, wait for it to finish and resync the position
 
@@ -787,6 +793,7 @@ namespace KFLOP_Test3
             {
                try
                 {
+                    KM.SetUserData(0, 100); // this is a test - 100 should be the init value
                     KM.ExecuteProgram(3, openFileDlg.FileName, true);
                 }
                 catch (DMException ex)
