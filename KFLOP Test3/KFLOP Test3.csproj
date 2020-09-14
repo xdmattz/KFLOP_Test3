@@ -108,6 +108,7 @@
       <DependentUpon>ConsolWindow.xaml</DependentUpon>
     </Compile>
     <Compile Include="HiLight_Lines.cs" />
+    <Compile Include="Machine.cs" />
     <Compile Include="MotionParams_Copy.cs" />
     <Compile Include="MotionParamWindow.xaml.cs">
       <DependentUpon>MotionParamWindow.xaml</DependentUpon>

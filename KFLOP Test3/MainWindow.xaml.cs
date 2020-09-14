@@ -41,26 +41,34 @@ namespace KFLOP_Test3
     public partial class MainWindow : Window
     {
         // global variables in the MainWindow class
-        static bool ExecutionInProgress = false;
-        static bool InFeedHold = false;
-        static bool InMotion = false;
+        
+        static bool Connected = false;  // used in the status time to indicate when the KFLOP is connected
+        static int skip = 0;            // skip timer used to delay when KFLOP is not connected
+        static bool StatusReady1 = false;           // Thread 1 loaded indicator
+        static bool StatusReady2 = false;            // Threads 1 and 2 loaded and the status is OK
+        static bool ExecutionInProgress = false;    // true while interpreter is executing
+        static bool InFeedHold = false;             // true when in feed hold
+        static bool InMotion = false;               // true when jogging
 
         static KMotion_dotNet.KM_Controller KM; // this is the controller instance!
         static MotionParams_Copy Xparam;
-        static ConfigFiles CFiles;
+        // static ConfigFiles CFiles;
+        ConfigFiles CFiles;
+
+        static Machine BP308;
 
         // not sure if I need the Mutex if I'm using the Dispatcher but we will see...
         static Mutex ConsoleMutex = new Mutex();
 
-        // these two globals are used in the status timer 
-        static bool Connected = false;
-        static int skip = 0;
+
         static int DisCount = 0;
         string GCodeFileName;
         int CurrentLineNo;
 
         // console window
         static ConsolWindow ConWin;
+
+        int[] PVars;
 
 
 
@@ -88,48 +96,27 @@ namespace KFLOP_Test3
             {
                 KM = new KMotion_dotNet.KM_Controller();
             }
-            catch(Exception e)
+            catch (Exception e)
             {
                 MessageBox.Show("Unable to load KMotion_dotNet Libraries.  Check Windows PATH or .exe location " + e.Message);
                 System.Windows.Application.Current.Shutdown();  // and shut down the application...
                 return;
             }
 
-            // copy of the motion parameters that the JSON reader can use.
-            Xparam = new MotionParams_Copy();
+            PVars = new int[14];
+
+            // Machine instance for status and bit control
+            // BP308 = new Machine(ref KM);
             // get the configuration file names
             CFiles = new ConfigFiles();
-            // check if the the config file exists
-            if(File.Exists("KTestConfig.json") == true)
-            {
-                JsonSerializer Jser = new JsonSerializer();
-                StreamReader sr = new StreamReader("KTestConfig.json");
-                JsonReader Jreader = new JsonTextReader(sr);
-                CFiles = Jser.Deserialize<ConfigFiles>(Jreader);
-                sr.Close();
-            } else
-            {
-                MessageBox.Show("No configureation file found");
-                // what to do here? 
-                // Initialize the strings to null and save the file for next time
-                SaveConfig(CFiles);
-            }
-            if(File.Exists(CFiles.MotionParams) == true)
-            {
-                JsonSerializer Jser = new JsonSerializer();
-                StreamReader sr = new StreamReader(CFiles.MotionParams);
-                JsonReader Jreader = new JsonTextReader(sr);
-                Xparam = Jser.Deserialize<MotionParams_Copy>(Jreader);
-                sr.Close();
-                Xparam.CopyParams(KM.CoordMotion.MotionParams); // copy the motion parameters to the KM instance
-            }
-
+            OpenConfig(ref CFiles);
+            // copy of the motion parameters that the JSON reader can use.
+            Xparam = new MotionParams_Copy();
+            OpenMotionParams(ref CFiles, ref Xparam);
             // console window
             ConWin = new ConsolWindow();
-
             // GCode Viewer
             GCodeView_Init();
-
             // add the callbacks
             AddHandlers();
 
@@ -138,6 +125,8 @@ namespace KFLOP_Test3
             Timer.Interval = TimeSpan.FromMilliseconds(100);    // timer tick every 100 ms (1/10 sec)
             Timer.Tick += dispatchTimer_Tick;
             Timer.Start();
+
+
 
             // the tab controls
             JogPanel1.KMx = KM;
@@ -171,69 +160,84 @@ namespace KFLOP_Test3
                     // update the elapsed time 
                     tbExTime.Text = KM.CoordMotion.TimeExecuted.ToString();
                 }
-                else // these actions happen every cycle
+
+                // these actions happen every cycle
+                var tickTimer = System.Diagnostics.Stopwatch.StartNew();
+                
+
+                if (KM.WaitToken(100) == KMOTION_TOKEN.KMOTION_LOCKED) // KMOTION_LOCKED means the board is available
                 {
-                    if (KM.WaitToken(100) == KMOTION_TOKEN.KMOTION_LOCKED) // KMOTION_LOCKED means the board is available
+                    try
                     {
-                        try
+                        KM_MainStatus MainStatus = KM.GetStatus(false); // passing false does not lock to board while generating status
+                        KM.ReleaseToken();
+                        //int X = KM.GetUserData(120);
+                        tbStatus.Text = MainStatus.GetPC_comm(120).ToString("X");
+                        tickTimer.Stop();
+                        tbTickTime.Text = ($"{tickTimer.ElapsedMilliseconds} ms");
+                        //tbStatus1.Text = X.ToString("X");
+                        
+                        // 
+                        // manage all the status bits ie. limit switches, Air pressure
+                        // manage all the status from persist.UserData
+                        // 
+                        // 
+                        // Set DRO Colors
+                        if ((MainStatus.Enables & 1) != 0)
                         {
-                            KM_MainStatus MainStatus = KM.GetStatus(false); // passing false does not lock to board while generating status
-                            KM.ReleaseToken();
-
-                            // Set DRO Colors
-                            if ((MainStatus.Enables & 1) != 0)
-                            {
-                                DROX.Foreground = Brushes.Green;
-                            }
-                            else
-                            {
-                                DROX.Foreground = Brushes.Red;
-                            }
-                            if ((MainStatus.Enables & 2) != 0)
-                            {
-                                DROY.Foreground = Brushes.Green;
-                            }
-                            else
-                            {
-                                DROY.Foreground = Brushes.Red;
-                            }
-                            if ((MainStatus.Enables & 4) != 0)
-                            {
-                                DROZ.Foreground = Brushes.Green;
-                            }
-                            else
-                            {
-                                DROZ.Foreground = Brushes.Red;
-                            }
-
-                            // Get Ablosule Machine Coordinates
-                            double x = 0, y = 0, z = 0, a = 0, b = 0, c = 0;
-                            KM.CoordMotion.UpdateCurrentPositionsABS(ref x, ref y, ref z, ref a, ref b, ref c, false);
-                            DROX.Text = String.Format("{0:F4}", x);
-                            DROY.Text = String.Format("{0:F4}", y);
-                            DROZ.Text = String.Format("{0:F4}", z);
-
-                            // manage the current line number for the gcode listing
-                            if(ExecutionInProgress)
-                            {
-                                CurrentLineNo = KM.CoordMotion.Interpreter.SetupParams.CurrentLine;
-                                GCodeView_GotoLine(CurrentLineNo);
-                            }
-                            //else { CurrentLineNo = 1; }
-
+                            DROX.Foreground = Brushes.Green;
                         }
-                        catch (DMException)  // in case disconnect in the middle of reading status
+                        else
                         {
-                            KM.ReleaseToken();  // make sure the token is released
+                            DROX.Foreground = Brushes.Red;
                         }
+                        if ((MainStatus.Enables & 2) != 0)
+                        {
+                            DROY.Foreground = Brushes.Green;
+                        }
+                        else
+                        {
+                            DROY.Foreground = Brushes.Red;
+                        }
+                        if ((MainStatus.Enables & 4) != 0)
+                        {
+                            DROZ.Foreground = Brushes.Green;
+                        }
+                        else
+                        {
+                            DROZ.Foreground = Brushes.Red;
+                        }
+
+                        // Get Ablosule Machine Coordinates
+                        double x = 0, y = 0, z = 0, a = 0, b = 0, c = 0;
+                        KM.CoordMotion.UpdateCurrentPositionsABS(ref x, ref y, ref z, ref a, ref b, ref c, false);
+                        DROX.Text = String.Format("{0:F4}", x);
+                        DROY.Text = String.Format("{0:F4}", y);
+                        DROZ.Text = String.Format("{0:F4}", z);
+
+                        // manage the current line number for the gcode listing
+                        if(ExecutionInProgress)
+                        {
+                            CurrentLineNo = KM.CoordMotion.Interpreter.SetupParams.CurrentLine;
+                            GCodeView_GotoLine(CurrentLineNo);
+                        }
+                        //else { CurrentLineNo = 1; }
+
                     }
-                    else
+                    catch (DMException)  // in case disconnect in the middle of reading status
                     {
-                        Connected = false;
+                        KM.ReleaseToken();  // make sure the token is released
                     }
-                    // Manage the Cycle Start button
-                    // btnCycleStart.IsEnabled = !ExecutionInProgress;
                 }
+                else
+                {
+                    Connected = false;
+                    StatusReady1 = false;
+                    StatusReady2 = false;
+                }
+                // Manage the Cycle Start button
+                // btnCycleStart.IsEnabled = !ExecutionInProgress;
+                
             }
             else
             {
@@ -252,6 +256,8 @@ namespace KFLOP_Test3
                     else
                     {
                         Connected = false;
+                        StatusReady1 = false;
+                        StatusReady2 = false;
                         Title = String.Format("C# WPF App - KFLOP Disconnected count = {0}", DisCount);
                     }
                 }
@@ -475,18 +481,19 @@ namespace KFLOP_Test3
             GCodeView.ShowLineNumbers = true;
 
             // load the code highlighting - make a GCODE highlighter xml?
-
+            string HFile = GetPathFile(CFiles.ConfigPath, CFiles.Highlight);
             try
             {
                 Stream InStream = default(Stream);
-                InStream = File.OpenRead(CFiles.Highlight);
+                
+                InStream = File.OpenRead(HFile);
                 XmlTextReader XTextReader = default(XmlTextReader);
                 XTextReader = new XmlTextReader(InStream);
                 GCodeView.SyntaxHighlighting = ICSharpCode.AvalonEdit.Highlighting.Xshd.HighlightingLoader.Load(XTextReader, ICSharpCode.AvalonEdit.Highlighting.HighlightingManager.Instance);
             }
             catch
             {
-                MessageBox.Show("Couldn't find AvalonEdit Highlight definition file " + CFiles.Highlight);
+                MessageBox.Show("Couldn't find AvalonEdit Highlight definition file " + HFile);
             }
 
         }
@@ -506,10 +513,12 @@ namespace KFLOP_Test3
         {
             // open a windows dialog to read in the cprogram
             var openFileDlg = new OpenFileDialog();
-            openFileDlg.FileName = CFiles.KThread1;
+            openFileDlg.InitialDirectory = GetStr(CFiles.KFlopCCodePath);
+            openFileDlg.FileName = GetStr(CFiles.KThread1);
             if(openFileDlg.ShowDialog() == true)
             {
-                CFiles.KThread1 = openFileDlg.FileName; // save the filename for next time
+                CFiles.KThread1 = System.IO.Path.GetFileName(openFileDlg.FileName); // save the filename for next time
+                CFiles.KFlopCCodePath = System.IO.Path.GetDirectoryName(openFileDlg.FileName);
                 try
                 {
                     KM.ExecuteProgram(1, openFileDlg.FileName, true);
@@ -551,10 +560,11 @@ namespace KFLOP_Test3
         #endregion
 
         #region Configuration Files
+
         private void Window_Closed(object sender, EventArgs e)
         {
             KM.Disconnect();    // make sure KM is disposed
-            SaveConfig(CFiles);
+            CFiles.SaveConfig();
             // close any open windows or dialogs.
             Environment.Exit(0);
             Application.Current.Shutdown();
@@ -569,15 +579,17 @@ namespace KFLOP_Test3
         private void btnOpenJ_Click(object sender, RoutedEventArgs e)
         {
             var openFile = new OpenFileDialog();
-            openFile.FileName = CFiles.MotionParams;
+            openFile.InitialDirectory = GetStr(CFiles.ConfigPath);
+            openFile.FileName = GetStr(CFiles.MotionParams);
             if (openFile.ShowDialog() == true)
             {
+                // CFiles.MotionParams = System.IO.Path.GetFileName(openFile.FileName); // this copies the new file name to the default
                 JsonSerializer Jser = new JsonSerializer();
                 StreamReader sr = new StreamReader(openFile.FileName);
                 JsonReader Jreader = new JsonTextReader(sr);
                 Xparam = Jser.Deserialize<MotionParams_Copy>(Jreader);
                 sr.Close();
-                CFiles.MotionParams = openFile.FileName;
+                CFiles.MotionParams = System.IO.Path.GetDirectoryName(openFile.FileName);
 
                 Xparam.CopyParams(KM.CoordMotion.MotionParams); // copy the motion parameters to the KM instance
                 SetupWindow st1 = new SetupWindow(KM.CoordMotion.MotionParams);
@@ -585,10 +597,52 @@ namespace KFLOP_Test3
             }
         }
 
+        #region Motion Parameters
+        private void OpenMotionParams(ref ConfigFiles cf, ref MotionParams_Copy Xp)
+        {
+            try
+            {
+                string CombinedPath = GetPathFile(cf.ConfigPath, cf.MotionParams);
+                // MessageBox.Show(CombinedPath);
+
+                if (System.IO.File.Exists(CombinedPath) == true)
+                {
+                    JsonSerializer Jser = new JsonSerializer();
+                    StreamReader sr = new StreamReader(CombinedPath);
+                    JsonReader Jreader = new JsonTextReader(sr);
+                    Xp = Jser.Deserialize<MotionParams_Copy>(Jreader);
+                    sr.Close();
+                    Xp.CopyParams(KM.CoordMotion.MotionParams); // copy the motion parameters to the KM instance
+                }
+            }
+            catch
+            {
+                MessageBox.Show(cf.MotionParams, "motion params error!");
+            }
+
+        }
+
+        #endregion
+
+        private void OpenConfig(ref ConfigFiles cf)
+        {
+            if (cf.FindConfig())
+            {
+                string combinedConfigFile = System.IO.Path.Combine(cf.ConfigPath, cf.ThisFile);
+                JsonSerializer Jser = new JsonSerializer();
+                StreamReader sr = new StreamReader(combinedConfigFile);
+                JsonReader Jreader = new JsonTextReader(sr);
+                cf = Jser.Deserialize<ConfigFiles>(Jreader);
+                sr.Close();
+            }
+        }
+
         // copy a config file to the default config file
+        // note that this will change the {ThisFile} property to "KTestConfig.json"
         private void btnConfig_Click(object sender, RoutedEventArgs e)
         {
             var openFile = new OpenFileDialog();
+            openFile.InitialDirectory = GetStr(CFiles.ConfigPath);
             if(openFile.ShowDialog() == true)
             {
                 JsonSerializer Jser = new JsonSerializer();
@@ -596,24 +650,14 @@ namespace KFLOP_Test3
                 JsonReader Jreader = new JsonTextReader(sr);
                 CFiles = Jser.Deserialize<ConfigFiles>(Jreader);
                 sr.Close();
-                SaveConfig(CFiles);
+                CFiles.SaveConfig();
             }
         }
 
         //  Save the configuration file
-        private void SaveConfig(ConfigFiles cf)
-        {
-            cf.fPath = System.AppDomain.CurrentDomain.BaseDirectory;
-            string combinedConfigFile = System.IO.Path.Combine(cf.fPath, "KTestConfig.json");
+        // these functions were moved to the ConfigFiles class.
 
-            JsonSerializer Jser = new JsonSerializer();
-            StreamWriter sw = new StreamWriter(combinedConfigFile);
-            JsonTextWriter Jwrite = new JsonTextWriter(sw);
-            Jser.NullValueHandling = NullValueHandling.Ignore;
-            Jser.Formatting = Newtonsoft.Json.Formatting.Indented;
-            Jser.Serialize(Jwrite, cf);
-            sw.Close();
-        }
+
         #endregion
 
         #region GCode execution buttons
@@ -624,9 +668,14 @@ namespace KFLOP_Test3
             var GFile = new OpenFileDialog();
             GFile.DefaultExt = ".ngc";
             GFile.Filter = "ngc Files (*.ngc)|*.ngc|Text Files (*.txt)|*.txt|Tap Files (*.tap)|*.tap|GCode (*.gcode)|*.gcode|All Files (*.*)|*.*";
+            GFile.InitialDirectory = GetStr(CFiles.GCodePath);
+            GFile.FileName = GetStr(CFiles.LastGCode);
             if (GFile.ShowDialog() == true)
             {
-                tbGCodeFile.Text = System.IO.Path.GetFileName(GFile.FileName);
+                CFiles.LastGCode = System.IO.Path.GetFileName(GFile.FileName);
+                CFiles.GCodePath = System.IO.Path.GetDirectoryName(GFile.FileName);
+                tbGCodeFile.Text = CFiles.LastGCode;
+
                 GCodeFileName = GFile.FileName;
 
                 // load the file into the Gcode View
@@ -668,13 +717,16 @@ namespace KFLOP_Test3
                     // note here - because I'm not running in the standard directory structure I needed to specify the VarsFile
                     // https://www.dynomotion.com/forum/viewtopic.php?f=12&t=1252&p=3638#p3638
                     //
-                    KM.CoordMotion.Interpreter.VarsFile = CFiles.EMCVarsFile;
+                    KM.CoordMotion.Interpreter.VarsFile = System.IO.Path.Combine(CFiles.ConfigPath, CFiles.EMCVarsFile);
+                    KM.CoordMotion.Interpreter.ToolFile = System.IO.Path.Combine(CFiles.ConfigPath, CFiles.ToolFile);
+
                     KM.CoordMotion.Interpreter.InitializeInterpreter();
                 }
                 catch (Exception ex)
                 {
                     MessageBox.Show($"File not found '{ex}'");
                 }
+
                 // disable the Jog buttons
                 JogPanel1.DisableJog();
                 // disable single step
@@ -786,17 +838,22 @@ namespace KFLOP_Test3
 
 
         #endregion
-
+        // this is just a test button to start Thread3
         private void Button_Click(object sender, RoutedEventArgs e)
         {
             // open a windows dialog to read in the cprogram
             var openFileDlg = new OpenFileDialog();
+            openFileDlg.InitialDirectory = GetStr(CFiles.KFlopCCodePath);
+            openFileDlg.FileName = GetStr(CFiles.KThread3);
             if (openFileDlg.ShowDialog() == true)
             {
-               try
+                CFiles.KThread3 = System.IO.Path.GetFileName(openFileDlg.FileName);
+                CFiles.KFlopCCodePath = System.IO.Path.GetDirectoryName(openFileDlg.FileName);
+                try
                 {
                     KM.SetUserData(0, 100); // this is a test - 100 should be the init value
                     KM.ExecuteProgram(3, openFileDlg.FileName, true);
+
                 }
                 catch (DMException ex)
                 {
@@ -804,5 +861,26 @@ namespace KFLOP_Test3
                 }
             }
         }
+
+        #region String helper functions 
+        private string GetPathFile(string a, string b)
+        {
+            if ((a != null) && (b != null))
+            {
+                return System.IO.Path.Combine(a, b);
+            }
+            else
+            {
+                return "";
+            }
+        }
+        private string GetStr(string a)
+        {
+            if (a != null)
+                return a;
+            else
+                return "";
+        }
+        #endregion
     }
 }

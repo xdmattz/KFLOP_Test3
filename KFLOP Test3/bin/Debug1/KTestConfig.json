@@ -1,7 +1,9 @@
 {
   "fPath": "C:\\KMotion435c\\PC VCS\\KFlop Test\\KFLOP Test3\\KFLOP Test3\\bin\\Debug1\\",
-  "EMCVarsFile": "C:\\KMotion435c\\PC VCS\\KFlop Test\\KFLOP Test3\\KFLOP Test3\\Config\\DRM_emc.var",
+  "EMCVarsFile": "C:\\KMotion435b\\PC VCS\\KFLOP Test\\DRM_emc.var",
   "KThread1": "C:\\Dan\\Eng Projects\\BP308\\KFLOP\\KFLOP C Code\\BP308_Startup.c",
-  "MotionParams": "C:\\KMotion435c\\PC VCS\\KFlop Test\\KFLOP Test3\\KFLOP Test3\\Config\\KM_BP308_MP.json",
-  "Highlight": "C:\\KMotion435c\\PC VCS\\KFlop Test\\KFLOP Test3\\KFLOP Test3\\Config\\GCode-Mode.xshd"
+  "MotionParams": "C:\\KMotion435b\\PC VCS\\KFLOP Test\\KM_BP308_MP.json",
+  "Highlight": "C:\\KMotion435b\\PC VCS\\GCode-Mode.xshd",
+  "ConfigPath": "C:\\KMotion435c\\PC VCS\\KFlop Test\\KFLOP Test3\\KFLOP Test3\\bin\\Debug1\\Config",
+  "ThisFile": "KTestConfig.json"
 }

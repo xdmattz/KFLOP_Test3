@@ -45,7 +45,7 @@
         <TextBox x:Name="tbSeq" HorizontalAlignment="Left" Height="23" Margin="576,435,0,0" TextWrapping="Wrap" Text="TextBox" VerticalAlignment="Top" Width="120"/>
         <TextBox x:Name="tbErr" HorizontalAlignment="Left" Height="23" Margin="576,463,0,0" TextWrapping="Wrap" Text="TextBox" VerticalAlignment="Top" Width="120"/>
         <CheckBox x:Name="cbSimulate" Content="Simulate" HorizontalAlignment="Left" Margin="576,248,0,0" VerticalAlignment="Top"/>
-        <TextBlock x:Name="tbExTime" HorizontalAlignment="Left" Margin="576,506,0,0" TextWrapping="Wrap" Text="TextBlock" VerticalAlignment="Top" RenderTransformOrigin="0.76,-0.844"/>
+        <TextBlock x:Name="tbExTime" HorizontalAlignment="Left" Margin="576,553,0,0" TextWrapping="Wrap" Text="TextBlock" VerticalAlignment="Top" RenderTransformOrigin="0.76,-0.844"/>
         <Button x:Name="btnConsole" Content="Console" HorizontalAlignment="Left" Margin="331,40,0,0" VerticalAlignment="Top" Width="75" Click="btnConsole_Click"/>
         <TabControl x:Name="tcMainTab" HorizontalAlignment="Left" Height="373" Margin="34,332,0,0" VerticalAlignment="Top" Width="494">
             <TabItem Header="Jog">
@@ -71,6 +71,9 @@
             </TabItem>
         </TabControl>
         <Button Content="Thread3" HorizontalAlignment="Left" Margin="612,10,0,0" VerticalAlignment="Top" Width="75" Click="Button_Click"/>
+        <Label Content="Tick Time" HorizontalAlignment="Left" Margin="576,504,0,0" VerticalAlignment="Top"/>
+        <TextBox x:Name="tbTickTime" HorizontalAlignment="Left" Height="23" Margin="641,506,0,0" TextWrapping="Wrap" Text="0.000" VerticalAlignment="Top" Width="120"/>
+        <TextBlock x:Name="tbStatus1" HorizontalAlignment="Left" Margin="641,583,0,0" TextWrapping="Wrap" Text="0" VerticalAlignment="Top" Width="74"/>
 
 
 
