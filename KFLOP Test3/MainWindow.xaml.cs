@@ -44,11 +44,10 @@ namespace KFLOP_Test3
         
         static bool Connected = false;  // used in the status time to indicate when the KFLOP is connected
         static int skip = 0;            // skip timer used to delay when KFLOP is not connected
-        static bool StatusReady1 = false;           // Thread 1 loaded indicator
-        static bool StatusReady2 = false;            // Threads 1 and 2 loaded and the status is OK
         static bool ExecutionInProgress = false;    // true while interpreter is executing
         static bool InFeedHold = false;             // true when in feed hold
         static bool InMotion = false;               // true when jogging
+        static int TimerEntry = 0;
 
         static KMotion_dotNet.KM_Controller KM; // this is the controller instance!
         static MotionParams_Copy Xparam;
@@ -69,6 +68,11 @@ namespace KFLOP_Test3
         static ConsolWindow ConWin;
 
         int[] PVars;
+
+        // this is a timing variable for debugging purposes 
+        // can be used to time processes 
+        System.Diagnostics.Stopwatch tickTimer; 
+
 
 
 
@@ -126,6 +130,10 @@ namespace KFLOP_Test3
             Timer.Tick += dispatchTimer_Tick;
             Timer.Start();
 
+            // debug timer
+            tickTimer = new System.Diagnostics.Stopwatch(); // for debuging the timing
+            tickTimer.Reset();
+
 
 
             // the tab controls
@@ -147,13 +155,23 @@ namespace KFLOP_Test3
         {
             int[] BoardList;
             int nBoards = 0;
-            // several sections
-            // if the board is connected then 
-            // then check certain things every cycle
-            // check some things every second 
+
+            // if for some reason the processes in the dispatch timer
+            // takes more than the period of the timer, this should catch that
+            // and make multiple entries into the timer tick not hang the process.
+            // remember to decrement TimerEntry at the end of the method!
+            // Note: TimerEntry is a static global variable - C# does't allow static local variables...
+            if (TimerEntry > 0) return;  
+            TimerEntry++;
+
+            // Timer Tick sections
+            // If the board is connected then 
+            // check some things once every second 
+            // check certain things every cycle
+
             if (Connected)
             {
-
+                #region Connected
                 if (++skip == 10)    // These actions happen every second
                 {
                     skip = 0;
@@ -162,85 +180,49 @@ namespace KFLOP_Test3
                 }
 
                 // these actions happen every cycle
-                var tickTimer = System.Diagnostics.Stopwatch.StartNew();
-                
 
+                tickTimer.Restart();
+                // lock the KFLOP board until the MainStatus is read.
                 if (KM.WaitToken(100) == KMOTION_TOKEN.KMOTION_LOCKED) // KMOTION_LOCKED means the board is available
                 {
                     try
                     {
+                        // note that KMotionCNC does a KM.ServiceConsole() here... 
                         KM_MainStatus MainStatus = KM.GetStatus(false); // passing false does not lock to board while generating status
                         KM.ReleaseToken();
-                        //int X = KM.GetUserData(120);
-                        tbStatus.Text = MainStatus.GetPC_comm(120).ToString("X");
-                        tickTimer.Stop();
-                        tbTickTime.Text = ($"{tickTimer.ElapsedMilliseconds} ms");
-                        //tbStatus1.Text = X.ToString("X");
-                        
-                        // 
-                        // manage all the status bits ie. limit switches, Air pressure
-                        // manage all the status from persist.UserData
-                        // 
-                        // 
-                        // Set DRO Colors
-                        if ((MainStatus.Enables & 1) != 0)
-                        {
-                            DROX.Foreground = Brushes.Green;
-                        }
-                        else
-                        {
-                            DROX.Foreground = Brushes.Red;
-                        }
-                        if ((MainStatus.Enables & 2) != 0)
-                        {
-                            DROY.Foreground = Brushes.Green;
-                        }
-                        else
-                        {
-                            DROY.Foreground = Brushes.Red;
-                        }
-                        if ((MainStatus.Enables & 4) != 0)
-                        {
-                            DROZ.Foreground = Brushes.Green;
-                        }
-                        else
-                        {
-                            DROZ.Foreground = Brushes.Red;
-                        }
 
-                        // Get Ablosule Machine Coordinates
-                        double x = 0, y = 0, z = 0, a = 0, b = 0, c = 0;
-                        KM.CoordMotion.UpdateCurrentPositionsABS(ref x, ref y, ref z, ref a, ref b, ref c, false);
-                        DROX.Text = String.Format("{0:F4}", x);
-                        DROY.Text = String.Format("{0:F4}", y);
-                        DROZ.Text = String.Format("{0:F4}", z);
-
-                        // manage the current line number for the gcode listing
-                        if(ExecutionInProgress)
-                        {
-                            CurrentLineNo = KM.CoordMotion.Interpreter.SetupParams.CurrentLine;
-                            GCodeView_GotoLine(CurrentLineNo);
-                        }
-                        //else { CurrentLineNo = 1; }
-
+                        // service all the timely functions
+                        //
+                        // Service KFlopStatus - 
+                        ServiceKFlopStatus(ref MainStatus);
+                        //
+                        // ServiceKFlopCommands - PC_Comm commands from KFlop
+                        ServiceKFlopCommands(ref MainStatus);
+                        //
+                        // Service the UI Controls - all the visible buttons on the screen
+                        //   This should include managing the GCode viewer - KMotionCNC manages
+                        //   the viewer separatly in a Mutex block 
+                        UpdateUI(ref MainStatus);
+                        //
+                        // KMotionCNC also services a JoyStick 
+                        //
                     }
                     catch (DMException)  // in case disconnect in the middle of reading status
                     {
                         KM.ReleaseToken();  // make sure the token is released
                     }
                 }
-                else
+                else    // only get here if the KFlop board can not get a token.
                 {
+                    // if the KFlop board can't get a token (WaitToken) then we must not be connected anymore.
                     Connected = false;
-                    StatusReady1 = false;
-                    StatusReady2 = false;
                 }
-                // Manage the Cycle Start button
-                // btnCycleStart.IsEnabled = !ExecutionInProgress;
-                
+                #endregion
             }
+
             else
             {
+                #region Not Connected
                 if (++skip == 10)    // These actions happen every second - when not connected
                 {
                     skip = 0;
@@ -256,13 +238,12 @@ namespace KFLOP_Test3
                     else
                     {
                         Connected = false;
-                        StatusReady1 = false;
-                        StatusReady2 = false;
                         Title = String.Format("C# WPF App - KFLOP Disconnected count = {0}", DisCount);
                     }
                 }
-
+                #endregion
             }
+            TimerEntry--;
         }
         #endregion
 
@@ -465,6 +446,71 @@ namespace KFLOP_Test3
 //            KM.CoordMotion.Interpreter.SetupParams.OriginIndex = -1; // Force update from GCode Vars
 //            KM.CoordMotion.Interpreter.ChangeFixtureNumber(Fixture_Number); // Load offset for fixture
 
+        }
+        #endregion
+
+
+        #region KFLOP Status
+        private void ServiceKFlopStatus(ref KM_MainStatus KStat)
+        {
+            //int X = KM.GetUserData(120);
+            tbStatus1.Text = KStat.GetPC_comm(4).ToString("X");
+            // tickTimer.Stop();
+            tbTickTime.Text = ($"{tickTimer.ElapsedMilliseconds} ms");
+            //tbStatus1.Text = X.ToString("X");
+        }
+        #endregion
+
+        #region KFLOP PC_Comm commands
+        private void ServiceKFlopCommands(ref KM_MainStatus KStat)
+        {
+
+        }
+        #endregion
+
+        #region User Interface updates
+        private void UpdateUI(ref KM_MainStatus KStat)
+        {
+            // Set DRO Colors
+            if ((KStat.Enables & 1) != 0)
+            {
+                DROX.Foreground = Brushes.Green;
+            }
+            else
+            {
+                DROX.Foreground = Brushes.Red;
+            }
+            if ((KStat.Enables & 2) != 0)
+            {
+                DROY.Foreground = Brushes.Green;
+            }
+            else
+            {
+                DROY.Foreground = Brushes.Red;
+            }
+            if ((KStat.Enables & 4) != 0)
+            {
+                DROZ.Foreground = Brushes.Green;
+            }
+            else
+            {
+                DROZ.Foreground = Brushes.Red;
+            }
+
+            // Get Ablosule Machine Coordinates
+            double x = 0, y = 0, z = 0, a = 0, b = 0, c = 0;
+            KM.CoordMotion.UpdateCurrentPositionsABS(ref x, ref y, ref z, ref a, ref b, ref c, false);
+            DROX.Text = String.Format("{0:F4}", x);
+            DROY.Text = String.Format("{0:F4}", y);
+            DROZ.Text = String.Format("{0:F4}", z);
+
+            // manage the current line number for the gcode listing
+            if (ExecutionInProgress)
+            {
+                CurrentLineNo = KM.CoordMotion.Interpreter.SetupParams.CurrentLine;
+                GCodeView_GotoLine(CurrentLineNo);
+            }
+            //else { CurrentLineNo = 1; }
         }
         #endregion
 

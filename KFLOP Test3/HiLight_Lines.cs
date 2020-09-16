@@ -10,7 +10,7 @@ using ICSharpCode.AvalonEdit;
 
 namespace KFLOP_Test3
 {
-    // line highligher - found this at 
+    // line highligher - found here: 
     // https://stackoverflow.com/questions/5072761/avalonedit-highlight-current-line-even-when-not-focused
 
     public class HighlightCurrentLineBackgroundRenderer : IBackgroundRenderer
