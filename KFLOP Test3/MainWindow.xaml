@@ -4,7 +4,6 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:avalonEdit="http://icsharpcode.net/sharpdevelop/avalonedit"
-        
         xmlns:local="clr-namespace:KFLOP_Test3"
         mc:Ignorable="d"
         Title="MainWindow" Height="826" Width="850" Closed="Window_Closed">
@@ -48,32 +47,21 @@
         <TextBlock x:Name="tbExTime" HorizontalAlignment="Left" Margin="576,553,0,0" TextWrapping="Wrap" Text="TextBlock" VerticalAlignment="Top" RenderTransformOrigin="0.76,-0.844"/>
         <Button x:Name="btnConsole" Content="Console" HorizontalAlignment="Left" Margin="331,40,0,0" VerticalAlignment="Top" Width="75" Click="btnConsole_Click"/>
         <TabControl x:Name="tcMainTab" HorizontalAlignment="Left" Height="373" Margin="34,332,0,0" VerticalAlignment="Top" Width="494">
-            <TabItem Header="Jog">
-                <Grid Background="#FFE5E5E5" Margin="0" >
-                    <!-- Add the Jog Panel here -->
-                    <local:JogPanel x:Name="JogPanel1"  Margin="10,5" >
-
-                    </local:JogPanel>
-
-                </Grid>
-            </TabItem>
-            <TabItem Header="Status" HorizontalAlignment="Right" Width="61">
-                Status Stuff goes here
-                <!--      <Grid Background="#FFE5E5E5">
-                    
-                </Grid>-->
-            </TabItem>
-            <TabItem Header="Probing">
-                Probing stuff goes here
-            </TabItem>
-            <TabItem Header="Tools">
-                Tool Management goes here
-            </TabItem>
+            <!-- fill the tabs in from the "Code Behind" -->
         </TabControl>
         <Button Content="Thread3" HorizontalAlignment="Left" Margin="612,10,0,0" VerticalAlignment="Top" Width="75" Click="Button_Click"/>
         <Label Content="Tick Time" HorizontalAlignment="Left" Margin="576,504,0,0" VerticalAlignment="Top"/>
         <TextBox x:Name="tbTickTime" HorizontalAlignment="Left" Height="23" Margin="641,506,0,0" TextWrapping="Wrap" Text="0.000" VerticalAlignment="Top" Width="120"/>
         <TextBlock x:Name="tbStatus1" HorizontalAlignment="Left" Margin="641,583,0,0" TextWrapping="Wrap" Text="0" VerticalAlignment="Top" Width="74"/>
+        <Rectangle Fill="#FFF4F4F5" HorizontalAlignment="Left" Height="117" Margin="744,270,0,0" Stroke="Black" VerticalAlignment="Top" Width="79" Grid.ColumnSpan="2"/>
+        <Label Content="Active Threads" HorizontalAlignment="Left" Margin="744,270,0,0" VerticalAlignment="Top" FontSize="10" Grid.ColumnSpan="2" Width="79"/>
+        <CheckBox x:Name="cbT1" Content="Thread1" HorizontalAlignment="Left" Margin="749,288,0,0" VerticalAlignment="Top" FontSize="10" Width="66" IsEnabled="False"/>
+        <CheckBox x:Name="cbT2" Content="Thread2" HorizontalAlignment="Left" Margin="749,301,0,0" VerticalAlignment="Top" FontSize="10" Width="66" IsEnabled="False"/>
+        <CheckBox x:Name="cbT3" Content="Thread3" HorizontalAlignment="Left" Margin="749,314,0,0" VerticalAlignment="Top" FontSize="10" Width="66" IsThreeState="True" IsEnabled="False"/>
+        <CheckBox x:Name="cbT4" Content="Thread4" HorizontalAlignment="Left" Margin="749,327,0,0" VerticalAlignment="Top" FontSize="10" Width="66" IsEnabled="False"/>
+        <CheckBox x:Name="cbT5" Content="Thread5" HorizontalAlignment="Left" Margin="749,340,0,0" VerticalAlignment="Top" FontSize="10" Width="66" IsEnabled="False"/>
+        <CheckBox x:Name="cbT6" Content="Thread6" HorizontalAlignment="Left" Margin="749,353,0,0" VerticalAlignment="Top" FontSize="10" Width="66" IsEnabled="False"/>
+        <CheckBox x:Name="cbT7" Content="Thread7" HorizontalAlignment="Left" Margin="749,366,0,0" VerticalAlignment="Top" FontSize="10" Width="66" IsEnabled="False"/>
 
 
 

@@ -107,6 +107,7 @@
     <Compile Include="ConsolWindow.xaml.cs">
       <DependentUpon>ConsolWindow.xaml</DependentUpon>
     </Compile>
+    <Compile Include="Constants.cs" />
     <Compile Include="HiLight_Lines.cs" />
     <Compile Include="Machine.cs" />
     <Compile Include="MotionParams_Copy.cs" />
@@ -115,6 +116,9 @@
     </Compile>
     <Compile Include="JogPanel.xaml.cs">
       <DependentUpon>JogPanel.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="StatusPanel.xaml.cs">
+      <DependentUpon>StatusPanel.xaml</DependentUpon>
     </Compile>
     <Page Include="ConsolWindow.xaml">
       <SubType>Designer</SubType>
@@ -137,6 +141,10 @@
       <Generator>MSBuild:Compile</Generator>
     </Page>
     <Page Include="JogPanel.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="StatusPanel.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
@@ -180,6 +188,18 @@
       <ProductName>.NET Framework 3.5 SP1</ProductName>
       <Install>false</Install>
     </BootstrapperPackage>
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="LimX+ sm.png" />
+    <Resource Include="LimX-a sm.png" />
+    <Resource Include="LimX-_sm.png" />
+    <Resource Include="LimY+ sm.png" />
+    <Resource Include="LimY- sm.png" />
+    <Resource Include="Small LED Green.png" />
+    <Resource Include="Small LED OFF.png" />
+    <Resource Include="Small LED OFFa.png" />
+    <Resource Include="Small LED Off_b.png" />
+    <Resource Include="Small LED Red.png" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

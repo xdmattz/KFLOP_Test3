@@ -2,6 +2,7 @@
   "fPath": "C:\\KMotion435c\\PC VCS\\KFlop Test\\KFLOP Test3\\KFLOP Test3\\bin\\Debug1\\",
   "EMCVarsFile": "DRM_emc.var",
   "KThread1": "BP308_Startup.c",
+  "KThread2": "BP308_Home.c",
   "KThread3": "T3_Tests.c",
   "LastGCode": "GCodeTest2.gcode",
   "MotionParams": "KM_BP308_MP.json",

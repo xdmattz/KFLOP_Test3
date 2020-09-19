@@ -49,6 +49,16 @@ namespace KFLOP_Test3
         static bool InMotion = false;               // true when jogging
         static int TimerEntry = 0;
 
+        // these flags indicate the status of the machine - as opposed to status of the software.
+        // they are updated by reading the P_STATUS persist variable from the KFLOP board controlling the machine
+        // the current persist variable for this is #104 - so it is always read in the MainStatus as the PC_comm[4] variable
+        static bool T1Active = false;
+        static bool ESTOP_FLAG = true;
+        static bool MachineIsHomed = false;
+        static bool MachineWarning = false;
+        static bool MachineError = false;
+
+
         static KMotion_dotNet.KM_Controller KM; // this is the controller instance!
         static MotionParams_Copy Xparam;
         // static ConfigFiles CFiles;
@@ -71,7 +81,11 @@ namespace KFLOP_Test3
 
         // this is a timing variable for debugging purposes 
         // can be used to time processes 
-        System.Diagnostics.Stopwatch tickTimer; 
+        System.Diagnostics.Stopwatch tickTimer;
+
+        // tab items 
+        JogPanel JogPanel1;
+        StatusPanel StatusPanel1;
 
 
 
@@ -137,8 +151,23 @@ namespace KFLOP_Test3
 
 
             // the tab controls
-            JogPanel1.KMx = KM;
-            // Status tab panel
+            // Add the usere controls to the Tab control area
+            // The Jog Panel
+            JogPanel1 = new JogPanel(ref KM);
+            var Tab1 = new TabItem();
+            Tab1.Name = "tabItemContent";
+            Tab1.Header = "Jog";
+            Tab1.Content = JogPanel1;
+            tcMainTab.Items.Add(Tab1);
+
+            // The Status Panel
+            StatusPanel1 = new StatusPanel(ref KM);
+            var Tab2 = new TabItem();
+            Tab2.Name = "tabItemContent1";
+            Tab2.Header = "Status";
+            Tab2.Content = StatusPanel1;
+            tcMainTab.Items.Add(Tab2);
+
             // Probing tab panel
             // Tools tab panel etc.
 
@@ -453,11 +482,44 @@ namespace KFLOP_Test3
         #region KFLOP Status
         private void ServiceKFlopStatus(ref KM_MainStatus KStat)
         {
+            BitOps B = new BitOps();
+
+            // this first little bit is just for testing
             //int X = KM.GetUserData(120);
             tbStatus1.Text = KStat.GetPC_comm(4).ToString("X");
             // tickTimer.Stop();
             tbTickTime.Text = ($"{tickTimer.ElapsedMilliseconds} ms");
             //tbStatus1.Text = X.ToString("X");
+
+            // check the status of the Machine P_STATUS is in PC_comm[4];
+            int status = KStat.PC_comm[CSConst.P_STATUS];
+            if (B.AnyInMask(status, PVConst.SB_ACTIVE_MASK))   // Active bit is set in P_STATUS means thread 1 is running properly 
+            {
+                T1Active = true;
+                // check the estop
+                if (B.AnyInMask(status, PVConst.SB_ESTOP_MASK))
+                {
+                    ESTOP_FLAG = false; // SB_ESTOP bit set means everything is OK - not in ESTOP
+                    if(B.AnyInMask(status, PVConst.SB_WARNING_STATUS_MASK))
+                    { MachineWarning = true; }
+                    else
+                    { MachineWarning = false; }
+                    if(B.AllInMask(status, PVConst.SB_ERROR_STATUS_MASK))
+                    { MachineError = false; }
+                    else { MachineError = true; }
+                }
+                else
+                {
+                    ESTOP_FLAG = true;  // in ESTOP! don't do anything else!
+                }
+
+            }
+            else
+            {
+                // if Active is not set, don't bother with anything else because there is nothing to talk to.
+                T1Active = false;
+            }
+
         }
         #endregion
 
@@ -472,7 +534,7 @@ namespace KFLOP_Test3
         private void UpdateUI(ref KM_MainStatus KStat)
         {
             // Set DRO Colors
-            if ((KStat.Enables & 1) != 0)
+            if ((KStat.Enables & AXConst.A_AXIS) != 0)
             {
                 DROX.Foreground = Brushes.Green;
             }
@@ -480,7 +542,7 @@ namespace KFLOP_Test3
             {
                 DROX.Foreground = Brushes.Red;
             }
-            if ((KStat.Enables & 2) != 0)
+            if ((KStat.Enables & AXConst.Y_AXIS_MASK) != 0)
             {
                 DROY.Foreground = Brushes.Green;
             }
@@ -488,7 +550,7 @@ namespace KFLOP_Test3
             {
                 DROY.Foreground = Brushes.Red;
             }
-            if ((KStat.Enables & 4) != 0)
+            if ((KStat.Enables & AXConst.Z_AXIS_MASK) != 0)
             {
                 DROZ.Foreground = Brushes.Green;
             }
@@ -511,6 +573,26 @@ namespace KFLOP_Test3
                 GCodeView_GotoLine(CurrentLineNo);
             }
             //else { CurrentLineNo = 1; }
+
+            // update the check boxes
+            if(cbT1.IsEnabled)
+            { if (KM.ThreadExecuting(1)) cbT1.IsChecked = true; }
+            if (cbT2.IsEnabled)
+            { if (KM.ThreadExecuting(2)) cbT2.IsChecked = true; }
+            if (cbT3.IsEnabled)
+            { if (KM.ThreadExecuting(3)) cbT3.IsChecked = true; }
+            if (cbT4.IsEnabled)
+            { if (KM.ThreadExecuting(4)) cbT4.IsChecked = true; }
+            if (cbT5.IsEnabled)
+            { if (KM.ThreadExecuting(5)) cbT5.IsChecked = true; }
+            if (cbT6.IsEnabled)
+            { if (KM.ThreadExecuting(6)) cbT6.IsChecked = true; }
+            if (cbT7.IsEnabled)
+            { if (KM.ThreadExecuting(7)) cbT7.IsChecked = true; }
+
+            // update limit switches 
+            StatusPanel1.CheckLimit(ref KStat);
+            StatusPanel1.CheckHome(ref KStat);
         }
         #endregion
 
@@ -568,8 +650,25 @@ namespace KFLOP_Test3
                 try
                 {
                     KM.ExecuteProgram(1, openFileDlg.FileName, true);
+                    cbT1.IsEnabled = true;
                 }
                 catch(DMException ex)
+                {
+                    MessageBox.Show("Unable to execute C Program in KFLOP\r\r" + ex.InnerException.Message);
+                }
+            }
+            openFileDlg.FileName = GetStr(CFiles.KThread2);
+            if(openFileDlg.ShowDialog() == true)
+            {
+                CFiles.KThread2 = System.IO.Path.GetFileName(openFileDlg.FileName); // save the filename for next time
+                CFiles.KFlopCCodePath = System.IO.Path.GetDirectoryName(openFileDlg.FileName);
+                try
+                {
+                    KM.SetUserData(PVConst.P_NOTIFY, T2Const.T2_NO_CMD);
+                    KM.ExecuteProgram(2, openFileDlg.FileName, true);
+                    cbT2.IsEnabled = true;
+                }
+                catch (DMException ex)
                 {
                     MessageBox.Show("Unable to execute C Program in KFLOP\r\r" + ex.InnerException.Message);
                 }
@@ -579,6 +678,7 @@ namespace KFLOP_Test3
         private void btnProgHalt_Click(object sender, RoutedEventArgs e)
         {
             KM.KillProgramThreads(1);
+            KM.KillProgramThreads(2);
 
         }
 
@@ -899,6 +999,7 @@ namespace KFLOP_Test3
                 {
                     KM.SetUserData(0, 100); // this is a test - 100 should be the init value
                     KM.ExecuteProgram(3, openFileDlg.FileName, true);
+                    cbT3.IsEnabled = true;
 
                 }
                 catch (DMException ex)

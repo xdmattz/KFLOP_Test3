@@ -1,0 +1,54 @@
+﻿<UserControl x:Class="KFLOP_Test3.StatusPanel"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:local="clr-namespace:KFLOP_Test3"
+             mc:Ignorable="d" 
+             d:DesignHeight="300" Width="446.471">
+    <Grid>
+        <Rectangle Fill="#FFF4F4F5" HorizontalAlignment="Left" Height="165" Margin="352,10,0,0" Stroke="Black" VerticalAlignment="Top" Width="74"/>
+        <Button x:Name="btnHomeX" Content="X" HorizontalAlignment="Left" Margin="373,35,0,0" VerticalAlignment="Top" Width="34" RenderTransformOrigin="0.467,-0.064" Height="21" Click="btnHomeX_Click"/>
+        <Button x:Name="btnHomeY" Content="Y" HorizontalAlignment="Left" Margin="373,56,0,0" VerticalAlignment="Top" Width="34" RenderTransformOrigin="0.467,-0.064" Height="21" Click="btnHomeY_Click"/>
+        <Button x:Name="btnHomeZ" Content="Z" HorizontalAlignment="Left" Margin="373,77,0,0" VerticalAlignment="Top" Width="34" RenderTransformOrigin="0.467,-0.064" Height="21" Click="btnHomeZ_Click"/>
+        <Button x:Name="btnHomeA" Content="A" HorizontalAlignment="Left" Margin="373,98,0,0" VerticalAlignment="Top" Width="34" RenderTransformOrigin="0.467,-0.064" Height="21"/>
+        <Button x:Name="btnHomeS" Content="Spin" HorizontalAlignment="Left" Margin="373,119,0,0" VerticalAlignment="Top" Width="34" RenderTransformOrigin="0.467,-0.064" Height="21" IsCancel="True" Click="btnHomeS_Click"/>
+        <Button x:Name="btnHomeAll" Content="All" HorizontalAlignment="Left" Margin="373,145,0,0" VerticalAlignment="Top" Width="34" RenderTransformOrigin="0.467,-0.064" Height="21" Click="btnHomeAll_Click"/>
+        <Label Content="Home" HorizontalAlignment="Left" Margin="364,10,0,0" VerticalAlignment="Top" Height="25" Width="50"/>
+        <Button x:Name="btnLimZp" HorizontalAlignment="Left" Margin="281,97,0,0" VerticalAlignment="Top" BorderThickness="0" Click="btnLimZp_Click">
+            <StackPanel Height="50" Width="50">
+                <Image Source="LimY+ sm.png" />
+            </StackPanel>
+        </Button>
+        <Button x:Name="btnLimZn" HorizontalAlignment="Left" Margin="281,158,0,0" VerticalAlignment="Top" BorderThickness="0" Click="btnLimZn_Click">
+            <StackPanel Height="50" Width="50">
+                <Image Source="LimY- sm.png" />
+            </StackPanel>
+        </Button>
+        <Button x:Name="btnLimYp" HorizontalAlignment="Left" Margin="165,77,0,0" VerticalAlignment="Top" BorderThickness="0" Click="btnLimYp_Click">
+            <StackPanel Height="50" Width="50">
+                <Image Source="LimY+ sm.png" />
+            </StackPanel>
+        </Button>
+        <Button x:Name="btnLimYn" HorizontalAlignment="Left" Margin="165,189,0,0" VerticalAlignment="Top" BorderThickness="0" Click="btnLimYn_Click">
+            <StackPanel Height="50" Width="50">
+                <Image Source="LimY- sm.png" />
+            </StackPanel>
+        </Button>
+        <Button x:Name="btnLimXp" HorizontalAlignment="Left" Margin="220,133,0,0" VerticalAlignment="Top" BorderThickness="0" Click="btnLimXp_Click">
+            <StackPanel Height="50" Width="50">
+                <Image Source="LimX+ sm.png" />
+            </StackPanel>
+        </Button>
+        <Button x:Name="btnLimXn" HorizontalAlignment="Left" Margin="109,133,0,0" VerticalAlignment="Top" BorderThickness="0" Click="btnLimXn_Click">
+            <StackPanel Height="50" Width="50">
+                <Image Source="LimX-a sm.png" />
+            </StackPanel>
+        </Button>
+        <CheckBox x:Name="cbLimZ" Content="Z Limit" HorizontalAlignment="Left" Margin="281,76,0,0" VerticalAlignment="Top"/>
+        <CheckBox x:Name="cbLimY" Content="Y Limit" HorizontalAlignment="Left" Margin="168,61,0,0" VerticalAlignment="Top"/>
+        <CheckBox x:Name="cbLimX" Content="X Limit" HorizontalAlignment="Left" Margin="107,117,0,0" VerticalAlignment="Top"/>
+        <TextBox x:Name="tbStatus1" HorizontalAlignment="Left" Height="23" Margin="29,229,0,0" TextWrapping="Wrap" Text="TextBox" VerticalAlignment="Top" Width="120"/>
+
+    </Grid>
+</UserControl>

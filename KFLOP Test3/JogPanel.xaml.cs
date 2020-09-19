@@ -32,15 +32,17 @@ namespace KFLOP_Test3
         private int JAxis_A;
         private int JAxis_B;
         private int JAxis_C;
-        
 
-        public JogPanel()
+        // a copy of the KM controller 
+        private KM_Controller KMx { get; set; }
+
+        public JogPanel(ref KM_Controller X)
         {
             InitializeComponent();
+            KMx = X;
         }
 
-        // a copy of the KM controller - must be set when the component is initialized 
-        public KM_Controller KMx { get; set; }
+
 
         #region Individudal Jog Buttons 
 
