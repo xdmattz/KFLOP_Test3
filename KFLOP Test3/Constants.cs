@@ -14,6 +14,7 @@ namespace KFLOP_Test3
         public const int PC_CMD = 0;
 
         public const int P_STATUS = 4;
+        public const int P_RPM = 5;
     }
 
     // constants relating to the persist variables

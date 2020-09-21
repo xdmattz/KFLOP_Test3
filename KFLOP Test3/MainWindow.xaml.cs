@@ -110,6 +110,7 @@ namespace KFLOP_Test3
             //
             // also copy the DSP_KFLOP folder into Debug1/Release1
             // reference this wiki page https://www.dynomotion.com/wiki/index.php?title=PC_Example_Applications
+            #region Initialization 
             try
             {
                 KM = new KMotion_dotNet.KM_Controller();
@@ -174,6 +175,7 @@ namespace KFLOP_Test3
             // hide the fwd and rev buttons
             HideFR();
 
+            #endregion
         }
 
         #region Status Timer Tick
@@ -309,10 +311,21 @@ namespace KFLOP_Test3
             MessageBox.Show(msg);
         }
 
+        /// <summary>
+        /// MCode8Callback - this is the method that is called when ever the MCode callback is specified
+        /// // need to figure out what happens with each mcode - ie M3, M4, M5, M6 and S
+        /// </summary>
+        /// <param name="code"></param>
+        /// <returns></returns>
         private int MCode8Callback(int code)
         {
             MessageBox.Show(String.Format("Code = {0}", code));
             return 0;
+        }
+
+        private void GCodeUserCallback(string msg)
+        {
+            MessageBox.Show(msg);
         }
 
         #region GCode Interrpreter callback handlers
@@ -392,6 +405,8 @@ namespace KFLOP_Test3
 
             // Other interpreter callbacks.
             KM.CoordMotion.Interpreter.InterpreterUserMCodeCallbackRequested += new KM_Interpreter.KM_GCodeInterpreterUserMcodeCallbackHandler(MCode8Callback);
+            KM.CoordMotion.Interpreter.InterpreterUserCallbackRequested += new KM_Interpreter.KM_GCodeInterpreterUserCallbackHandler(GCodeUserCallback);
+
             // KM.CoordMotion.Interpreter.
             SetMCodeHandlers();
         }
@@ -406,6 +421,21 @@ namespace KFLOP_Test3
             // testing all the possible MCode Actions
 
             KMI = KM.CoordMotion.Interpreter;   // just for convinecne so I don't have to type so much...
+
+            // startup action 47.
+            KMI.SetMcodeAction(42, MCODE_TYPE.M_Action_Callback, 0, 0, 0, 0, 0, "");
+            // set up MCODE actions for the Spindle Control
+            // KMI.SetMcodeAction(10, MCODE_TYPE.M_Action_Callback, 0, 0, 0, 0, 0, "");
+            // M3 action
+            KMI.SetMcodeAction(3, MCODE_TYPE.M_Action_Callback, 0, 0, 0, 0, 0, "");
+            KMI.SetMcodeAction(4, MCODE_TYPE.M_Action_Callback, 0, 0, 0, 0, 0, "");
+            KMI.SetMcodeAction(5, MCODE_TYPE.M_Action_Callback, 0, 0, 0, 0, 0, "");
+            KMI.SetMcodeAction(6, MCODE_TYPE.M_Action_Callback, 0, 0, 0, 0, 0, "");
+            KMI.SetMcodeAction(7, MCODE_TYPE.M_Action_Callback, 0, 0, 0, 0, 0, "");
+            KMI.SetMcodeAction(8, MCODE_TYPE.M_Action_Callback, 0, 0, 0, 0, 0, "");
+            KMI.SetMcodeAction(9, MCODE_TYPE.M_Action_Callback, 0, 0, 0, 0, 0, "");
+            // Set S to run thread 3 code which is preloaded with variable in userdata 99
+            KMI.SetMcodeAction(10, MCODE_TYPE.M_Action_Program, 3, 99, 0, 0, 0, "");
 
             // MCode Action 1 - Set a bit high or low
             // the bit to  set is in the first agument, the state of the bit is in the second
@@ -434,8 +464,7 @@ namespace KFLOP_Test3
             KMI.SetMcodeAction(32, MCODE_TYPE.M_Action_Program, 3, 0, 0, 0, 0, "");
             // Set M112 to run thread 3 code which has been preloaded.
             KMI.SetMcodeAction(33, MCODE_TYPE.M_Action_Program, 3, 0, 0, 0, 0, "");
-            // Set S to run thread 3 code which is preloaded with variable in userdata 99
-            KMI.SetMcodeAction(10, MCODE_TYPE.M_Action_Program, 3, 99, 0, 0, 0, "");
+
 
             // MCode Action 5 - Run a user C program on the KFLOP board and wait for it to finish
             // set M119 to run thread 3 code which has be preloaded, pass the code name in persist.UserData[100]
@@ -446,16 +475,16 @@ namespace KFLOP_Test3
 
             // MCode Action 7 - Run a PC Program
             // the name of the program to run is in the last (string) argument.
-            KMI.SetMcodeAction(7, MCODE_TYPE.M_Action_Program_PC, 0, 0, 0, 0, 0, "C:\\KMotion435c\\PC VCS\\MessageBoxTest2.exe");
+           // KMI.SetMcodeAction(7, MCODE_TYPE.M_Action_Program_PC, 0, 0, 0, 0, 0, "C:\\KMotion435c\\PC VCS\\MessageBoxTest2.exe");
 
             // MCode Action 8 - Callback to a user function in this app
             // M8 code should call the MCode8Callback function with something.
-            KMI.SetMcodeAction(8, MCODE_TYPE.M_Action_Callback, 0, 0, 0, 0, 0, "");
+          //  KMI.SetMcodeAction(8, MCODE_TYPE.M_Action_Callback, 0, 0, 0, 0, 0, "");
 
 
             // MCode Action 9 - Wait until a bit on the KFLOP board is set/cleared.
             // wait for bit 1040 (extended IO from Konnect) to go to 1
-            KMI.SetMcodeAction(9, MCODE_TYPE.M_Action_Waitbit, 1040, 1, 0, 0, 0, "");
+           // KMI.SetMcodeAction(9, MCODE_TYPE.M_Action_Waitbit, 1040, 1, 0, 0, 0, "");
 
         }
 
@@ -570,7 +599,7 @@ namespace KFLOP_Test3
             if (ExecutionInProgress)
             {
                 CurrentLineNo = KM.CoordMotion.Interpreter.SetupParams.CurrentLine;
-                GCodeView_GotoLine(CurrentLineNo);
+                GCodeView_GotoLine(CurrentLineNo +1);
             }
             //else { CurrentLineNo = 1; }
 
@@ -593,6 +622,14 @@ namespace KFLOP_Test3
             // update limit switches 
             StatusPanel1.CheckLimit(ref KStat);
             StatusPanel1.CheckHome(ref KStat);
+
+            // update the Spindle enable
+            if ((KStat.Enables & AXConst.SPINDLE_AXIS_MASK) != 0)
+            { cbSimulate.IsChecked = true; }
+            else
+            { cbSimulate.IsChecked = false; }
+            // update the Spindle RPM
+            tbSpindleSpeedRPM.Text = KStat.PC_comm[CSConst.P_RPM].ToString();
         }
         #endregion
 
@@ -649,7 +686,7 @@ namespace KFLOP_Test3
                 CFiles.KFlopCCodePath = System.IO.Path.GetDirectoryName(openFileDlg.FileName);
                 try
                 {
-                    KM.ExecuteProgram(1, openFileDlg.FileName, true);
+                    KM.ExecuteProgram(1, openFileDlg.FileName, true);  // trying false here...
                     cbT1.IsEnabled = true;
                 }
                 catch(DMException ex)
@@ -1028,6 +1065,38 @@ namespace KFLOP_Test3
             else
                 return "";
         }
+        #endregion
+
+        #region Spindle Buttons
+
+        private void btnSpindleCW_Click(object sender, RoutedEventArgs e)
+        {
+            double S_RPM;
+            if (double.TryParse(tbSpindleSpeedSet.Text, out S_RPM))
+            {
+                // get the speed from the textbox
+                // send Sxxx and M3
+            } else
+            { tbSpindleSpeedSet.Text = "0";  }
+        }
+
+        private void btnSpindleCCW_Click(object sender, RoutedEventArgs e)
+        {
+            double S_RPM;
+            if (double.TryParse(tbSpindleSpeedSet.Text, out S_RPM))
+            {
+                // get the speed from the textbox
+                // send Sxxx and M4
+            }
+            else
+            { tbSpindleSpeedSet.Text = "0"; }
+        }
+
+        private void btnSpindleStop_Click(object sender, RoutedEventArgs e)
+        {
+            // Send an M5
+        }
+
         #endregion
     }
 }

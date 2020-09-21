@@ -52,7 +52,7 @@
         <Button Content="Thread3" HorizontalAlignment="Left" Margin="612,10,0,0" VerticalAlignment="Top" Width="75" Click="Button_Click"/>
         <Label Content="Tick Time" HorizontalAlignment="Left" Margin="576,504,0,0" VerticalAlignment="Top"/>
         <TextBox x:Name="tbTickTime" HorizontalAlignment="Left" Height="23" Margin="641,506,0,0" TextWrapping="Wrap" Text="0.000" VerticalAlignment="Top" Width="120"/>
-        <TextBlock x:Name="tbStatus1" HorizontalAlignment="Left" Margin="641,583,0,0" TextWrapping="Wrap" Text="0" VerticalAlignment="Top" Width="74"/>
+        <TextBlock x:Name="tbStatus1" HorizontalAlignment="Left" Margin="576,588,0,0" TextWrapping="Wrap" Text="0" VerticalAlignment="Top" Width="74"/>
         <Rectangle Fill="#FFF4F4F5" HorizontalAlignment="Left" Height="117" Margin="744,270,0,0" Stroke="Black" VerticalAlignment="Top" Width="79" Grid.ColumnSpan="2"/>
         <Label Content="Active Threads" HorizontalAlignment="Left" Margin="744,270,0,0" VerticalAlignment="Top" FontSize="10" Grid.ColumnSpan="2" Width="79"/>
         <CheckBox x:Name="cbT1" Content="Thread1" HorizontalAlignment="Left" Margin="749,288,0,0" VerticalAlignment="Top" FontSize="10" Width="66" IsEnabled="False"/>
@@ -62,7 +62,14 @@
         <CheckBox x:Name="cbT5" Content="Thread5" HorizontalAlignment="Left" Margin="749,340,0,0" VerticalAlignment="Top" FontSize="10" Width="66" IsEnabled="False"/>
         <CheckBox x:Name="cbT6" Content="Thread6" HorizontalAlignment="Left" Margin="749,353,0,0" VerticalAlignment="Top" FontSize="10" Width="66" IsEnabled="False"/>
         <CheckBox x:Name="cbT7" Content="Thread7" HorizontalAlignment="Left" Margin="749,366,0,0" VerticalAlignment="Top" FontSize="10" Width="66" IsEnabled="False"/>
-
+        <TextBox x:Name="tbSpindleSpeedSet" HorizontalAlignment="Left" Height="24" Margin="612,655,0,0" TextWrapping="Wrap" Text="1000" VerticalAlignment="Top" Width="69" RenderTransformOrigin="1.21,0.083"/>
+        <Label Content="Spindle Speed (RPM)" HorizontalAlignment="Left" Margin="552,624,0,0" VerticalAlignment="Top"/>
+        <CheckBox x:Name="cbSpindleEnable" Content="" HorizontalAlignment="Left" Margin="769,630,0,0" VerticalAlignment="Top" RenderTransformOrigin="-2.097,2.844"/>
+        <Button x:Name="btnSpindleCW" Content="Start CW" HorizontalAlignment="Left" Margin="692,655,0,0" VerticalAlignment="Top" Width="69" Click="btnSpindleCW_Click"/>
+        <Button x:Name="btnSpindleCCW" Content="Start CCW" HorizontalAlignment="Left" Margin="692,677,0,0" VerticalAlignment="Top" Width="69" Click="btnSpindleCCW_Click"/>
+        <Button x:Name="btnSpindleStop" Content="Stop" HorizontalAlignment="Left" Margin="692,699,0,0" VerticalAlignment="Top" Width="69" Click="btnSpindleStop_Click"/>
+        <Label Content="Set" HorizontalAlignment="Left" Margin="576,655,0,0" VerticalAlignment="Top"/>
+        <TextBox x:Name="tbSpindleSpeedRPM" HorizontalAlignment="Left" Height="24" Margin="692,630,0,0" TextWrapping="Wrap" Text="1000" VerticalAlignment="Top" Width="69" RenderTransformOrigin="1.21,0.083"/>
 
 
     </Grid>
