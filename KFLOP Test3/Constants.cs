@@ -32,7 +32,8 @@ namespace KFLOP_Test3
         public const int P_MSG_PTR_H        = 126;
         public const int P_MPG_RESYNC       = 127;
         public const int P_SPINDLE_STATUS   = 128;
-        public const int P_SPINDLE_RPM      = 129;
+        public const int P_SPINDLE_RPM_CMD  = 129;  // location where the spindle speed is passed to in thread 3
+        public const int P_SPINDLE_RPM      = 105;  // calcualted spindle speed this is in the PC_Comm range so always passed to the PC program
 
         // perisist UserData variables used for Thread 2 communications
         public const int P_NOTIFY           = 131;
@@ -71,9 +72,16 @@ namespace KFLOP_Test3
         public const int SB_Y_HOME          = 17;
         public const int SB_Z_HOME          = 18;
         public const int SB_A_HOME          = 19;
+        // blank space for added axis if necessary
         public const int SB_SPIN_HOME       = 23;
-
-
+        // Spindle Specific flags
+        public const int SB_SPINDLE_STATUS_MASK = 0x3f000000;
+        public const int SB_SPINDLE_OK      = 24; // Spindle fault 1 = OK, 0 = fault
+        public const int SB_SPINDLE_RPM     = 25;   // Spindle mode = RPM when set
+        public const int SB_SPINDLE_PID     = 26;   // Spindle mode = PID when set
+        public const int SB_SPINDLE_ON      = 27;
+        public const int SB_SPINDLE_CW      = 28;
+        public const int SB_SPINDLE_CCW     = 29; 
     }
 
     class AXConst
@@ -89,6 +97,9 @@ namespace KFLOP_Test3
         public const int Z_AXIS_MASK = 0x04;
         public const int A_AXIS_MASK = 0x08;
         public const int SPINDLE_AXIS_MASK = 0x0080;
+
+        public const double MAX_SPINDLE_RPM = 6000;
+        public const double MIN_SPINDLE_RPM = 0;
 
     }
 

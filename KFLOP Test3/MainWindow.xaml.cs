@@ -57,6 +57,8 @@ namespace KFLOP_Test3
         static bool MachineIsHomed = false;
         static bool MachineWarning = false;
         static bool MachineError = false;
+        static bool RestoreStoppedState = false;
+        static bool InterpreterInitialized = false;
 
 
         static KMotion_dotNet.KM_Controller KM; // this is the controller instance!
@@ -319,6 +321,36 @@ namespace KFLOP_Test3
         /// <returns></returns>
         private int MCode8Callback(int code)
         {
+            if (KM.ThreadExecuting(2))
+            {
+                MessageBox.Show("Thread2 already executing!");
+            }
+            else
+            {
+                switch (code)
+                {
+                    case 3: // M3 callback - Spindle CW
+                        KM.SetUserData(PVConst.P_NOTIFY, T2Const.T2_SPINDLE_CW);
+                        KM.ExecuteProgram(2);
+                        break;
+                    case 4: // M4 callback - Spindle CCW
+                        KM.SetUserData(PVConst.P_NOTIFY, T2Const.T2_SPINDLE_CCW);
+                        KM.ExecuteProgram(2);
+                        break;
+                    case 5: // M5 Callback - Spindle Stop
+                        KM.SetUserData(PVConst.P_NOTIFY, T2Const.T2_SPINDLE_STOP);
+                        KM.ExecuteProgram(2);
+                        break;
+                    case 6: // M6 Callback - Tool Change
+                        // lots to do in this function.
+                        break;
+                    case 7: // M7 Callback - Mist Coolant On?
+                    case 8: // M8 Callback - Coolant On
+                    case 9: // M9 Callback -Coolant Off
+                        break;
+                    default: break;
+                }
+            }
             MessageBox.Show(String.Format("Code = {0}", code));
             return 0;
         }
@@ -435,7 +467,7 @@ namespace KFLOP_Test3
             KMI.SetMcodeAction(8, MCODE_TYPE.M_Action_Callback, 0, 0, 0, 0, 0, "");
             KMI.SetMcodeAction(9, MCODE_TYPE.M_Action_Callback, 0, 0, 0, 0, 0, "");
             // Set S to run thread 3 code which is preloaded with variable in userdata 99
-            KMI.SetMcodeAction(10, MCODE_TYPE.M_Action_Program, 3, 99, 0, 0, 0, "");
+            KMI.SetMcodeAction(10, MCODE_TYPE.M_Action_Program, 3, PVConst.P_SPINDLE_RPM_CMD, 0, 0, 0, "");
 
             // MCode Action 1 - Set a bit high or low
             // the bit to  set is in the first agument, the state of the bit is in the second
@@ -895,27 +927,37 @@ namespace KFLOP_Test3
                 ExecutionInProgress = true; // set here but not cleared until the InterpreterCompleted callback
                 KM.CoordMotion.Abort();     // make sure that everything is cleared
                 KM.CoordMotion.ClearAbort();
-                try
-                {
-                    // note here - because I'm not running in the standard directory structure I needed to specify the VarsFile
-                    // https://www.dynomotion.com/forum/viewtopic.php?f=12&t=1252&p=3638#p3638
-                    //
-                    KM.CoordMotion.Interpreter.VarsFile = System.IO.Path.Combine(CFiles.ConfigPath, CFiles.EMCVarsFile);
-                    KM.CoordMotion.Interpreter.ToolFile = System.IO.Path.Combine(CFiles.ConfigPath, CFiles.ToolFile);
 
-                    KM.CoordMotion.Interpreter.InitializeInterpreter();
-                }
-                catch (Exception ex)
+                if (GetInterpVars())
                 {
-                    MessageBox.Show($"File not found '{ex}'");
+                    // disable the Jog buttons
+                    JogPanel1.DisableJog();
+                    // disable single step
+                    btnSingleStep.IsEnabled = false;
+                    Set_Fixture_Offset(2, 2, 3, 0); // Set X, Y, Z for G55
+                    KM.CoordMotion.Interpreter.Interpret(GCodeFileName);  // Execute the File!
                 }
+            }
+        }
 
-                // disable the Jog buttons
-                JogPanel1.DisableJog();
-                // disable single step
-                btnSingleStep.IsEnabled = false;
-                Set_Fixture_Offset(2, 2, 3, 0); // Set X, Y, Z for G55
-                KM.CoordMotion.Interpreter.Interpret(GCodeFileName);  // Execute the File!
+        private bool GetInterpVars()
+        {
+            try
+            {
+                // note here - because I'm not running in the standard directory structure I needed to specify the VarsFile
+                // https://www.dynomotion.com/forum/viewtopic.php?f=12&t=1252&p=3638#p3638
+                //
+                KM.CoordMotion.Interpreter.VarsFile = System.IO.Path.Combine(CFiles.ConfigPath, CFiles.EMCVarsFile);
+                KM.CoordMotion.Interpreter.ToolFile = System.IO.Path.Combine(CFiles.ConfigPath, CFiles.ToolFile);
+
+                KM.CoordMotion.Interpreter.InitializeInterpreter();
+                InterpreterInitialized = true;
+                return true;
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"File not found '{ex}'");
+                return false;
             }
         }
 
@@ -995,11 +1037,34 @@ namespace KFLOP_Test3
 
         private void btnSingleStep_Click(object sender, RoutedEventArgs e)
         {
-            if(!ExecutionInProgress)
+            if (!ExecutionInProgress)
             {
-
+                if (!InterpreterInitialized)
+                {
+                    if (GetInterpVars() == false)
+                    { return; }
+                }
+                RestoreStoppedState = false;
+                ExecutionInProgress = true;
+                KM.CoordMotion.Interpreter.Interpret(GCodeFileName, CurrentLineNo, CurrentLineNo, 0);
+                
             }
         }
+
+
+        private void btnReStart_Click(object sender, RoutedEventArgs e)
+        {
+            if(!ExecutionInProgress)
+            {
+                KM.CoordMotion.IsPreviouslyStopped = PREV_STOP_TYPE.Prev_Stopped_None;
+                CurrentLineNo = 0;
+                GCodeView_GotoLine(CurrentLineNo + 1);
+                ExecutionInProgress = false;
+            }
+
+        }
+
+
         #endregion
 
 
@@ -1071,32 +1136,54 @@ namespace KFLOP_Test3
 
         private void btnSpindleCW_Click(object sender, RoutedEventArgs e)
         {
-            double S_RPM;
-            if (double.TryParse(tbSpindleSpeedSet.Text, out S_RPM))
-            {
-                // get the speed from the textbox
-                // send Sxxx and M3
-            } else
-            { tbSpindleSpeedSet.Text = "0";  }
+            // send Sxxx and M3
+            KM.CoordMotion.Interpreter.InvokeAction(10, false);
+            KM.CoordMotion.Interpreter.InvokeAction(3, false);
         }
 
         private void btnSpindleCCW_Click(object sender, RoutedEventArgs e)
         {
-            double S_RPM;
-            if (double.TryParse(tbSpindleSpeedSet.Text, out S_RPM))
-            {
-                // get the speed from the textbox
-                // send Sxxx and M4
-            }
-            else
-            { tbSpindleSpeedSet.Text = "0"; }
+            // send Sxxx and M4
+            KM.CoordMotion.Interpreter.InvokeAction(10, false);
+            KM.CoordMotion.Interpreter.InvokeAction(4, false);
         }
 
         private void btnSpindleStop_Click(object sender, RoutedEventArgs e)
         {
             // Send an M5
+            KM.CoordMotion.Interpreter.InvokeAction(5, false);
         }
 
+        private void tbSpindleSpeedSet_PreviewKeyDown(object sender, KeyEventArgs e)
+        {
+            double SSpeed;
+            if (e.Key == Key.Enter)
+            {
+                // check the spindle speed for the correct range
+                if (double.TryParse(tbSpindleSpeedSet.Text, out SSpeed))
+                {
+                    if ((SSpeed >= AXConst.MIN_SPINDLE_RPM) && (SSpeed <= AXConst.MAX_SPINDLE_RPM))
+                    {
+                        KM.CoordMotion.Interpreter.SetupParams.SpindleSpeed = SSpeed;
+                        KM.CoordMotion.Interpreter.InvokeAction(10, false);
+                    }
+                    else
+                    {
+                        MessageBox.Show("Spindle Speed out of range!");
+                    }
+                }
+                else
+                {
+                    tbSpindleSpeedSet.Text = "0";
+                }
+                tbSpindleSpeedSet.Background = Brushes.White;
+            }
+            else
+            {
+                tbSpindleSpeedSet.Background = Brushes.Pink;
+            }
+        }
         #endregion
+
     }
 }

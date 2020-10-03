@@ -19,12 +19,14 @@
         <Button x:Name="btnOpenJ" Content="Load JSON" HorizontalAlignment="Left" Margin="421,10,0,0" VerticalAlignment="Top" Width="75" Click="btnOpenJ_Click"/>
         <Button x:Name="btnConfig" Content="Config" HorizontalAlignment="Left" Margin="142,10,0,0" VerticalAlignment="Top" Width="75" Click="btnConfig_Click"/>
         <Button x:Name="btnGCode" Content="Load GCode" HorizontalAlignment="Left" Margin="34,42,0,0" VerticalAlignment="Top" Width="75" Click="btnGCode_Click"/>
-        <Button x:Name="btnCycleStart" Content="Cycle Start" HorizontalAlignment="Left" Margin="71,710,0,0" VerticalAlignment="Top" Width="75" Click="btnCycleStart_Click" />
-        <Button x:Name="btnFeedHold" Content="Feed Hold" HorizontalAlignment="Left" Margin="184,710,0,0" VerticalAlignment="Top" Width="75" Click="btnFeedHold_Click"/>
-        <Button x:Name="btnRev" Content="&lt;&lt;" HorizontalAlignment="Left" Margin="184,710,0,0" VerticalAlignment="Top" Width="33" PreviewMouseDown="btnRev_PreviewMouseDown" PreviewMouseUp="btnFR_PreviewMouseUp"  />
-        <Button x:Name="btnFwd" Content="&gt;&gt;" HorizontalAlignment="Left" Margin="225,710,0,0" VerticalAlignment="Top" Width="33" PreviewMouseDown="btnFwd_PreviewMouseDown" PreviewMouseUp="btnFR_PreviewMouseUp" />
-        <Button x:Name="btnHalt" Content="Halt" HorizontalAlignment="Left" Margin="299,710,0,0" VerticalAlignment="Top" Width="75" RenderTransformOrigin="0.5,0.5" Click="btnHalt_Click" />
-        <Button x:Name="btnSingleStep" Content="Single Step" HorizontalAlignment="Left" VerticalAlignment="Top" Width="75" Margin="414,710,0,0" Click="btnSingleStep_Click" />
+        <Button x:Name="btnCycleStart" Content="Cycle Start" HorizontalAlignment="Left" Margin="48,710,0,0" VerticalAlignment="Top" Width="75" Click="btnCycleStart_Click" />
+        <Button x:Name="btnFeedHold" Content="Feed Hold" HorizontalAlignment="Left" Margin="151,710,0,0" VerticalAlignment="Top" Width="75" Click="btnFeedHold_Click"/>
+        <Button x:Name="btnRev" Content="&lt;&lt;" HorizontalAlignment="Left" Margin="151,710,0,0" VerticalAlignment="Top" Width="33" PreviewMouseDown="btnRev_PreviewMouseDown" PreviewMouseUp="btnFR_PreviewMouseUp"  />
+        <Button x:Name="btnFwd" Content="&gt;&gt;" HorizontalAlignment="Left" Margin="192,710,0,0" VerticalAlignment="Top" Width="33" PreviewMouseDown="btnFwd_PreviewMouseDown" PreviewMouseUp="btnFR_PreviewMouseUp" />
+        <Button x:Name="btnHalt" Content="Halt" HorizontalAlignment="Left" Margin="251,710,0,0" VerticalAlignment="Top" Width="75" RenderTransformOrigin="0.5,0.5" Click="btnHalt_Click" />
+        <Button x:Name="btnSingleStep" Content="Single Step" HorizontalAlignment="Left" VerticalAlignment="Top" Width="75" Margin="353,710,0,0" Click="btnSingleStep_Click" />
+        <Button x:Name="btnReStart" Content="Restart" HorizontalAlignment="Left" VerticalAlignment="Top" Width="66" Margin="445,710,0,0" Click="btnReStart_Click"  />
+
 
         <TextBox x:Name="tbGCodeFile" HorizontalAlignment="Left" Height="23" Margin="142,41,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="173"/>
         <TextBlock x:Name="DROX" HorizontalAlignment="Left" Margin="644,56,0,0" TextWrapping="Wrap" Text="0.0000" VerticalAlignment="Top" FontSize="36" Width="161" RenderTransformOrigin="0.5,0.5"/>
@@ -62,7 +64,7 @@
         <CheckBox x:Name="cbT5" Content="Thread5" HorizontalAlignment="Left" Margin="749,340,0,0" VerticalAlignment="Top" FontSize="10" Width="66" IsEnabled="False"/>
         <CheckBox x:Name="cbT6" Content="Thread6" HorizontalAlignment="Left" Margin="749,353,0,0" VerticalAlignment="Top" FontSize="10" Width="66" IsEnabled="False"/>
         <CheckBox x:Name="cbT7" Content="Thread7" HorizontalAlignment="Left" Margin="749,366,0,0" VerticalAlignment="Top" FontSize="10" Width="66" IsEnabled="False"/>
-        <TextBox x:Name="tbSpindleSpeedSet" HorizontalAlignment="Left" Height="24" Margin="612,655,0,0" TextWrapping="Wrap" Text="1000" VerticalAlignment="Top" Width="69" RenderTransformOrigin="1.21,0.083"/>
+        <TextBox x:Name="tbSpindleSpeedSet" HorizontalAlignment="Left" Height="24" Margin="612,655,0,0" TextWrapping="Wrap" Text="1000" VerticalAlignment="Top" Width="69" RenderTransformOrigin="1.21,0.083" PreviewKeyDown="tbSpindleSpeedSet_PreviewKeyDown"/>
         <Label Content="Spindle Speed (RPM)" HorizontalAlignment="Left" Margin="552,624,0,0" VerticalAlignment="Top"/>
         <CheckBox x:Name="cbSpindleEnable" Content="" HorizontalAlignment="Left" Margin="769,630,0,0" VerticalAlignment="Top" RenderTransformOrigin="-2.097,2.844"/>
         <Button x:Name="btnSpindleCW" Content="Start CW" HorizontalAlignment="Left" Margin="692,655,0,0" VerticalAlignment="Top" Width="69" Click="btnSpindleCW_Click"/>
