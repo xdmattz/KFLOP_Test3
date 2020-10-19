@@ -77,7 +77,7 @@ namespace KFLOP_Test3
             ConfigPath = System.IO.Path.Combine(fPath, "Config");
             ThisFile = "KTestConfig.json";
             // MessageBox.Show(fullPath);
-            string ConfigFileName = System.IO.Path.Combine(fPath, ThisFile);
+            string ConfigFileName = System.IO.Path.Combine(ConfigPath, ThisFile);
             if (System.IO.File.Exists(ConfigFileName) == true)
             {
                 return true;
