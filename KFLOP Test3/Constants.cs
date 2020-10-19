@@ -90,6 +90,8 @@ namespace KFLOP_Test3
         public const int Y_AXIS = 1;
         public const int Z_AXIS = 2;
         public const int A_AXIS = 3;
+        public const int B_AXIS = 4;
+        public const int C_AXIS = 5;
         public const int SPINDLE_AXIS = 7;
 
         public const int X_AXIS_MASK = 0x01;

@@ -215,7 +215,7 @@ namespace KFLOP_Test3
                 KMx.WriteLine(s);
             }
             catch (DMException ex) // In case disconnect in the middle of reading status
-            {
+            { 
                 MessageBox.Show(ex.InnerException.Message);
             }
         }

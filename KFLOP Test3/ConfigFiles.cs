@@ -18,24 +18,37 @@ namespace KFLOP_Test3
         public ConfigFiles()
         { }
 
-        public string fPath { get; set; }
-        public string EMCVarsFile { get; set; }
-        public string KThread1 { get; set; }
-        public string KThread2 { get; set; }
-        public string KThread3 { get; set; }
-        public string KThread4 { get; set; }
+        public string fPath { get; set; }   // the default directory path name for the program
+        // Files for setting up the RS274 Interpreter (EMC)
+        // the offset parameter file - see the NIST RS274/NGC Interpreter section 3.2.1
+        // https://tsapps.nist.gov/publication/get_pdf.cfm?pub_id=823374
+        public string EMCVarsFile { get; set; }     // which one of the two following files is active? 
+        public string EMCVarsFile_mm { get; set; }  // the EMCVars file all in mm
+        public string EMCVarsFile_inch { get; set; } // the EMDVars file all in inches
+        public string EMCSetupFile { get; set; }    // the in KMCNC this is the default.set file  
+        // 
+        public string ToolTable { get; set; }
+        public string ToolFile { get; set; }        
+        public string ToolFile_mm { get; set; } // tool file 
+        public string ToolFile_inch { get; set; }
+        public string MotionParams { get; set; }
+        // KFLOP C Programs - C programs to run in each thread
+        public string KThread1 { get; set; }    // the main thread - always running
+        public string KThread2 { get; set; }    // the secondary thread - commands from this program
+        public string KThread3 { get; set; }    // third thread because the control for spindle speed is weird.
+        public string KThread4 { get; set; }    // other threads
         public string KThread5 { get; set; }
         public string KThread6 { get; set; }
         public string KThread7 { get; set; }
-        public string LastGCode { get; set; }
-        public string MotionParams { get; set; }
-        public string ToolTable { get; set; }
-        public string Highlight { get; set; }
-        public string ToolFile { get; set; }
-        public string GCodePath { get; set; }
-        public string KFlopCCodePath { get; set; }
-        public string ConfigPath { get; set; }
-        public string ThisFile { get; set; }
+        public string KFlopCCodePath { get; set; }  // the C program file path name
+        // G Code programs
+        public string LastGCode { get; set; }   // the last G Code file that was loaded
+        public string Highlight { get; set; }   // G Code Highlighting for Avalon Edit
+        public string GCodePath { get; set; }   // the G Code file path name
+        public string MDIFile { get; set; }
+        // Configuration files 
+        public string ConfigPath { get; set; }  
+        public string ThisFile { get; set; }    // the name of the configuration file 
 
 
         public void SaveConfig()
@@ -79,7 +92,6 @@ namespace KFLOP_Test3
             }
 
         }
-
 
     }
 

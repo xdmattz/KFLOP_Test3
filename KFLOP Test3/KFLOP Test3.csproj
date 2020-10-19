@@ -103,12 +103,21 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </ApplicationDefinition>
+    <Compile Include="ButtonGrid.xaml.cs">
+      <DependentUpon>ButtonGrid.xaml</DependentUpon>
+    </Compile>
     <Compile Include="ConfigFiles.cs" />
     <Compile Include="ConsolWindow.xaml.cs">
       <DependentUpon>ConsolWindow.xaml</DependentUpon>
     </Compile>
     <Compile Include="Constants.cs" />
+    <Compile Include="DROBox.xaml.cs">
+      <DependentUpon>DROBox.xaml</DependentUpon>
+    </Compile>
     <Compile Include="HiLight_Lines.cs" />
+    <Compile Include="LightButton.xaml.cs">
+      <DependentUpon>LightButton.xaml</DependentUpon>
+    </Compile>
     <Compile Include="Machine.cs" />
     <Compile Include="MotionParams_Copy.cs" />
     <Compile Include="MotionParamWindow.xaml.cs">
@@ -117,10 +126,28 @@
     <Compile Include="JogPanel.xaml.cs">
       <DependentUpon>JogPanel.xaml</DependentUpon>
     </Compile>
+    <Compile Include="OffsetInputWindow.xaml.cs">
+      <DependentUpon>OffsetInputWindow.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="OffsetPanel.xaml.cs">
+      <DependentUpon>OffsetPanel.xaml</DependentUpon>
+    </Compile>
     <Compile Include="StatusPanel.xaml.cs">
       <DependentUpon>StatusPanel.xaml</DependentUpon>
     </Compile>
+    <Page Include="ButtonGrid.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
     <Page Include="ConsolWindow.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="DROBox.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="LightButton.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
@@ -141,6 +168,14 @@
       <Generator>MSBuild:Compile</Generator>
     </Page>
     <Page Include="JogPanel.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="OffsetInputWindow.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="OffsetPanel.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>

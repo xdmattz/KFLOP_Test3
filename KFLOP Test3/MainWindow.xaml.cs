@@ -57,8 +57,10 @@ namespace KFLOP_Test3
         static bool MachineIsHomed = false;
         static bool MachineWarning = false;
         static bool MachineError = false;
+        static bool SingleStepping = false;
         static bool RestoreStoppedState = false;
         static bool InterpreterInitialized = false;
+        static bool m_MDI = false;
 
 
         static KMotion_dotNet.KM_Controller KM; // this is the controller instance!
@@ -88,6 +90,8 @@ namespace KFLOP_Test3
         // tab items 
         JogPanel JogPanel1;
         StatusPanel StatusPanel1;
+        OffsetPanel OffsetPanel1;
+        // more tab items here...
 
 
 
@@ -140,6 +144,27 @@ namespace KFLOP_Test3
             GCodeView_Init();
             // add the callbacks
             AddHandlers();
+            // Initialize the GCode Interpreter
+            GetInterpVars();    // load the emcvars and tool files
+
+            // ******* // so I need to wait for the KFLOP to connect before I can do this?
+
+            // Initialize DROs
+            XDRO.axis = AXConst.X_AXIS;
+            XDRO.AxisName.Text = "X:";
+            XDRO.SetBigValue(0.0);
+            XDRO.ZeroButtonClickedCallback += ZeroSetCallback; // the zero callback method
+
+            YDRO.axis = AXConst.Y_AXIS;
+            YDRO.AxisName.Text = "Y:";
+            YDRO.SetBigValue(0.0);
+            YDRO.ZeroButtonClickedCallback += ZeroSetCallback; // the zero callback method
+
+            ZDRO.axis = AXConst.Z_AXIS;
+            ZDRO.AxisName.Text = "Z:";
+            ZDRO.SetBigValue(0.0);
+            ZDRO.ZeroButtonClickedCallback += ZeroSetCallback; // the zero callback method
+
 
             // start a timer for the status update
             var Timer = new DispatcherTimer();
@@ -170,6 +195,15 @@ namespace KFLOP_Test3
             Tab2.Header = "Status";
             Tab2.Content = StatusPanel1;
             tcMainTab.Items.Add(Tab2);
+
+            // the Work Offset Panel
+            OffsetPanel1 = new OffsetPanel(ref KM);
+            var Tab3 = new TabItem();
+            Tab3.Name = "tabItemContent2";
+            Tab3.Header = "Work Offsets";
+            Tab3.Content = OffsetPanel1;
+            tcMainTab.Items.Add(Tab3);
+
 
             // Probing tab panel
             // Tools tab panel etc.
@@ -308,7 +342,12 @@ namespace KFLOP_Test3
             ConWin.AddSomeText(msg);
         }
 
-        static void KM_ErrorUpdated(string msg)
+        public void KM_ErrorUpdated(string msg)
+        {
+            Dispatcher.BeginInvoke(new System.Threading.ThreadStart(() => KM_ErrorUpdated2(msg)));
+        }
+
+        public void KM_ErrorUpdated2(string msg)
         {
             MessageBox.Show(msg);
         }
@@ -383,20 +422,25 @@ namespace KFLOP_Test3
 
         public void InterpCompleted2(int status, int lineno, int seq, string err)
         {
-            tbStatus.Text = status.ToString();
-            tbLineNo.Text = lineno.ToString();
-            CurrentLineNo = lineno;
-            GCodeView_GotoLine(lineno);
-            tbSeq.Text = seq.ToString();
-            tbErr.Text = err;
-
+            if (m_MDI == false)
+            {
+                tbStatus.Text = status.ToString();
+                tbLineNo.Text = lineno.ToString();
+                CurrentLineNo = lineno;
+                GCodeView_GotoLine(lineno);
+                tbSeq.Text = seq.ToString();
+                tbErr.Text = err;
+            }
             if ((status != 0) && status != 1005)
             {
                 MessageBox.Show(err); // status 1005 = successful halt
             }
             ExecutionInProgress = false; // not running anymore.
+            m_MDI = false;
             JogPanel1.EnableJog();  // reenable the Jog Buttons
             btnSingleStep.IsEnabled = true;
+            OffsetPanel1.OffsetButtons.EnableButtons();            // Offsets enabled
+            // 
         }
 
         void InterpStatus(int lineno, string msg)
@@ -431,6 +475,7 @@ namespace KFLOP_Test3
             // Callback for Errors
             KM.ErrorReceived += new KMotion_dotNet.KMErrorHandler(KM_ErrorUpdated);
 
+            // Interpreter call back methods
             // Coordinated Motion Callback - Gcode file completed
             KM.CoordMotion.Interpreter.InterpreterCompleted += new KMotion_dotNet.KM_Interpreter.KM_GCodeInterpreterCompleteHandler(Interpreter_InterpreterCompleted);
             KM.CoordMotion.Interpreter.InterpreterStatusUpdated += new KMotion_dotNet.KM_Interpreter.KM_GCodeInterpreterStatusHandler(InterpStatus);
@@ -439,8 +484,13 @@ namespace KFLOP_Test3
             KM.CoordMotion.Interpreter.InterpreterUserMCodeCallbackRequested += new KM_Interpreter.KM_GCodeInterpreterUserMcodeCallbackHandler(MCode8Callback);
             KM.CoordMotion.Interpreter.InterpreterUserCallbackRequested += new KM_Interpreter.KM_GCodeInterpreterUserCallbackHandler(GCodeUserCallback);
 
-            // KM.CoordMotion.Interpreter.
+            // KM.CoordMotion.Interpreter. M Code handlers
             SetMCodeHandlers();
+
+            // Call backs for motion
+            // add the motion callbacks here for 3D plotting of paths
+
+
         }
 
         #endregion
@@ -587,48 +637,69 @@ namespace KFLOP_Test3
         #region KFLOP PC_Comm commands
         private void ServiceKFlopCommands(ref KM_MainStatus KStat)
         {
-
+            // process any commands from KFLOP board
+            // commands passed in persist.UserData variables.
         }
         #endregion
 
         #region User Interface updates
         private void UpdateUI(ref KM_MainStatus KStat)
         {
-            // Set DRO Colors
+            // Set DRO Colors - based on active axis
             if ((KStat.Enables & AXConst.A_AXIS) != 0)
             {
-                DROX.Foreground = Brushes.Green;
+                XDRO.SetBigColor(Brushes.Green);
             }
             else
             {
-                DROX.Foreground = Brushes.Red;
+                XDRO.SetBigColor(Brushes.Red);
             }
             if ((KStat.Enables & AXConst.Y_AXIS_MASK) != 0)
             {
-                DROY.Foreground = Brushes.Green;
+                YDRO.SetBigColor(Brushes.Green);
             }
             else
             {
-                DROY.Foreground = Brushes.Red;
+                YDRO.SetBigColor(Brushes.Red);
             }
             if ((KStat.Enables & AXConst.Z_AXIS_MASK) != 0)
             {
-                DROZ.Foreground = Brushes.Green;
+                ZDRO.SetBigColor(Brushes.Green);
             }
             else
             {
-                DROZ.Foreground = Brushes.Red;
+                ZDRO.SetBigColor(Brushes.Red);
             }
 
             // Get Ablosule Machine Coordinates
             double x = 0, y = 0, z = 0, a = 0, b = 0, c = 0;
             KM.CoordMotion.UpdateCurrentPositionsABS(ref x, ref y, ref z, ref a, ref b, ref c, false);
-            DROX.Text = String.Format("{0:F4}", x);
-            DROY.Text = String.Format("{0:F4}", y);
-            DROZ.Text = String.Format("{0:F4}", z);
+
+
+            // Machine Coordinates
+            double Mx = 0, My = 0, Mz = 0, Ma = 0, Mb = 0, Mc = 0;
+            // Interpreter Coordinates
+            double Ix = 0, Iy = 0, Iz = 0, Ia = 0, Ib = 0, Ic = 0;
+
+            KM.CoordMotion.Interpreter.ConvertAbsoluteToMachine(x, y, z, a, b, c, ref Mx, ref My, ref Mz, ref Ma, ref Mb, ref Mc);
+            KM.CoordMotion.Interpreter.ConvertAbsoluteToInterpreterCoord(x, y, z, a, b, c, ref Ix, ref Iy, ref Iz, ref Ia, ref Ib, ref Ic);
+            // 
+            // show the values of Machine and Intrepeter coordinates
+            XDRO.SetBigValue(Ix);
+            YDRO.SetBigValue(Iy);
+            ZDRO.SetBigValue(Iz);
+
+            XDRO.SetMachValue(x);
+            YDRO.SetMachValue(y);
+            ZDRO.SetMachValue(z);
+
+            int units = (int)(KM.CoordMotion.Interpreter.SetupParams.LengthUnits);
+            XDRO.SetUnits(units);
+            YDRO.SetUnits(units);
+            ZDRO.SetUnits(units);
 
             // manage the current line number for the gcode listing
-            if (ExecutionInProgress)
+            if (ExecutionInProgress && (m_MDI == false))
             {
                 CurrentLineNo = KM.CoordMotion.Interpreter.SetupParams.CurrentLine;
                 GCodeView_GotoLine(CurrentLineNo +1);
@@ -657,11 +728,21 @@ namespace KFLOP_Test3
 
             // update the Spindle enable
             if ((KStat.Enables & AXConst.SPINDLE_AXIS_MASK) != 0)
-            { cbSimulate.IsChecked = true; }
+            { cbSpindleEnable.IsChecked = true; }
             else
-            { cbSimulate.IsChecked = false; }
+            { cbSpindleEnable.IsChecked = false; }
             // update the Spindle RPM
             tbSpindleSpeedRPM.Text = KStat.PC_comm[CSConst.P_RPM].ToString();
+
+            // check the current work offset and set the button color
+            // see if this will reflect the GCode setting...
+            // only do this if the G Code is executing
+            if (ExecutionInProgress == true)
+            {
+                OffsetPanel1.OffsetButtons.SetButton(KM.CoordMotion.Interpreter.SetupParams.OriginIndex);
+                
+            }
+            OffsetPanel1.SetOffsetDisplay();
         }
         #endregion
 
@@ -924,18 +1005,38 @@ namespace KFLOP_Test3
                 {
                     KM.CoordMotion.IsSimulation = false;    // don't forget clear when not checked!
                 }
-                ExecutionInProgress = true; // set here but not cleared until the InterpreterCompleted callback
-                KM.CoordMotion.Abort();     // make sure that everything is cleared
-                KM.CoordMotion.ClearAbort();
 
-                if (GetInterpVars())
+                if (SingleStepping == true)
                 {
                     // disable the Jog buttons
                     JogPanel1.DisableJog();
                     // disable single step
                     btnSingleStep.IsEnabled = false;
-                    Set_Fixture_Offset(2, 2, 3, 0); // Set X, Y, Z for G55
-                    KM.CoordMotion.Interpreter.Interpret(GCodeFileName);  // Execute the File!
+                    // disable Offsets
+                    OffsetPanel1.OffsetButtons.DisableButtons();
+                    // 
+                    ExecutionInProgress = true;
+                    // if in the middle of single stepping, then start from the current line.
+                    KM.CoordMotion.Interpreter.Interpret(GCodeFileName, CurrentLineNo, -1, 0);
+                }
+                else
+                {
+                    ExecutionInProgress = true; // set here but not cleared until the InterpreterCompleted callback
+                    KM.CoordMotion.Abort();     // make sure that everything is cleared
+                    KM.CoordMotion.ClearAbort();
+
+                  //  if (GetInterpVars())
+                  //  {
+                        // disable the Jog buttons
+                        JogPanel1.DisableJog();
+                        // disable single step
+                        btnSingleStep.IsEnabled = false;
+                        // disable Offsets
+                        OffsetPanel1.OffsetButtons.DisableButtons();
+                        // 
+                       // Set_Fixture_Offset(2, 2, 3, 0); // Set X, Y, Z for G55
+                        KM.CoordMotion.Interpreter.Interpret(GCodeFileName);  // Execute the File!
+                  //  }
                 }
             }
         }
@@ -947,6 +1048,7 @@ namespace KFLOP_Test3
                 // note here - because I'm not running in the standard directory structure I needed to specify the VarsFile
                 // https://www.dynomotion.com/forum/viewtopic.php?f=12&t=1252&p=3638#p3638
                 //
+                KM.CoordMotion.Interpreter.SetupFile = System.IO.Path.Combine(CFiles.ConfigPath, CFiles.EMCSetupFile);
                 KM.CoordMotion.Interpreter.VarsFile = System.IO.Path.Combine(CFiles.ConfigPath, CFiles.EMCVarsFile);
                 KM.CoordMotion.Interpreter.ToolFile = System.IO.Path.Combine(CFiles.ConfigPath, CFiles.ToolFile);
 
@@ -984,6 +1086,9 @@ namespace KFLOP_Test3
                 KM.CoordMotion.Interpreter.Halt();
                 JogPanel1.EnableJog();  // reenable the jog buttons when halted
                 btnSingleStep.IsEnabled = true;
+                // Enable Offsets
+                OffsetPanel1.OffsetButtons.EnableButtons();
+                // 
             }
         }
 
@@ -994,6 +1099,9 @@ namespace KFLOP_Test3
             btnCycleStart.Content = "Cycle Start";
             JogPanel1.EnableJog();
             btnSingleStep.IsEnabled = true;
+            // Enable Offsets
+            OffsetPanel1.OffsetButtons.EnableButtons();
+            // 
         }
 
         private void FR_Write(String s)
@@ -1046,7 +1154,9 @@ namespace KFLOP_Test3
                 }
                 RestoreStoppedState = false;
                 ExecutionInProgress = true;
+                SingleStepping = true;
                 KM.CoordMotion.Interpreter.Interpret(GCodeFileName, CurrentLineNo, CurrentLineNo, 0);
+                
                 
             }
         }
@@ -1060,10 +1170,62 @@ namespace KFLOP_Test3
                 CurrentLineNo = 0;
                 GCodeView_GotoLine(CurrentLineNo + 1);
                 ExecutionInProgress = false;
+                SingleStepping = false;
             }
 
         }
 
+        private void btnMDI_Click(object sender, RoutedEventArgs e)
+        {
+            // manual GCode line.
+            // write the line to a file
+            // then execute the file. - should be pretty simple...
+
+            int i = 0;  // this should wait until the last gcode command is done.
+            while (ExecutionInProgress)
+            {
+                Thread.Sleep(10);
+                if (i++ > 1000)
+                {
+                    MessageBox.Show("Interpreter is busy");
+                    return;
+                }
+            }
+            bool f = false;
+            string MDIFileName = CFiles.fPath + CFiles.MDIFile;
+            // should check for an existing file name
+            if(System.IO.File.Exists(MDIFileName) == false)
+            {
+                // make a new file name...
+                var MDIF = new SaveFileDialog();
+                MDIF.DefaultExt = ".gcode";
+                MDIF.InitialDirectory = GetStr(CFiles.fPath);
+                MDIF.FileName = GetStr(CFiles.MDIFile);
+                if (MDIF.ShowDialog() == true)
+                {
+                    CFiles.MDIFile = System.IO.Path.GetFileName(MDIF.FileName);
+                    MDIFileName = MDIF.FileName;
+                }
+                else { return; }
+            }
+            using (StreamWriter writer = new StreamWriter(MDIFileName))
+            {
+               // writer.WriteLine("%");    // don't need this but leaving it in because I learned something 
+                writer.WriteLine(tbManualGcode.Text);
+                // writer.WriteLine("%");
+                writer.WriteLine();
+                writer.Close();
+                f = true;
+            }
+            if (f)
+            {
+                // do I need to check for simulation mode here?
+                // NOTE! the GCode Interpreter line numbering starts at 0!
+                KM.CoordMotion.Interpreter.Interpret(MDIFileName, 0, 0, 0);
+                m_MDI = true;
+                ExecutionInProgress = true;
+            }
+        }
 
         #endregion
 
@@ -1182,6 +1344,43 @@ namespace KFLOP_Test3
             {
                 tbSpindleSpeedSet.Background = Brushes.Pink;
             }
+        }
+        #endregion
+
+        #region Zero and offsets
+        // this is the call back for setting the axis offset from the DROs
+        private void ZeroSetCallback(int axis, double value)
+        {
+            int currfixture;
+            currfixture = KM.CoordMotion.Interpreter.SetupParams.OriginIndex;
+            double ax, ay, az, aa, ab, ac;  // absolute coordinates
+            ax = ay = az = aa = ab = ac = 0;
+            double fx, fy, fz, fa, fb, fc;  // fixture coordinates
+            fx = fy = fz = fa = fb = fc = 0;
+            double tx, ty, tz;
+            tx = ty = tz = 0;
+//            tz = KM.CoordMotion.Interpreter.SetupParams.ToolLengthOffset;
+//            tx = KM.CoordMotion.Interpreter.SetupParams.ToolXOffset;
+//            ty = KM.CoordMotion.Interpreter.SetupParams.ToolYOffset;
+
+            KM.CoordMotion.Interpreter.GetOrigin(currfixture, ref fx, ref fy, ref fz, ref fa, ref fb, ref fc);
+            KM.CoordMotion.ReadAndSyncCurPositions(ref ax, ref ay, ref az, ref aa, ref ab, ref ac);
+
+            switch(axis)
+            {
+                case AXConst.X_AXIS: fx = ax - value - tx;  break;
+                case AXConst.Y_AXIS: fy = ay - value - ty; break;
+                case AXConst.Z_AXIS: fz = az - value - tz; break;
+                case AXConst.A_AXIS: fa = aa - value; break;
+                case AXConst.B_AXIS: fb = ab - value; break;
+                case AXConst.C_AXIS: fc = ac - value; break;
+                default : break;
+            }
+            KM.CoordMotion.Interpreter.SetOrigin(currfixture, fx, fy, fz, fa, fb, fc);
+            // what does this do?
+            KM.CoordMotion.Interpreter.SetupParams.OriginIndex = -1; // force update from GCode Vars
+            KM.CoordMotion.Interpreter.ChangeFixtureNumber(currfixture); // reload the fixture
+
         }
         #endregion
 
