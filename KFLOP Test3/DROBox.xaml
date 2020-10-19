@@ -1,0 +1,41 @@
+﻿<UserControl x:Class="KFLOP_Test3.DROBox"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:local="clr-namespace:KFLOP_Test3"
+             mc:Ignorable="d" 
+             d:DesignHeight="60" d:DesignWidth="350">
+    
+    <Grid >
+        <Border BorderBrush="Black" BorderThickness="3" CornerRadius="8">
+            <Grid x:Name="BoarderGrid">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                   <!-- <RowDefinition Height="Auto"/> -->
+                </Grid.RowDefinitions>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="2*"/>
+                    <ColumnDefinition Width="2*"/>
+                    <ColumnDefinition Width="8*"/>
+                    <ColumnDefinition Width="4*"/>
+                    <ColumnDefinition Width="0.2*"/>
+                </Grid.ColumnDefinitions>
+                <StackPanel Grid.Row="0" Grid.Column="0" Orientation="Vertical" >
+                    <Button x:Name="Zero" Content="Zero" Margin="3,3,3,3" Click="Zero_Click" />
+                    <Button x:Name="Set" Content="Set" Margin="3,1,3,3" Click="Set_Click"/>
+                </StackPanel>
+                <!--+ put the text block in a ViewBox to make it auto scale for height-->
+                <TextBlock x:Name="AxisName"  Grid.Row="0" Grid.Column="1" FontSize="36" HorizontalAlignment="Right"/>
+                <TextBlock x:Name="BigAxisValue"  Grid.Row="0" Grid.Column="2" FontSize="36" HorizontalAlignment="Right"/>
+                <StackPanel Orientation="Vertical" Grid.Row="0" Grid.Column="3">
+                    <TextBlock x:Name="tbMachValue" Text="00.000" FontSize="12" HorizontalAlignment="Right"/>
+                    <TextBlock x:Name="tbOffsetValue" Text="00.000" FontSize="12" HorizontalAlignment="Right"/>
+                    <TextBlock x:Name="tbUnits" Text="00.000" FontSize="12" HorizontalAlignment="Right"/>
+
+                </StackPanel>
+            </Grid>
+        </Border>
+
+    </Grid>
+</UserControl>
