@@ -390,7 +390,7 @@ namespace KFLOP_Test3
                     default: break;
                 }
             }
-            MessageBox.Show(String.Format("Code = {0}", code));
+            // MessageBox.Show(String.Format("Code = {0}", code));
             return 0;
         }
 
