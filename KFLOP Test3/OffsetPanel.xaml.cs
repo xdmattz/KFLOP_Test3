@@ -108,5 +108,30 @@ namespace KFLOP_Test3
             BAxis(fb);
             CAxis(fc);
         }
+
+        public void InitG28(double[] x)
+        {
+            G28XAxisOffset.Text = string.Format("X: {0:F4}", x[0]);
+            G28YAxisOffset.Text = string.Format("Y: {0:F4}", x[1]);
+            G28ZAxisOffset.Text = string.Format("Z: {0:F4}", x[2]);
+            G28AAxisOffset.Text = string.Format("A: {0:F4}", x[3]);
+            G28BAxisOffset.Text = string.Format("B: {0:F4}", x[4]);
+            G28CAxisOffset.Text = string.Format("C: {0:F4}", x[5]);
+        }
+
+        public void InitG30(double[] x)
+        {
+            G30XAxisOffset.Text = string.Format("X: {0:F4}", x[0]);
+            G30YAxisOffset.Text = string.Format("Y: {0:F4}", x[1]);
+            G30ZAxisOffset.Text = string.Format("Z: {0:F4}", x[2]);
+            G30AAxisOffset.Text = string.Format("A: {0:F4}", x[3]);
+            G30BAxisOffset.Text = string.Format("B: {0:F4}", x[4]);
+            G30CAxisOffset.Text = string.Format("C: {0:F4}", x[5]);
+        }
+
+        private void btnFixtureSave_Click(object sender, RoutedEventArgs e)
+        {
+            // save the fixure files (EMCVars)
+        }
     }
 }

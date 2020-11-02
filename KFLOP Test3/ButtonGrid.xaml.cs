@@ -23,14 +23,14 @@ namespace KFLOP_Test3
     public partial class ButtonGrid : UserControl
     {
         // a copy  of the KM Controler
-        private KM_Controller sp { get; set; }
+        private KM_Controller xKM { get; set; }
 
         static bool xEnabled = true;
         static int fixture;
 
         public ButtonGrid(ref KM_Controller X)
         {
-            sp = X;
+            xKM = X;
             InitializeComponent();
         }
 
@@ -58,8 +58,8 @@ namespace KFLOP_Test3
                 // get the fixture number
                 fixture = int.Parse(tag.ToString());
                 // set the fixture
-                //sp.CoordMotion.Interpreter.SetupParams.OriginIndex = fixture;
-                sp.CoordMotion.Interpreter.ChangeFixtureNumber(fixture);
+                //xKM.CoordMotion.Interpreter.SetupParams.OriginIndex = fixture;
+                xKM.CoordMotion.Interpreter.ChangeFixtureNumber(fixture);
                 // how do I update the fixtue coordinates from here?
             }
         }

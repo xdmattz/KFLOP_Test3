@@ -9,9 +9,9 @@
     <Grid x:Name="Grid1">
         <Grid.RowDefinitions>
             <RowDefinition Height="4*"/>
-            <RowDefinition Height="1*"/>
-            <RowDefinition Height="1*"/>
-            <RowDefinition Height="4*"/>
+            <RowDefinition Height="2*"/>
+            <RowDefinition Height="2*"/>
+            <RowDefinition Height="2*"/>
         </Grid.RowDefinitions>
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="35*"/>
@@ -20,17 +20,75 @@
  <!--       <local:ButtonGrid x:Name="OffsetButtons" Grid.Row="0" Grid.Column="0" >
           
         </local:ButtonGrid>
--->        
-        <StackPanel Grid.Row="1" Grid.Column="0" Orientation="Horizontal">
-            <TextBox x:Name="XAxisOffset" Text="X: "  />
-            <TextBox x:Name="YAxisOffset" Text="Y: " />
-            <TextBox x:Name="ZAxisOffset" Text="Z: " />
+-->
+        <Grid Grid.Row="1" Grid.Column="0">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="1*"/>
+            </Grid.ColumnDefinitions>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="2*"/>
+                <RowDefinition Height="2*"/>
+                <RowDefinition Height="2*"/>
+            </Grid.RowDefinitions>
+            <TextBlock Text="Current Offset" Grid.Row="0" Grid.Column="0"/>
+            <StackPanel Grid.Row="1" Grid.Column="0" Orientation="Horizontal">
+                <TextBox x:Name="XAxisOffset" Text="X: " />
+                <TextBox x:Name="YAxisOffset" Text="Y: " />
+                <TextBox x:Name="ZAxisOffset" Text="Z: " />
 
-        </StackPanel>
-        <StackPanel Grid.Row="2" Orientation="Horizontal">
-            <TextBox x:Name="AAxisOffset" Text="A: " />
-            <TextBox x:Name="BAxisOffset" Text="B: " />
-            <TextBox x:Name="CAxisOffset" Text="C: " />
-        </StackPanel>
+            </StackPanel>
+            <StackPanel Grid.Row="2" Grid.Column="0" Orientation="Horizontal">
+                <TextBox x:Name="AAxisOffset" Text="A: " />
+                <TextBox x:Name="BAxisOffset" Text="B: " />
+                <TextBox x:Name="CAxisOffset" Text="C: " />
+                <Button x:Name="btnFixtureSave" Content="Save" Click="btnFixtureSave_Click"  />
+            </StackPanel>
+        </Grid>
+
+        <Grid Grid.Row="2" Grid.Column="0">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="1*"/>
+            </Grid.ColumnDefinitions>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="2*"/>
+                <RowDefinition Height="2*"/>
+                <RowDefinition Height="2*"/>
+            </Grid.RowDefinitions>
+            <TextBlock Text="G28 Position" Grid.Row="0" Grid.Column="0"/>
+            <StackPanel Grid.Row="1" Grid.Column="0" Orientation="Horizontal">
+                <TextBox x:Name="G28XAxisOffset" Text="X: " />
+                <TextBox x:Name="G28YAxisOffset" Text="Y: " />
+                <TextBox x:Name="G28ZAxisOffset" Text="Z: " />
+
+            </StackPanel>
+            <StackPanel Grid.Row="2" Grid.Column="0" Orientation="Horizontal">
+                <TextBox x:Name="G28AAxisOffset" Text="A: " />
+                <TextBox x:Name="G28BAxisOffset" Text="B: " />
+                <TextBox x:Name="G28CAxisOffset" Text="C: " />
+            </StackPanel>
+        </Grid>
+        <Grid Grid.Row="3" Grid.Column="0">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="1*"/>
+            </Grid.ColumnDefinitions>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="2*"/>
+                <RowDefinition Height="2*"/>
+                <RowDefinition Height="2*"/>
+            </Grid.RowDefinitions>
+            <TextBlock Text="G30 Position" Grid.Row="0" Grid.Column="0"/>
+            <StackPanel Grid.Row="1" Grid.Column="0" Orientation="Horizontal">
+                <TextBox x:Name="G30XAxisOffset" Text="X: " />
+                <TextBox x:Name="G30YAxisOffset" Text="Y: " />
+                <TextBox x:Name="G30ZAxisOffset" Text="Z: " />
+
+            </StackPanel>
+            <StackPanel Grid.Row="2" Grid.Column="0" Orientation="Horizontal">
+                <TextBox x:Name="G30AAxisOffset" Text="A: " />
+                <TextBox x:Name="G30BAxisOffset" Text="B: " />
+                <TextBox x:Name="G30CAxisOffset" Text="C: " />
+            </StackPanel>
+        </Grid>
+        
     </Grid>
 </UserControl>

@@ -73,6 +73,10 @@
         <local:DROBox x:Name="XDRO" Height="60" Width="320" Grid.ColumnSpan="2" Margin="540,49,10,671" />
         <local:DROBox x:Name="YDRO" Height="60" Width="320" Grid.ColumnSpan="2" Margin="540,114,10,606" />
         <local:DROBox x:Name="ZDRO" Height="60" Width="320" Grid.ColumnSpan="2" Margin="540,179,10,541" />
+        <Label Content="status" HorizontalAlignment="Left" Margin="535,379,0,0" VerticalAlignment="Top"/>
+        <Label Content="line no" HorizontalAlignment="Left" Margin="530,407,0,0" VerticalAlignment="Top" RenderTransformOrigin="0.688,0.462"/>
+        <Label Content="Seq" HorizontalAlignment="Left" Margin="541,435,0,0" VerticalAlignment="Top"/>
+        <Label Content="Err" HorizontalAlignment="Left" Margin="547,463,0,0" VerticalAlignment="Top"/>
 
     </Grid>
 </Window>

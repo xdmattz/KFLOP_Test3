@@ -114,6 +114,7 @@
     <Compile Include="DROBox.xaml.cs">
       <DependentUpon>DROBox.xaml</DependentUpon>
     </Compile>
+    <Compile Include="Fixtuers.cs" />
     <Compile Include="HiLight_Lines.cs" />
     <Compile Include="LightButton.xaml.cs">
       <DependentUpon>LightButton.xaml</DependentUpon>

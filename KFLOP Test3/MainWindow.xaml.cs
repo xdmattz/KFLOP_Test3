@@ -40,19 +40,20 @@ namespace KFLOP_Test3
     /// </summary>
     public partial class MainWindow : Window
     {
+        #region Global Variables
         // global variables in the MainWindow class
-        
-        static bool Connected = false;  // used in the status time to indicate when the KFLOP is connected
+
+        static bool KFLOP_Connected = false;  // used in the status time to indicate when the KFLOP is connected
         static int skip = 0;            // skip timer used to delay when KFLOP is not connected
         static bool ExecutionInProgress = false;    // true while interpreter is executing
         static bool InFeedHold = false;             // true when in feed hold
         static bool InMotion = false;               // true when jogging
-        static int TimerEntry = 0;
+        static int TimerEntry = 0;                  // used in the dispatch timer to avoid multiple entry.
 
         // these flags indicate the status of the machine - as opposed to status of the software.
         // they are updated by reading the P_STATUS persist variable from the KFLOP board controlling the machine
         // the current persist variable for this is #104 - so it is always read in the MainStatus as the PC_comm[4] variable
-        static bool T1Active = false;
+        static bool T1Active = false;   // indicates that Thread1 is running on the KFLOP Board
         static bool ESTOP_FLAG = true;
         static bool MachineIsHomed = false;
         static bool MachineWarning = false;
@@ -61,6 +62,25 @@ namespace KFLOP_Test3
         static bool RestoreStoppedState = false;
         static bool InterpreterInitialized = false;
         static bool m_MDI = false;
+        static bool m_M30 = false;
+        static bool Halted1 = false;
+
+
+        // machine offsets
+        // 
+        static double[] fixG28;
+        static double[] fixG30;
+        static double Stopped_X;
+        static double Stopped_Y;
+        static double Stopped_Z;
+        static double Stopped_A;
+        static double Stopped_B;
+        static double Stopped_C;
+        static double Safe_Z;
+        static bool SafeRelAbs;
+        static KMotion_dotNet.CANON_DIRECTION StoppedSpindleDirection;
+        static double StoppedSpindleSpeed;
+        static double StoppedFeedrate;
 
 
         static KMotion_dotNet.KM_Controller KM; // this is the controller instance!
@@ -78,6 +98,9 @@ namespace KFLOP_Test3
         string GCodeFileName;
         int CurrentLineNo;
 
+        // fixture stuff
+        Fixtures WorkOffsets;
+
         // console window
         static ConsolWindow ConWin;
 
@@ -91,9 +114,11 @@ namespace KFLOP_Test3
         JogPanel JogPanel1;
         StatusPanel StatusPanel1;
         OffsetPanel OffsetPanel1;
+        private readonly int LineNumber;
+
         // more tab items here...
 
-
+        #endregion
 
 
         public MainWindow()
@@ -128,26 +153,37 @@ namespace KFLOP_Test3
                 return;
             }
 
+            // Initialize the global variables
             PVars = new int[14];
+
+            fixG28 = new double[6];
+            fixG30 = new double[6];
+
+            Safe_Z = 0.0;
+            SafeRelAbs = false;
+
 
             // Machine instance for status and bit control
             // BP308 = new Machine(ref KM);
             // get the configuration file names
             CFiles = new ConfigFiles();
             OpenConfig(ref CFiles);
+
+            // Initialize the GCode Interpreter
+            GetInterpVars();    // load the emcvars and tool files
             // copy of the motion parameters that the JSON reader can use.
             Xparam = new MotionParams_Copy();
             OpenMotionParams(ref CFiles, ref Xparam);
-            // console window
+            // console window - for receiving messages from KFLOP
             ConWin = new ConsolWindow();
-            // GCode Viewer
+            // GCode Viewer - Avalon Edit window for viewing GCode
             GCodeView_Init();
             // add the callbacks
             AddHandlers();
-            // Initialize the GCode Interpreter
-            GetInterpVars();    // load the emcvars and tool files
+            // Initialize the buttons
+            
 
-            // ******* // so I need to wait for the KFLOP to connect before I can do this?
+            // ******* // so I need to wait for the KFLOP to connect before I can do this? - Nope.
 
             // Initialize DROs
             XDRO.axis = AXConst.X_AXIS;
@@ -176,7 +212,8 @@ namespace KFLOP_Test3
             tickTimer = new System.Diagnostics.Stopwatch(); // for debuging the timing
             tickTimer.Reset();
 
-
+            // Work offset functions
+            WorkOffsets = new Fixtures(ref KM);
 
             // the tab controls
             // Add the usere controls to the Tab control area
@@ -203,11 +240,13 @@ namespace KFLOP_Test3
             Tab3.Header = "Work Offsets";
             Tab3.Content = OffsetPanel1;
             tcMainTab.Items.Add(Tab3);
+            OffsetPanel1.InitG28(fixG28);
+            OffsetPanel1.InitG30(fixG30);
 
 
             // Probing tab panel
             // Tools tab panel etc.
-
+            GCodeButtonsInit();
             // hide the fwd and rev buttons
             HideFR();
 
@@ -236,9 +275,9 @@ namespace KFLOP_Test3
             // check some things once every second 
             // check certain things every cycle
 
-            if (Connected)
+            if (KFLOP_Connected)
             {
-                #region Connected
+                #region KFLOP_Connected
                 if (++skip == 10)    // These actions happen every second
                 {
                     skip = 0;
@@ -282,7 +321,7 @@ namespace KFLOP_Test3
                 else    // only get here if the KFlop board can not get a token.
                 {
                     // if the KFlop board can't get a token (WaitToken) then we must not be connected anymore.
-                    Connected = false;
+                    KFLOP_Connected = false;
                 }
                 #endregion
             }
@@ -299,12 +338,12 @@ namespace KFLOP_Test3
                     BoardList = KM.GetBoards(out nBoards);
                     if (nBoards > 0)
                     {
-                        Connected = true;
+                        KFLOP_Connected = true;
                         Title = String.Format("C# WPF App - Connected = USB location {0:X} count = {1}", BoardList[0], DisCount);
                     }
                     else
                     {
-                        Connected = false;
+                        KFLOP_Connected = false;
                         Title = String.Format("C# WPF App - KFLOP Disconnected count = {0}", DisCount);
                     }
                 }
@@ -352,13 +391,19 @@ namespace KFLOP_Test3
             MessageBox.Show(msg);
         }
 
+        #region GCode Interpreter callback handlers
+        // there are 4 possible interpreter callbacks
+        // 1 - Interpreter Complete
+        // 2 - Interpreter Status
+        // 3 - User Callback Requested
+        // 4 - User MCode Callback Requested
+
         /// <summary>
         /// MCode8Callback - this is the method that is called when ever the MCode callback is specified
         /// // need to figure out what happens with each mcode - ie M3, M4, M5, M6 and S
         /// </summary>
-        /// <param name="code"></param>
-        /// <returns></returns>
-        private int MCode8Callback(int code)
+        // 'code' is the action# see https://www.dynomotion.com/wiki/index.php/KMotion_Libraries_-_GCode_Interpreter_-_Trajectory_Planner_-_Coordinated_Motion_-_.NET#GCode_Actions
+        private int MCode8Callback(int code)    
         {
             if (KM.ThreadExecuting(2))
             {
@@ -368,6 +413,9 @@ namespace KFLOP_Test3
             {
                 switch (code)
                 {
+                    case 2: // M2 End Program
+                        m_M30 = true;   // set the end of program flag
+                        break;
                     case 3: // M3 callback - Spindle CW
                         KM.SetUserData(PVConst.P_NOTIFY, T2Const.T2_SPINDLE_CW);
                         KM.ExecuteProgram(2);
@@ -387,6 +435,17 @@ namespace KFLOP_Test3
                     case 8: // M8 Callback - Coolant On
                     case 9: // M9 Callback -Coolant Off
                         break;
+                    case 24:    // M30 End Program
+                        m_M30 = true; // set the end of program flag
+                        break;
+                    case 42: // Cycle start
+                    case 43: // Halt
+                    case 44: // Stop
+                    case 45: // FeedHold
+                    case 46: // Resume
+                    case 47: // Prog Start
+                    case 48: // Prog Exit
+                        break;
                     default: break;
                 }
             }
@@ -399,8 +458,7 @@ namespace KFLOP_Test3
             MessageBox.Show(msg);
         }
 
-        #region GCode Interrpreter callback handlers
-        //static 
+
         public void Interpreter_InterpreterCompleted(int status, int lineno, int sequence_number, string err)
         {
             Dispatcher.BeginInvoke(new System.Threading.ThreadStart(() => InterpCompleted2(status, lineno, sequence_number, err)));
@@ -422,6 +480,7 @@ namespace KFLOP_Test3
 
         public void InterpCompleted2(int status, int lineno, int seq, string err)
         {
+            // check if this was an MDI command
             if (m_MDI == false)
             {
                 tbStatus.Text = status.ToString();
@@ -431,16 +490,59 @@ namespace KFLOP_Test3
                 tbSeq.Text = seq.ToString();
                 tbErr.Text = err;
             }
-            if ((status != 0) && status != 1005)
+            if ((status != 0) && (status != 1005))
             {
-                MessageBox.Show(err); // status 1005 = successful halt
+                // if there is no GCode file then this will happen!
+                // MessageBox.Show(err); // status 1005 = successful halt
+                // restart
+                btnMDI.IsEnabled = true;
+                btnGCode.IsEnabled = true;
+                SingleStepping = false;
+                GCodeButtonsInit();
             }
+            if(m_M30)   // at the end of the program - set the cycle start button
+            {
+                m_M30 = false;
+                GCodeButtonsInit();
+                btnGCode.IsEnabled = true; // enable the load GCode button
+                SingleStepping = false;
+            }
+            if (SingleStepping)
+            {
+                // what should we do here if single stepping? - get the stopped state?
+                // MessageBox.Show("Single Stepping!");
+                btnCycleStart.Content = "Continue";
+            }
+            if(status == 1005)
+            {
+                // get the stopped state coordinates
+                KM.CoordMotion.Interpreter.ReadCurMachinePosition(ref Stopped_X, ref Stopped_Y, ref Stopped_Z, ref Stopped_A, ref Stopped_B, ref Stopped_C);
+                StoppedSpindleDirection = KM.CoordMotion.Interpreter.SetupParams.SpindleDirection;
+                StoppedSpindleSpeed = KM.CoordMotion.Interpreter.SetupParams.SpindleSpeed;
+                StoppedFeedrate = KM.CoordMotion.Interpreter.SetupParams.FeedRate;
+                string msg = string.Format("Halted1 happend first\n");
+                if (ExecutionInProgress) msg += "Execution in progress\n";
+                msg += string.Format("X: {0:F4}\n", Stopped_X);
+                msg += string.Format("Y: {0:F4}\n", Stopped_Y);
+                msg += string.Format("Z: {0:F4}\n", Stopped_Z);
+                msg += string.Format("A: {0:F4}\n", Stopped_A);
+                msg += string.Format("B: {0:F4}\n", Stopped_B);
+                msg += string.Format("C: {0:F4}\n", Stopped_C);
+                msg += string.Format("FR: {0:F3}\n", StoppedFeedrate);
+                msg += string.Format("Spindle Speed: {0:F4}\n", StoppedSpindleSpeed);
+                msg += string.Format("SpindleDir: {0}", StoppedSpindleDirection);
+                MessageBox.Show(msg);
+            }
+
             ExecutionInProgress = false; // not running anymore.
-            m_MDI = false;
+            m_MDI = false;  // any manual commands are done.
+
             JogPanel1.EnableJog();  // reenable the Jog Buttons
             btnSingleStep.IsEnabled = true;
+            btnCycleStart.IsEnabled = true;
+            btnFeedHold.IsEnabled = false;
+            btnHalt.IsEnabled = false;
             OffsetPanel1.OffsetButtons.EnableButtons();            // Offsets enabled
-            // 
         }
 
         void InterpStatus(int lineno, string msg)
@@ -504,18 +606,22 @@ namespace KFLOP_Test3
 
             KMI = KM.CoordMotion.Interpreter;   // just for convinecne so I don't have to type so much...
 
-            // startup action 47.
-            KMI.SetMcodeAction(42, MCODE_TYPE.M_Action_Callback, 0, 0, 0, 0, 0, "");
+            // the first argument of SetMcodeAction is the index# see https://www.dynomotion.com/wiki/index.php/KMotion_Libraries_-_GCode_Interpreter_-_Trajectory_Planner_-_Coordinated_Motion_-_.NET#GCode_Actions
+            // startup action 42.
+            KMI.SetMcodeAction(42, MCODE_TYPE.M_Action_Callback, 0, 0, 0, 0, 0, ""); // Cycle Start
             // set up MCODE actions for the Spindle Control
             // KMI.SetMcodeAction(10, MCODE_TYPE.M_Action_Callback, 0, 0, 0, 0, 0, "");
             // M3 action
-            KMI.SetMcodeAction(3, MCODE_TYPE.M_Action_Callback, 0, 0, 0, 0, 0, "");
-            KMI.SetMcodeAction(4, MCODE_TYPE.M_Action_Callback, 0, 0, 0, 0, 0, "");
-            KMI.SetMcodeAction(5, MCODE_TYPE.M_Action_Callback, 0, 0, 0, 0, 0, "");
-            KMI.SetMcodeAction(6, MCODE_TYPE.M_Action_Callback, 0, 0, 0, 0, 0, "");
-            KMI.SetMcodeAction(7, MCODE_TYPE.M_Action_Callback, 0, 0, 0, 0, 0, "");
-            KMI.SetMcodeAction(8, MCODE_TYPE.M_Action_Callback, 0, 0, 0, 0, 0, "");
-            KMI.SetMcodeAction(9, MCODE_TYPE.M_Action_Callback, 0, 0, 0, 0, 0, "");
+            KMI.SetMcodeAction(3, MCODE_TYPE.M_Action_Callback, 0, 0, 0, 0, 0, ""); // M3 Spindle On CW
+            KMI.SetMcodeAction(4, MCODE_TYPE.M_Action_Callback, 0, 0, 0, 0, 0, ""); // M4 Spindle On CCW
+            KMI.SetMcodeAction(5, MCODE_TYPE.M_Action_Callback, 0, 0, 0, 0, 0, ""); // M5 Spindle Off
+            KMI.SetMcodeAction(6, MCODE_TYPE.M_Action_Callback, 0, 0, 0, 0, 0, ""); // M6 Tool Change
+            KMI.SetMcodeAction(7, MCODE_TYPE.M_Action_Callback, 0, 0, 0, 0, 0, ""); // M7 Mist On
+            KMI.SetMcodeAction(8, MCODE_TYPE.M_Action_Callback, 0, 0, 0, 0, 0, ""); // M8 Flood On
+            KMI.SetMcodeAction(9, MCODE_TYPE.M_Action_Callback, 0, 0, 0, 0, 0, ""); // M9 Coolant Off
+            KMI.SetMcodeAction(2, MCODE_TYPE.M_Action_Callback, 0, 0, 0, 0, 0, ""); // M2 Stop 
+            KMI.SetMcodeAction(41, MCODE_TYPE.M_Action_Callback, 0, 0, 0, 0, 0, ""); // M30 Stop and Rewind
+
             // Set S to run thread 3 code which is preloaded with variable in userdata 99
             KMI.SetMcodeAction(10, MCODE_TYPE.M_Action_Program, 3, PVConst.P_SPINDLE_RPM_CMD, 0, 0, 0, "");
 
@@ -956,8 +1062,8 @@ namespace KFLOP_Test3
 
         #endregion
 
-        #region GCode execution buttons
 
+        #region GCode file open
         private void btnGCode_Click(object sender, RoutedEventArgs e)
         {
             // open a GCode file
@@ -974,25 +1080,138 @@ namespace KFLOP_Test3
 
                 GCodeFileName = GFile.FileName;
 
+                // check the file for G20/G21
+                CheckForG20G21(GCodeFileName);
+
                 // load the file into the Gcode View
                 GCodeView.Load(GCodeFileName);
-
             }
+        }
+
+        private void CheckForG20G21(string filename)
+        {
+            // open the file
+            System.IO.StreamReader infile = new StreamReader(filename);
+            // scan the first 10 or so lines for G20 or G21
+            const int MaxLineCount = 15;
+            int lineCount = 0;
+            string line;
+            while((line = infile.ReadLine()) != null) 
+            {
+                if((line.Contains("G20")) || (line.Contains("g20")))
+                {
+                    // inches
+                    // MessageBox.Show("Inches");
+                    SwitchToInch();
+                    break;
+                }
+                if((line.Contains("G21")) || (line.Contains("g21")))
+                {
+                    // metric
+                    // MessageBox.Show("Metric");
+                    SwitchToMM();
+                    break;
+                }
+                if(lineCount++ > MaxLineCount)
+                {
+                    MessageBox.Show("No G20/G21 found - assuming Inches");
+                    SwitchToInch();
+                }
+            }
+            infile.Close(); // don't forget to close the file so the Interpreter can use it!
+
 
         }
 
+        private void SwitchToInch()
+        {
+            // check the current units of the interpreter - if already in inches then don't do anything.
+            if(KM.CoordMotion.Interpreter.SetupParams.LengthUnits != CANON_UNITS.CANON_UNITS_INCHES)
+            {
+                int fixture;
+                // get the current fixture number
+                fixture = KM.CoordMotion.Interpreter.SetupParams.OriginIndex;
+                // switch to inches
+
+                // convert the current offsets from metric to inch
+                // write to the EMVars file
+                string EMCVarsFileName = System.IO.Path.Combine(CFiles.ConfigPath, CFiles.EMCVarsFile_inch);
+                WorkOffsets.SaveFixtures(EMCVarsFileName, (1 / 25.400), fixG28, fixG30);
+                // reload the EMVars file
+                KM.CoordMotion.Interpreter.VarsFile = EMCVarsFileName;
+                KM.CoordMotion.Interpreter.InitializeInterpreter();
+                InterpreterInitialized = true;
+
+                GetG28G30(EMCVarsFileName);
+                OffsetPanel1.InitG28(fixG28);
+                OffsetPanel1.InitG30(fixG30);
+                SendGCodeLine("G20");
+
+                // reset the fixture number to reload the offsets - now in inches
+                KM.CoordMotion.Interpreter.ChangeFixtureNumber(fixture); 
+                // this doesn't seem to do what I wanted which was to have the DRO screen update when switching units
+            }
+        }
+
+        private void SwitchToMM()
+        {
+            // check the current units of the interpreter
+            if (KM.CoordMotion.Interpreter.SetupParams.LengthUnits != CANON_UNITS.CANON_UNITS_MM)
+            {
+                int fixture;
+                // get the current fixture number
+                fixture = KM.CoordMotion.Interpreter.SetupParams.OriginIndex;
+                // switch to mm
+                // convert the current offsets from inch to mm
+                string EMCVarsFileName = System.IO.Path.Combine(CFiles.ConfigPath, CFiles.EMCVarsFile_mm);
+                WorkOffsets.SaveFixtures(EMCVarsFileName, (25.400), fixG28, fixG30);
+                // reload the EMVars file
+                KM.CoordMotion.Interpreter.VarsFile = EMCVarsFileName;
+                KM.CoordMotion.Interpreter.InitializeInterpreter();
+                InterpreterInitialized = true;
+
+                GetG28G30(EMCVarsFileName);
+                OffsetPanel1.InitG28(fixG28);
+                OffsetPanel1.InitG30(fixG30);
+                SendGCodeLine("G21");
+                // reset the fixture number to reload the offsets - now in mm
+                KM.CoordMotion.Interpreter.ChangeFixtureNumber(fixture);
+            }
+        }
+
+        #endregion
+
+        #region GCode execution buttons
+
         private void btnCycleStart_Click(object sender, RoutedEventArgs e)
         {
-            if (ExecutionInProgress == true)
+            if (Halted1)
+            {
+                // resume from stopped state
+                Halted1 = false;
+            }
+            btnGCode.IsEnabled = false; // disable the load GCode button
+            btnMDI.IsEnabled = false;
+            btnCycleStart.IsEnabled = false;    // disable the buttons
+            btnReStart.IsEnabled = false;
+            btnSingleStep.IsEnabled = false;
+            // enable feedhold
+            btnFeedHold.IsEnabled = true;
+            // enable Halt
+            btnHalt.IsEnabled = true;
+
+            
+
+            if (ExecutionInProgress == true)    
             {
                 if(InFeedHold)
                 {
                     KM.ResumeFeedhold();
                     InFeedHold = false;
                     HideFR();
-                    btnCycleStart.Content = "Cycle Start";
-                }
+                    btnCycleStart.Content = "Resume";
 
+                }
                 return;    // if already running then ignore
             }
             else
@@ -1006,37 +1225,24 @@ namespace KFLOP_Test3
                     KM.CoordMotion.IsSimulation = false;    // don't forget clear when not checked!
                 }
 
+                // disable the Jog buttons
+                JogPanel1.DisableJog();
+                // disable single step
+
+                OffsetPanel1.OffsetButtons.DisableButtons();
+                // set the Execution in progress flag
+                ExecutionInProgress = true;
+
                 if (SingleStepping == true)
                 {
-                    // disable the Jog buttons
-                    JogPanel1.DisableJog();
-                    // disable single step
-                    btnSingleStep.IsEnabled = false;
-                    // disable Offsets
-                    OffsetPanel1.OffsetButtons.DisableButtons();
-                    // 
-                    ExecutionInProgress = true;
                     // if in the middle of single stepping, then start from the current line.
                     KM.CoordMotion.Interpreter.Interpret(GCodeFileName, CurrentLineNo, -1, 0);
+                    SingleStepping = false;
                 }
                 else
                 {
-                    ExecutionInProgress = true; // set here but not cleared until the InterpreterCompleted callback
-                    KM.CoordMotion.Abort();     // make sure that everything is cleared
-                    KM.CoordMotion.ClearAbort();
-
-                  //  if (GetInterpVars())
-                  //  {
-                        // disable the Jog buttons
-                        JogPanel1.DisableJog();
-                        // disable single step
-                        btnSingleStep.IsEnabled = false;
-                        // disable Offsets
-                        OffsetPanel1.OffsetButtons.DisableButtons();
-                        // 
-                       // Set_Fixture_Offset(2, 2, 3, 0); // Set X, Y, Z for G55
-                        KM.CoordMotion.Interpreter.Interpret(GCodeFileName);  // Execute the File!
-                  //  }
+                    KM.CoordMotion.Interpreter.Interpret(GCodeFileName);  // Execute the File!
+                    SingleStepping = false;
                 }
             }
         }
@@ -1048,12 +1254,20 @@ namespace KFLOP_Test3
                 // note here - because I'm not running in the standard directory structure I needed to specify the VarsFile
                 // https://www.dynomotion.com/forum/viewtopic.php?f=12&t=1252&p=3638#p3638
                 //
-                KM.CoordMotion.Interpreter.SetupFile = System.IO.Path.Combine(CFiles.ConfigPath, CFiles.EMCSetupFile);
-                KM.CoordMotion.Interpreter.VarsFile = System.IO.Path.Combine(CFiles.ConfigPath, CFiles.EMCVarsFile);
-                KM.CoordMotion.Interpreter.ToolFile = System.IO.Path.Combine(CFiles.ConfigPath, CFiles.ToolFile);
+                // 
+                string EMCVarsFileName = System.IO.Path.Combine(CFiles.ConfigPath, CFiles.EMCVarsFile);
+                string EMCSetupFileName = System.IO.Path.Combine(CFiles.ConfigPath, CFiles.EMCSetupFile);
+                string EMC_ToolFileName = System.IO.Path.Combine(CFiles.ConfigPath, CFiles.ToolFile);
+
+                KM.CoordMotion.Interpreter.SetupFile = EMCSetupFileName;
+                KM.CoordMotion.Interpreter.VarsFile = EMCVarsFileName;
+                KM.CoordMotion.Interpreter.ToolFile = EMC_ToolFileName;
 
                 KM.CoordMotion.Interpreter.InitializeInterpreter();
                 InterpreterInitialized = true;
+
+                GetG28G30(EMCVarsFileName);
+
                 return true;
             }
             catch (Exception ex)
@@ -1063,17 +1277,102 @@ namespace KFLOP_Test3
             }
         }
 
+        #region G28 and G30 Variables
+        private void GetG28G30(string FileName)
+        {
+            // get the G28 and G30 variables.
+            using (TextReader reader = File.OpenText(FileName))
+            {
+                int G28Lines = 0;
+                int G30Lines = 0;
+                int LineCount = 0;
+                while ((G28Lines < 6) && (G30Lines < 6))
+                {
+                    string text = reader.ReadLine();    // read a line
+                    string[] bits = text.Split('\t');   // split at the tab
+                    int varNumber = int.Parse(bits[0]);
+                    if (varNumber == (5161 + G28Lines))
+                    {
+                        fixG28[G28Lines] = double.Parse(bits[1]);
+                        G28Lines++;
+                    }
+                    if (varNumber == (5181 + G30Lines))
+                    {
+                        fixG30[G30Lines] = double.Parse(bits[1]);
+                        G30Lines++;
+                    }
+                    if (LineCount++ > 20) break;    // if we get to here we have a problem!
+                }
+                reader.Close();
+            }
+        }
+        #endregion
+        // replaced by reading stopped state location in interpreter callback
+        //private void WaitForStop()
+        //{
+        //    // wait until the machine is stopped and recored the stopped axis variables
+        //    // get the stop state
+        //    string StopRecord = "";
+        //    bool StopCondition = false;
+        //    System.Diagnostics.Stopwatch stopwatch = new System.Diagnostics.Stopwatch();
+        //    stopwatch.Start();
+        //    long time1, time2;
+        //    time2 = stopwatch.ElapsedMilliseconds;
+        //    Thread.Sleep(40);   // sleep for just a little bit.
+
+        //    do
+        //    {
+        //        time1 = stopwatch.ElapsedMilliseconds;
+        //        if (time1 - time2 > 10)
+        //        {
+        //            time2 = time1; // setup for next delay
+        //            string sres = KM.WriteLineReadLine("GetStopState");
+        //            if ((sres == "3") || (sres == "4") || (sres == "0")) StopCondition = true;
+        //            StopRecord += String.Format("Time: {0} ", time1) + sres + "\n";
+
+        //        }
+        //        if (time1 > 3000) StopCondition = true; // timeout in 3ms
+
+        //    }
+        //    while (StopCondition != true);
+        //    // MessageBox.Show(StopRecord);
+        //    // get the absolute postitions at stopped
+        //    KM.CoordMotion.Interpreter.ReadCurMachinePosition(ref Stopped_X, ref Stopped_Y, ref Stopped_Z, ref Stopped_A, ref Stopped_B, ref Stopped_C);
+        //}
+
+        private void btnHalt_Click(object sender, RoutedEventArgs e)
+        {
+            KM.CoordMotion.Interpreter.Halt();
+//            WaitForStop();  // stop and save the stopped state. 
+            // better place to do this is to check for status 1005 in the interpreter callback.
+            Halted1 = true;
+            HideFR();   // put the feed hold button back 
+            btnCycleStart.Content = "Resume";
+            btnCycleStart.IsEnabled = true;
+            JogPanel1.EnableJog();
+            btnSingleStep.IsEnabled = true;
+            btnReStart.IsEnabled = true;
+            btnMDI.IsEnabled = true;
+
+        }
+
+        #region Feed Hold Buttons
         private void btnFeedHold_Click(object sender, RoutedEventArgs e)
         {
             try
             {
-                if (KM.WriteLineReadLine("GetStopState") == "0") // https://dynomotion.com/Help/Cmd.htm#GetStopState
+                // https://dynomotion.com/Help/Cmd.htm#GetStopState
+                // GetStopState = 0 is not stopping - which means it must be moving...
+                if (KM.WriteLineReadLine("GetStopState") == "0") 
                 {
                     KM.Feedhold();
                     btnCycleStart.Content = "Resume";
+                    btnCycleStart.IsEnabled = true;
                     InFeedHold = true;
                     ShowFR();
+                    // WaitForStop(); // don't do this here... only in Halt
                 }
+
                 //else
                 //{
                 //    KM.ResumeFeedhold();
@@ -1081,29 +1380,14 @@ namespace KFLOP_Test3
                 //    btnSingleStep.IsEnabled = true;
                 //}
             }
-            catch(Exception)
+            catch (Exception)
             {
                 KM.CoordMotion.Interpreter.Halt();
                 JogPanel1.EnableJog();  // reenable the jog buttons when halted
-                btnSingleStep.IsEnabled = true;
-                // Enable Offsets
-                OffsetPanel1.OffsetButtons.EnableButtons();
+                GCodeButtonsInit();
                 // 
             }
         }
-
-        private void btnHalt_Click(object sender, RoutedEventArgs e)
-        {
-            KM.CoordMotion.Interpreter.Halt();
-            HideFR();   // put the feed hold button back 
-            btnCycleStart.Content = "Cycle Start";
-            JogPanel1.EnableJog();
-            btnSingleStep.IsEnabled = true;
-            // Enable Offsets
-            OffsetPanel1.OffsetButtons.EnableButtons();
-            // 
-        }
-
         private void FR_Write(String s)
         {
             try
@@ -1142,9 +1426,16 @@ namespace KFLOP_Test3
             btnRev.Visibility = Visibility.Visible;
             btnFeedHold.Visibility = Visibility.Collapsed;
         }
+        #endregion
 
         private void btnSingleStep_Click(object sender, RoutedEventArgs e)
         {
+            if (Halted1)
+            {
+                // resume from stopped state
+                Halted1= false;
+            }
+
             if (!ExecutionInProgress)
             {
                 if (!InterpreterInitialized)
@@ -1152,12 +1443,16 @@ namespace KFLOP_Test3
                     if (GetInterpVars() == false)
                     { return; }
                 }
+                btnGCode.IsEnabled = false; // disable the load GCode button
+
+                btnCycleStart.IsEnabled = false;
                 RestoreStoppedState = false;
+                btnMDI.IsEnabled = false;
                 ExecutionInProgress = true;
                 SingleStepping = true;
+                btnFeedHold.IsEnabled = true;
+                btnHalt.IsEnabled = true;
                 KM.CoordMotion.Interpreter.Interpret(GCodeFileName, CurrentLineNo, CurrentLineNo, 0);
-                
-                
             }
         }
 
@@ -1171,21 +1466,47 @@ namespace KFLOP_Test3
                 GCodeView_GotoLine(CurrentLineNo + 1);
                 ExecutionInProgress = false;
                 SingleStepping = false;
+                GCodeButtonsInit();
+                btnGCode.IsEnabled = true; // enable the load GCode button
+                btnMDI.IsEnabled = true;
             }
 
         }
 
+        // Initial button enables
+        private void GCodeButtonsInit()
+        {
+            btnCycleStart.Content = "Cycle Start";
+            btnCycleStart.IsEnabled = true;
+
+            btnFeedHold.IsEnabled = false;
+            btnHalt.IsEnabled = false;
+
+            btnSingleStep.IsEnabled = true;
+            btnReStart.IsEnabled = true;
+
+            btnMDI.IsEnabled = true;
+            // enable the fixture offsets buttons
+            OffsetPanel1.OffsetButtons.EnableButtons();
+        }
+
+        // Manual Data Input - Single GCode Line
         private void btnMDI_Click(object sender, RoutedEventArgs e)
+        {
+            SendGCodeLine(tbManualGcode.Text);
+        }
+
+        // send a single command line to the Interpreter
+        private void SendGCodeLine(string GCodeLine)
         {
             // manual GCode line.
             // write the line to a file
             // then execute the file. - should be pretty simple...
-
             int i = 0;  // this should wait until the last gcode command is done.
             while (ExecutionInProgress)
             {
                 Thread.Sleep(10);
-                if (i++ > 1000)
+                if (i++ > 1000) // this is a 10 second delay - that's pretty long...
                 {
                     MessageBox.Show("Interpreter is busy");
                     return;
@@ -1194,7 +1515,7 @@ namespace KFLOP_Test3
             bool f = false;
             string MDIFileName = CFiles.fPath + CFiles.MDIFile;
             // should check for an existing file name
-            if(System.IO.File.Exists(MDIFileName) == false)
+            if (System.IO.File.Exists(MDIFileName) == false)
             {
                 // make a new file name...
                 var MDIF = new SaveFileDialog();
@@ -1210,8 +1531,8 @@ namespace KFLOP_Test3
             }
             using (StreamWriter writer = new StreamWriter(MDIFileName))
             {
-               // writer.WriteLine("%");    // don't need this but leaving it in because I learned something 
-                writer.WriteLine(tbManualGcode.Text);
+                // writer.WriteLine("%");    // don't need this but leaving it in because I learned something 
+                writer.WriteLine(GCodeLine);
                 // writer.WriteLine("%");
                 writer.WriteLine();
                 writer.Close();
@@ -1227,9 +1548,72 @@ namespace KFLOP_Test3
             }
         }
 
+        private int CheckforResumeCircumstances()
+        {
+            double cx, cy, cz, ca, cb, cc;  // current axis values
+            cx = cy = cz = ca = cb = cc = 0;
+            // trying to copy the functionality of KMotionCNC
+            if(KM.CoordMotion.IsPreviouslyStopped == PREV_STOP_TYPE.Prev_Stopped_None)
+            {
+                //KM.CoordMotion.Interpreter.ReadAndSynchCurInterpreterPosition(ref cx, ref cy, ref cz, ref ca, ref cb, ref cc);
+                //KM.CoordMotion.Interpreter.SetupParams.X_AxisPosition = cx;
+                //KM.CoordMotion.Interpreter.SetupParams.Y_AxisPosition = cy;
+                //KM.CoordMotion.Interpreter.SetupParams.Z_AxisPosition = cz;
+                //KM.CoordMotion.Interpreter.SetupParams.A_AxisPosition = ca;
+                //KM.CoordMotion.Interpreter.SetupParams.B_AxisPosition = cb;
+                //KM.CoordMotion.Interpreter.SetupParams.C_AxisPosition = cc;
+                return 0;
+            }
+            // read the current position
+            KM.CoordMotion.UpdateCurrentPositionsABS(ref cx, ref cy, ref cz, ref ca, ref cb, ref cc, true);
+            int dx, dy, dz, da, db, dc;
+            dx = dy = dz = da = db = dc = 0;
+            
+            KM.CoordMotion.GetAxisDefinitions(ref dx, ref dy, ref dz, ref da, ref db, ref dc);
+            // if the axis is enabled and hasn't moved...
+            if(((dx < 0) || (round(cx) == round(Stopped_X))) &&
+                ((dy < 0) || (round(cy) == round(Stopped_Y))) &&
+                ((dz < 0) || (round(cz) == round(Stopped_Z))) &&
+                ((da < 0) || (round(ca) == round(Stopped_A))) &&
+                ((db < 0) || (round(cb) == round(Stopped_B))) &&
+                ((dc < 0) || (round(cc) == round(Stopped_C))))
+            {
+                return 0;
+            }
+                
+
+            return 0;
+
+        }
+
+        // round to a reasonablly small value
+        private double round(double val)
+        {
+            if (KM.CoordMotion.Interpreter.SetupParams.LengthUnits == CANON_UNITS.CANON_UNITS_INCHES)
+            {
+                if (val < 0)
+                {
+                    val = (Math.Ceiling((val * 1e6 - 0.5) / (1e6)));
+                }
+                else
+                {
+                    val = (Math.Floor((val * 1e6 + 0.5) / (1e6)));
+                }
+            } else
+            {
+                if(val < 0)
+                {
+                    val = (Math.Ceiling((val * 1e5 - 0.5) / (1e5)));
+                }
+                else
+                {
+                    val = (Math.Floor((val * 1e5 + 0.5) / (1e5)));
+                }
+            }
+            return val;
+         }
+
         #endregion
-
-
 
         private void btnConsole_Click(object sender, RoutedEventArgs e)
         {
