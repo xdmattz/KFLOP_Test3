@@ -133,6 +133,9 @@
     <Compile Include="OffsetPanel.xaml.cs">
       <DependentUpon>OffsetPanel.xaml</DependentUpon>
     </Compile>
+    <Compile Include="ResumeDialog.xaml.cs">
+      <DependentUpon>ResumeDialog.xaml</DependentUpon>
+    </Compile>
     <Compile Include="StatusPanel.xaml.cs">
       <DependentUpon>StatusPanel.xaml</DependentUpon>
     </Compile>
@@ -177,6 +180,10 @@
       <Generator>MSBuild:Compile</Generator>
     </Page>
     <Page Include="OffsetPanel.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="ResumeDialog.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>

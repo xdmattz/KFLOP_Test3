@@ -76,11 +76,19 @@ namespace KFLOP_Test3
         static double Stopped_A;
         static double Stopped_B;
         static double Stopped_C;
-        static double Safe_Z;
-        static bool SafeRelAbs;
+        static double StoppedIX;
+        static double StoppedIY;
+        static double StoppedIZ;
+        static double StoppedIA;
+        static double StoppedIB;
+        static double StoppedIC;
+
+        static double m_Safe_Z;
+        static bool m_SafeRelAbs;
         static KMotion_dotNet.CANON_DIRECTION StoppedSpindleDirection;
         static double StoppedSpindleSpeed;
         static double StoppedFeedrate;
+ 
 
 
         static KMotion_dotNet.KM_Controller KM; // this is the controller instance!
@@ -159,8 +167,8 @@ namespace KFLOP_Test3
             fixG28 = new double[6];
             fixG30 = new double[6];
 
-            Safe_Z = 0.0;
-            SafeRelAbs = false;
+            m_Safe_Z = 4.0;
+            m_SafeRelAbs = false; // false = relative, true = absolute
 
 
             // Machine instance for status and bit control
@@ -517,14 +525,16 @@ namespace KFLOP_Test3
             {
                 // get the stopped state coordinates
                 KM.CoordMotion.Interpreter.ReadCurMachinePosition(ref Stopped_X, ref Stopped_Y, ref Stopped_Z, ref Stopped_A, ref Stopped_B, ref Stopped_C);
+                KM.CoordMotion.Interpreter.ReadCurInterpreterPosition(ref StoppedIX, ref StoppedIY, ref StoppedIZ, ref StoppedIA, ref StoppedIB, ref StoppedIC);
                 StoppedSpindleDirection = KM.CoordMotion.Interpreter.SetupParams.SpindleDirection;
                 StoppedSpindleSpeed = KM.CoordMotion.Interpreter.SetupParams.SpindleSpeed;
                 StoppedFeedrate = KM.CoordMotion.Interpreter.SetupParams.FeedRate;
+
                 string msg = string.Format("Halted1 happend first\n");
                 if (ExecutionInProgress) msg += "Execution in progress\n";
-                msg += string.Format("X: {0:F4}\n", Stopped_X);
-                msg += string.Format("Y: {0:F4}\n", Stopped_Y);
-                msg += string.Format("Z: {0:F4}\n", Stopped_Z);
+                msg += string.Format("X: {0:F4} {1:F4}\n", Stopped_X, StoppedIX);
+                msg += string.Format("Y: {0:F4} {1:F4}\n", Stopped_Y, StoppedIY);
+                msg += string.Format("Z: {0:F4} {1:F4}\n", Stopped_Z, StoppedIZ);
                 msg += string.Format("A: {0:F4}\n", Stopped_A);
                 msg += string.Format("B: {0:F4}\n", Stopped_B);
                 msg += string.Format("C: {0:F4}\n", Stopped_C);
@@ -1185,11 +1195,7 @@ namespace KFLOP_Test3
 
         private void btnCycleStart_Click(object sender, RoutedEventArgs e)
         {
-            if (Halted1)
-            {
-                // resume from stopped state
-                Halted1 = false;
-            }
+
             btnGCode.IsEnabled = false; // disable the load GCode button
             btnMDI.IsEnabled = false;
             btnCycleStart.IsEnabled = false;    // disable the buttons
@@ -1202,15 +1208,20 @@ namespace KFLOP_Test3
 
             
 
-            if (ExecutionInProgress == true)    
+            if (ExecutionInProgress == true)  // get here if feedhold or halt  
             {
                 if(InFeedHold)
                 {
+                   //  MessageBox.Show("Restart from Feedhold");
                     KM.ResumeFeedhold();
                     InFeedHold = false;
                     HideFR();
                     btnCycleStart.Content = "Resume";
-
+                    return;
+                }
+                if(Halted1)
+                {
+                    MessageBox.Show("Halted in Execution in progress - some kind of error");
                 }
                 return;    // if already running then ignore
             }
@@ -1225,12 +1236,26 @@ namespace KFLOP_Test3
                     KM.CoordMotion.IsSimulation = false;    // don't forget clear when not checked!
                 }
 
-                // disable the Jog buttons
-                JogPanel1.DisableJog();
-                // disable single step
+                KM.CoordMotion.ClearAbort(); // do I need these two calls here?
+                KM.CoordMotion.ClearHalt(); // 
 
+                if (Halted1)
+                {
+                    if (CheckforResumeCircumstances() != true)  // check if we should move back to where we stopped
+                    {
+                        return;
+                    }
+                    
+                    Halted1 = false;
+                    JogPanel1.DisableJog(); // disable the Jog buttons
+                    OffsetPanel1.OffsetButtons.DisableButtons();
+                    ExecutionInProgress = true;
+                    KM.CoordMotion.Interpreter.Interpret(GCodeFileName, CurrentLineNo, -1, 0);
+                    return;
+                }
+                
+                JogPanel1.DisableJog(); // disable the Jog buttons
                 OffsetPanel1.OffsetButtons.DisableButtons();
-                // set the Execution in progress flag
                 ExecutionInProgress = true;
 
                 if (SingleStepping == true)
@@ -1432,8 +1457,17 @@ namespace KFLOP_Test3
         {
             if (Halted1)
             {
-                // resume from stopped state
-                Halted1= false;
+                if (CheckforResumeCircumstances() != true)  // check if we should move back to where we stopped
+                {
+                    return;
+                }
+
+                Halted1 = false;
+                JogPanel1.DisableJog(); // disable the Jog buttons
+                OffsetPanel1.OffsetButtons.DisableButtons();
+                ExecutionInProgress = true;
+                KM.CoordMotion.Interpreter.Interpret(GCodeFileName, CurrentLineNo, CurrentLineNo, 0);
+                return;
             }
 
             if (!ExecutionInProgress)
@@ -1454,6 +1488,7 @@ namespace KFLOP_Test3
                 btnHalt.IsEnabled = true;
                 KM.CoordMotion.Interpreter.Interpret(GCodeFileName, CurrentLineNo, CurrentLineNo, 0);
             }
+
         }
 
 
@@ -1548,7 +1583,7 @@ namespace KFLOP_Test3
             }
         }
 
-        private int CheckforResumeCircumstances()
+        private bool CheckforResumeCircumstances()
         {
             double cx, cy, cz, ca, cb, cc;  // current axis values
             cx = cy = cz = ca = cb = cc = 0;
@@ -1562,7 +1597,8 @@ namespace KFLOP_Test3
                 //KM.CoordMotion.Interpreter.SetupParams.A_AxisPosition = ca;
                 //KM.CoordMotion.Interpreter.SetupParams.B_AxisPosition = cb;
                 //KM.CoordMotion.Interpreter.SetupParams.C_AxisPosition = cc;
-                return 0;
+                MessageBox.Show("previously stopped");
+                return false;
             }
             // read the current position
             KM.CoordMotion.UpdateCurrentPositionsABS(ref cx, ref cy, ref cz, ref ca, ref cb, ref cc, true);
@@ -1570,19 +1606,100 @@ namespace KFLOP_Test3
             dx = dy = dz = da = db = dc = 0;
             
             KM.CoordMotion.GetAxisDefinitions(ref dx, ref dy, ref dz, ref da, ref db, ref dc);
+            //string msg;
+            //msg = "check for movement\n";
+            //msg += string.Format("X def:{0} {1:F7} {2:F7}\n", dx, round(cx), round(Stopped_X));
+            //msg += string.Format("Y def:{0} {1:F7} {2:F7}\n", dy, round(cy), round(Stopped_Y));
+            //msg += string.Format("Z def:{0} {1:F7} {2:F7}\n", dz, round(cz), round(Stopped_Z));
+            //msg += string.Format("A def:{0} {1:F7} {2:F7}\n", da, round(ca), round(Stopped_A));
+            //msg += string.Format("B def:{0} {1:F7} {2:F7}\n", db, round(cb), round(Stopped_B));
+            //msg += string.Format("C def:{0} {1:F7} {2:F7}\n", dc, round(cc), round(Stopped_C));
+
+            //MessageBox.Show(msg);
+
             // if the axis is enabled and hasn't moved...
-            if(((dx < 0) || (round(cx) == round(Stopped_X))) &&
+            if (((dx < 0) || (round(cx) == round(Stopped_X))) &&
                 ((dy < 0) || (round(cy) == round(Stopped_Y))) &&
                 ((dz < 0) || (round(cz) == round(Stopped_Z))) &&
                 ((da < 0) || (round(ca) == round(Stopped_A))) &&
                 ((db < 0) || (round(cb) == round(Stopped_B))) &&
                 ((dc < 0) || (round(cc) == round(Stopped_C))))
             {
-                return 0;
+                MessageBox.Show("No movement");
+                return true; // return without modification
             }
-                
 
-            return 0;
+            // show the resume dialog
+            // if cancel then return false
+            //    
+            MessageBox.Show("Something moved!");
+            ResumeDialog Resume = new ResumeDialog();
+
+            Resume.SafeZ = KM.CoordMotion.Interpreter.InchesToUserUnits(m_Safe_Z);
+            Resume.SafeRelAbs = m_SafeRelAbs;
+            Resume.DoSafeZ = true;
+            Resume.TraverseXY = true;
+            Resume.Metric = KM.CoordMotion.Interpreter.SetupParams.LengthUnits == CANON_UNITS.CANON_UNITS_MM;
+            Resume.SafeX = StoppedIX;
+            Resume.SafeY = StoppedIY;
+
+            if(StoppedSpindleDirection == CANON_DIRECTION.CANON_STOPPED)
+            {
+                Resume.SafeSpindleStart = false;
+                Resume.SafeSpindleCWCCW = true;
+            }
+            else if(StoppedSpindleDirection == CANON_DIRECTION.CANON_CLOCKWISE)
+            {
+                Resume.SafeSpindleStart = true;
+                Resume.SafeSpindleCWCCW = true;
+            }
+            else
+            {
+                Resume.SafeSpindleStart = true;
+                Resume.SafeSpindleCWCCW = false;
+            }
+            Resume.SafeSpindleSpeed = StoppedSpindleSpeed;
+            Resume.DoSafeFeedZ = true;
+            Resume.SafeFeedZ = StoppedIZ;
+            Resume.ResumeFeedRate = StoppedFeedrate;
+            Resume.SafeFeedZRate = StoppedFeedrate;
+            Resume.RestoreFeedRate = true;
+
+
+            bool? ResumeResult = Resume.ShowDialog();
+            if(ResumeResult == false)
+            {
+                MessageBox.Show("False");
+                return false;
+            } 
+            else
+            {
+                MessageBox.Show("True!");
+                // get the results back from the dialog box
+                KM.CoordMotion.Interpreter.CanResume = true;
+                KM.CoordMotion.Interpreter.ResumeFeedSafeZ = Resume.SafeZ;
+                if(Resume.SafeRelAbs)
+                { KM.CoordMotion.Interpreter.ResumeSafeRelAbs = 1; }
+                else { KM.CoordMotion.Interpreter.ResumeSafeRelAbs = 0; }
+
+                KM.CoordMotion.Interpreter.ResumeTraverseXY = Resume.TraverseXY;
+                KM.CoordMotion.Interpreter.ResumeTraverseSafeX = Resume.SafeX;
+                KM.CoordMotion.Interpreter.ResumeTraverseSafeY = Resume.SafeY;
+                KM.CoordMotion.Interpreter.ResumeSafeStartSpindle = Resume.SafeSpindleStart;
+                if (Resume.SafeSpindleCWCCW)    // this looks backwards - but it is correct.
+                { KM.CoordMotion.Interpreter.ResumeSafeSpindleCWCCW = 0; }
+                else { KM.CoordMotion.Interpreter.ResumeSafeSpindleCWCCW = 1; }
+
+                // what about the spindle speed?
+                KM.CoordMotion.Interpreter.ResumeMoveToSafeZ = Resume.DoSafeZ;
+                KM.CoordMotion.Interpreter.ResumeDoSafeFeedZ = Resume.DoSafeFeedZ;
+                KM.CoordMotion.Interpreter.ResumeFeedSafeZ = Resume.SafeFeedZ;
+                KM.CoordMotion.Interpreter.ResumeZFeedRate = Resume.SafeFeedZRate;
+                KM.CoordMotion.Interpreter.ResumeFeedRate = Resume.ResumeFeedRate;
+                KM.CoordMotion.Interpreter.ResumeRestoreFeedRate = Resume.RestoreFeedRate;
+            }
+
+            return true;
 
         }
 
@@ -1593,21 +1710,21 @@ namespace KFLOP_Test3
             {
                 if (val < 0)
                 {
-                    val = (Math.Ceiling((val * 1e6 - 0.5) / (1e6)));
+                    val = (Math.Ceiling(val * 1e6 - 0.5)) / 1e6;
                 }
                 else
                 {
-                    val = (Math.Floor((val * 1e6 + 0.5) / (1e6)));
+                    val = (Math.Floor(val * 1e6 + 0.5)) / 1e6;
                 }
             } else
             {
                 if(val < 0)
                 {
-                    val = (Math.Ceiling((val * 1e5 - 0.5) / (1e5)));
+                    val = (Math.Ceiling(val * 1e5 - 0.5)) / 1e5;
                 }
                 else
                 {
-                    val = (Math.Floor((val * 1e5 + 0.5) / (1e5)));
+                    val = (Math.Floor(val * 1e5 + 0.5)) / 1e5;
                 }
             }
             return val;
