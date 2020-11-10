@@ -1,0 +1,80 @@
+﻿<Window x:Class="KFLOP_Test3.ResumeDialog"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:KFLOP_Test3"
+        mc:Ignorable="d"
+        Title="Resume GCode?" Height="360" Width="450" Loaded="Window_Loaded">
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="1.5*"/>
+            <RowDefinition Height="1*"/>
+            <RowDefinition Height="1*"/>
+            <RowDefinition Height="1*"/>
+            <RowDefinition Height="1*"/>
+            <RowDefinition Height="1*"/>
+            <RowDefinition Height="1*"/>
+        </Grid.RowDefinitions>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="*"/>
+        </Grid.ColumnDefinitions>
+        <StackPanel Grid.Row="0" Orientation="Vertical" >
+            <Label Content="Axes have moved from Halted Position!" VerticalAlignment="Center" HorizontalAlignment="Center" />
+            <Label Content="Select the desired actions." VerticalAlignment="Center" HorizontalAlignment="Center"/>
+        </StackPanel>
+        <StackPanel Grid.Row="1" Orientation="Horizontal" >
+            <Label Content="#1" />
+            <CheckBox x:Name="cbSafeZHeight" Content="Move to safe Z height" VerticalAlignment="Center" Margin="0,0,10,0" />
+            <TextBox x:Name="tbSafeZHeight" Text="0.00" VerticalAlignment="Center" />
+            <Label Content="Z Move inches" VerticalAlignment="Center"/>
+            <StackPanel Orientation="Vertical"  VerticalAlignment="Center" HorizontalAlignment="Right" Margin="20,0,0,0">
+           <RadioButton x:Name="rbRelMove" GroupName="ZMove"  Content="Relative Move"/>
+           <RadioButton x:Name="rbAbsMove" GroupName="ZMove"  Content ="Absolute Height"/>
+            </StackPanel>
+        </StackPanel>
+        <StackPanel Grid.Row="2" Orientation="Horizontal">
+            <Label Content="#2" />
+            <CheckBox x:Name="cbXYTraverse" Content="Traverse to XY Halted Position" VerticalAlignment="Center" Margin="0,0,10,0" />
+            <StackPanel Margin="10,0,0,0">
+            <Label Content="X" HorizontalAlignment="Center" />
+            <TextBox x:Name="tbXHalted" Text="0.0000"/>
+            </StackPanel>
+            <StackPanel Margin="10,0,0,0">
+                <Label Content="Y" HorizontalAlignment="Center" />
+                <TextBox x:Name="tbYHalted" Text="0.0000"/>
+            </StackPanel>
+            <Label x:Name="lbTraverseUnits" Content="inches" VerticalAlignment="Center"/>
+        </StackPanel>
+        <StackPanel Grid.Row="3" Orientation="Horizontal">
+            <Label Content="#3" />
+            <CheckBox x:Name="cbStartSpinle" Content="Start Spindle" VerticalAlignment="Center"/>
+            <RadioButton x:Name="rbCW" GroupName="rbgSpindle" Content="CW" VerticalAlignment="Center" Margin="20,0,0,0"/>
+            <RadioButton x:Name="rbCCW" GroupName="rbgSpindle" Content="CCW" VerticalAlignment="Center" Margin="5,0,0,0" />
+            <Label Content="Spindle speed (RPM)" VerticalAlignment="Center" Margin="20,0,0,0" />
+            <TextBox x:Name="tbSpindleSpeed" Text="0.000" VerticalAlignment="Center" />
+        </StackPanel>
+        <StackPanel Grid.Row="4" Orientation="Horizontal">
+            <Label Content="#4"/>
+            <CheckBox x:Name="cbZFeedTo" Content="Feed Z to" VerticalAlignment="Center" />
+            <TextBox x:Name="tbZFeed" Text="0.000" VerticalAlignment="Center" Margin="5,0,0,0"/>
+            <Label x:Name="lbZHUnits" Content="Z Height inches" VerticalAlignment="Center"/>
+            <TextBox x:Name="tbZFeedRate" Text="0.00" VerticalAlignment="Center"/>
+            <Label x:Name="lbZFR" Content="Feed Rate in/min" VerticalAlignment="Center"/>
+        </StackPanel>
+        <StackPanel Grid.Row="5" Orientation="Horizontal">
+            <Label Content="#5" />
+            <CheckBox x:Name="cbRestoreFR" Content="Restore Feed Rate" VerticalAlignment="Center"/>
+            <TextBox x:Name="tbRestoreFR" Text="0.00" VerticalAlignment="Center" Margin="5,0,0,0"/>
+            <Label x:Name="lbFR" Content="Feed Rate in/min" VerticalAlignment="Center"/>
+        </StackPanel>
+        <Grid Grid.Row="6" >
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+            <Button Grid.Column="0" x:Name="btnExecute" Content="Execute" Width="100" Margin="0,10" Click="btnExecute_Click"/>
+            <Button Grid.Column="1"  x:Name="btnCancel" Content="Cancel" Width="100" Margin="0,10" Click="btnCancel_Click"/>
+        </Grid>
+    </Grid>
+</Window>

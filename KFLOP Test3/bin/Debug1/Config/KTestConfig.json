@@ -1,0 +1,22 @@
+{
+  "fPath": "C:\\KMotion435d\\PC VCS\\KFLOP Test\\KFLOP_Test3\\KFLOP Test3\\bin\\Debug1\\",
+  "EMCVarsFile": "DRM_emc.var",
+  "EMCVarsFile_mm": "DRM_emc_mm.var",
+  "EMCVarsFile_inch": "DRM_emc_inch.var",
+  "EMCSetupFile": "Default.set",
+  "ToolTable": "ToolTable.json",
+  "ToolFile": "Default.tbl",
+  "ToolFile_mm": "Default.tbl",
+  "ToolFile_inch": "Default.tbl",
+  "MotionParams": "MotionParams.json",
+  "KThread1": "BP308_Startup.c",
+  "KThread2": "BP308_Home.c",
+  "KThread3": "T3_Tests.c",
+  "KFlopCCodePath": "C:\\Dan\\Eng Projects\\BP308\\KFLOP\\KFLOP C Code",
+  "LastGCode": "Square_Inch1.gcode",
+  "Highlight": "GCode-Mode.xshd",
+  "GCodePath": "C:\\KMotion435d\\PC VCS",
+  "MDIFile": "MDI.gcode",
+  "ConfigPath": "C:\\KMotion435d\\PC VCS\\KFLOP Test\\KFLOP_Test3\\KFLOP Test3\\bin\\Debug1\\Config",
+  "ThisFile": "KTestConfig.json"
+}

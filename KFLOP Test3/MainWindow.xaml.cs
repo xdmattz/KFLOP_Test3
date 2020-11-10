@@ -58,6 +58,9 @@ namespace KFLOP_Test3
         static bool MachineIsHomed = false;
         static bool MachineWarning = false;
         static bool MachineError = false;
+        static bool MachineAxisLimit = false;
+
+        // Other Status Flags
         static bool SingleStepping = false;
         static bool RestoreStoppedState = false;
         static bool InterpreterInitialized = false;
@@ -70,12 +73,14 @@ namespace KFLOP_Test3
         // 
         static double[] fixG28;
         static double[] fixG30;
+        // when stopped these are the machine coordinates
         static double Stopped_X;
         static double Stopped_Y;
         static double Stopped_Z;
         static double Stopped_A;
         static double Stopped_B;
         static double Stopped_C;
+        // when stopped these are the interpreter coordinates
         static double StoppedIX;
         static double StoppedIY;
         static double StoppedIZ;
@@ -122,7 +127,6 @@ namespace KFLOP_Test3
         JogPanel JogPanel1;
         StatusPanel StatusPanel1;
         OffsetPanel OffsetPanel1;
-        private readonly int LineNumber;
 
         // more tab items here...
 
@@ -530,18 +534,18 @@ namespace KFLOP_Test3
                 StoppedSpindleSpeed = KM.CoordMotion.Interpreter.SetupParams.SpindleSpeed;
                 StoppedFeedrate = KM.CoordMotion.Interpreter.SetupParams.FeedRate;
 
-                string msg = string.Format("Halted1 happend first\n");
-                if (ExecutionInProgress) msg += "Execution in progress\n";
-                msg += string.Format("X: {0:F4} {1:F4}\n", Stopped_X, StoppedIX);
-                msg += string.Format("Y: {0:F4} {1:F4}\n", Stopped_Y, StoppedIY);
-                msg += string.Format("Z: {0:F4} {1:F4}\n", Stopped_Z, StoppedIZ);
-                msg += string.Format("A: {0:F4}\n", Stopped_A);
-                msg += string.Format("B: {0:F4}\n", Stopped_B);
-                msg += string.Format("C: {0:F4}\n", Stopped_C);
-                msg += string.Format("FR: {0:F3}\n", StoppedFeedrate);
-                msg += string.Format("Spindle Speed: {0:F4}\n", StoppedSpindleSpeed);
-                msg += string.Format("SpindleDir: {0}", StoppedSpindleDirection);
-                MessageBox.Show(msg);
+                //string msg = string.Format("Halted1 happend first\n");
+                //if (ExecutionInProgress) msg += "Execution in progress\n";
+                //msg += string.Format("X: {0:F4} {1:F4}\n", Stopped_X, StoppedIX);
+                //msg += string.Format("Y: {0:F4} {1:F4}\n", Stopped_Y, StoppedIY);
+                //msg += string.Format("Z: {0:F4} {1:F4}\n", Stopped_Z, StoppedIZ);
+                //msg += string.Format("A: {0:F4}\n", Stopped_A);
+                //msg += string.Format("B: {0:F4}\n", Stopped_B);
+                //msg += string.Format("C: {0:F4}\n", Stopped_C);
+                //msg += string.Format("FR: {0:F3}\n", StoppedFeedrate);
+                //msg += string.Format("Spindle Speed: {0:F4}\n", StoppedSpindleSpeed);
+                //msg += string.Format("SpindleDir: {0}", StoppedSpindleDirection);
+                //MessageBox.Show(msg);
             }
 
             ExecutionInProgress = false; // not running anymore.
@@ -734,11 +738,19 @@ namespace KFLOP_Test3
                     if(B.AllInMask(status, PVConst.SB_ERROR_STATUS_MASK))
                     { MachineError = false; }
                     else { MachineError = true; }
+                    // check if the machine has been homed - don't trust any coordinates until it is!
+                    if (B.AnyInMask(status, PVConst.SB_HOME_STATUS_MASK))
+                    { MachineIsHomed = false; }
+                    else { MachineIsHomed = true; }
+                    if(B.AllInMask(status, PVConst.SB_LIMIT_MASK))
+                    { MachineAxisLimit = false; }   // all the limits must be 1 to operate - 0 = on the limit switch
+                    else { MachineAxisLimit = true; }
                 }
                 else
                 {
                     ESTOP_FLAG = true;  // in ESTOP! don't do anything else!
                 }
+
 
             }
             else
@@ -747,6 +759,40 @@ namespace KFLOP_Test3
                 T1Active = false;
             }
 
+        }
+
+        // Check operational status flags
+        // true means that everything is OK to proceed
+        // false - something needs to happen first.
+        private bool CheckStatus()
+        {
+            // temporary disable - don't have all the Hardware monitors on the test bench.
+            //if(MachineError)
+            //{
+            //    MessageBox.Show("There is a Machine Error!\nPlease fix it and retry");
+            //    return false;
+            //}
+            if(ESTOP_FLAG)
+            {
+                MessageBox.Show("Machine is in ESTOP!\nCannot proceed");
+                return false;
+            }
+            if(T1Active == false)
+            {
+                MessageBox.Show("Thread 1 on the KFLOP board is not running!\nCannot proceed");
+                return false;
+            }
+            if(MachineIsHomed == false)
+            {
+                MessageBox.Show("Machine is not homed!\nPlease home before proceeding");
+                return false;
+            }
+            if (MachineAxisLimit == true)
+            {
+                MessageBox.Show("There is an axis on the limit!\nPlease Correct before continuing");
+                return false;
+            }
+            return true;
         }
         #endregion
 
@@ -1195,79 +1241,83 @@ namespace KFLOP_Test3
 
         private void btnCycleStart_Click(object sender, RoutedEventArgs e)
         {
-
-            btnGCode.IsEnabled = false; // disable the load GCode button
-            btnMDI.IsEnabled = false;
-            btnCycleStart.IsEnabled = false;    // disable the buttons
-            btnReStart.IsEnabled = false;
-            btnSingleStep.IsEnabled = false;
-            // enable feedhold
-            btnFeedHold.IsEnabled = true;
-            // enable Halt
-            btnHalt.IsEnabled = true;
-
-            
-
-            if (ExecutionInProgress == true)  // get here if feedhold or halt  
+            if (CheckStatus())
             {
-                if(InFeedHold)
-                {
-                   //  MessageBox.Show("Restart from Feedhold");
-                    KM.ResumeFeedhold();
-                    InFeedHold = false;
-                    HideFR();
-                    btnCycleStart.Content = "Resume";
-                    return;
-                }
-                if(Halted1)
-                {
-                    MessageBox.Show("Halted in Execution in progress - some kind of error");
-                }
-                return;    // if already running then ignore
-            }
-            else
-            {
-                // see if it should be simulated
-                if(cbSimulate.IsChecked == true)
-                {
-                    KM.CoordMotion.IsSimulation = true;
-                } else
-                {
-                    KM.CoordMotion.IsSimulation = false;    // don't forget clear when not checked!
-                }
 
-                KM.CoordMotion.ClearAbort(); // do I need these two calls here?
-                KM.CoordMotion.ClearHalt(); // 
+                btnGCode.IsEnabled = false; // disable the load GCode button
+                btnMDI.IsEnabled = false;
+                btnCycleStart.IsEnabled = false;    // disable the buttons
+                btnReStart.IsEnabled = false;
+                btnSingleStep.IsEnabled = false;
+                // enable feedhold
+                btnFeedHold.IsEnabled = true;
+                // enable Halt
+                btnHalt.IsEnabled = true;
 
-                if (Halted1)
+
+
+                if (ExecutionInProgress == true)  // get here if feedhold or halt  
                 {
-                    if (CheckforResumeCircumstances() != true)  // check if we should move back to where we stopped
+                    if (InFeedHold)
                     {
+                        //  MessageBox.Show("Restart from Feedhold");
+                        KM.ResumeFeedhold();
+                        InFeedHold = false;
+                        HideFR();
+                        btnCycleStart.Content = "Resume";
                         return;
                     }
-                    
-                    Halted1 = false;
-                    JogPanel1.DisableJog(); // disable the Jog buttons
-                    OffsetPanel1.OffsetButtons.DisableButtons();
-                    ExecutionInProgress = true;
-                    KM.CoordMotion.Interpreter.Interpret(GCodeFileName, CurrentLineNo, -1, 0);
-                    return;
-                }
-                
-                JogPanel1.DisableJog(); // disable the Jog buttons
-                OffsetPanel1.OffsetButtons.DisableButtons();
-                ExecutionInProgress = true;
-
-                if (SingleStepping == true)
-                {
-                    // if in the middle of single stepping, then start from the current line.
-                    KM.CoordMotion.Interpreter.Interpret(GCodeFileName, CurrentLineNo, -1, 0);
-                    SingleStepping = false;
+                    if (Halted1)
+                    {
+                        MessageBox.Show("Halted in Execution in progress - some kind of error");
+                    }
+                    return;    // if already running then ignore
                 }
                 else
                 {
-                    KM.CoordMotion.Interpreter.Interpret(GCodeFileName);  // Execute the File!
-                    SingleStepping = false;
+                    // see if it should be simulated
+                    if (cbSimulate.IsChecked == true)
+                    {
+                        KM.CoordMotion.IsSimulation = true;
+                    }
+                    else
+                    {
+                        KM.CoordMotion.IsSimulation = false;    // don't forget clear when not checked!
+                    }
+
+                    KM.CoordMotion.ClearAbort(); // do I need these two calls here?
+                    KM.CoordMotion.ClearHalt(); // 
+
+                    if (Halted1)
+                    {
+                        if (CheckforResumeCircumstances() != true)  // check if we should move back to where we stopped
+                        {
+                            return;
+                        }
+
+                        Halted1 = false;
+                        JogPanel1.DisableJog(); // disable the Jog buttons
+                        OffsetPanel1.OffsetButtons.DisableButtons();
+                        ExecutionInProgress = true;
+                        KM.CoordMotion.Interpreter.Interpret(GCodeFileName, CurrentLineNo, -1, 0);
+                        return;
+                    }
+
+                    JogPanel1.DisableJog(); // disable the Jog buttons
+                    OffsetPanel1.OffsetButtons.DisableButtons();
+                    ExecutionInProgress = true;
+
+                    if (SingleStepping == true)
+                    {
+                        // if in the middle of single stepping, then start from the current line.
+                        KM.CoordMotion.Interpreter.Interpret(GCodeFileName, CurrentLineNo, -1, 0);
+                        SingleStepping = false;
+                    }
+                    else
+                    {
+                        KM.CoordMotion.Interpreter.Interpret(GCodeFileName);  // Execute the File!
+                        SingleStepping = false;
+                    }
                 }
             }
         }
@@ -1455,40 +1505,44 @@ namespace KFLOP_Test3
 
         private void btnSingleStep_Click(object sender, RoutedEventArgs e)
         {
-            if (Halted1)
+            if (CheckStatus())
             {
-                if (CheckforResumeCircumstances() != true)  // check if we should move back to where we stopped
+                if (Halted1)
                 {
+                    if (CheckforResumeCircumstances() != true)  // check if we should move back to where we stopped
+                    {
+                        return;
+                    }
+                    KM.CoordMotion.ClearAbort(); // do I need these two calls here?
+                    KM.CoordMotion.ClearHalt(); // 
+
+                    Halted1 = false;
+                    JogPanel1.DisableJog(); // disable the Jog buttons
+                    OffsetPanel1.OffsetButtons.DisableButtons();
+                    ExecutionInProgress = true;
+                    KM.CoordMotion.Interpreter.Interpret(GCodeFileName, CurrentLineNo, CurrentLineNo, 0);
                     return;
                 }
 
-                Halted1 = false;
-                JogPanel1.DisableJog(); // disable the Jog buttons
-                OffsetPanel1.OffsetButtons.DisableButtons();
-                ExecutionInProgress = true;
-                KM.CoordMotion.Interpreter.Interpret(GCodeFileName, CurrentLineNo, CurrentLineNo, 0);
-                return;
-            }
-
-            if (!ExecutionInProgress)
-            {
-                if (!InterpreterInitialized)
+                if (!ExecutionInProgress)
                 {
-                    if (GetInterpVars() == false)
-                    { return; }
+                    if (!InterpreterInitialized)
+                    {
+                        if (GetInterpVars() == false)
+                        { return; }
+                    }
+                    btnGCode.IsEnabled = false; // disable the load GCode button
+
+                    btnCycleStart.IsEnabled = false;
+                    RestoreStoppedState = false;
+                    btnMDI.IsEnabled = false;
+                    ExecutionInProgress = true;
+                    SingleStepping = true;
+                    btnFeedHold.IsEnabled = true;
+                    btnHalt.IsEnabled = true;
+                    KM.CoordMotion.Interpreter.Interpret(GCodeFileName, CurrentLineNo, CurrentLineNo, 0);
                 }
-                btnGCode.IsEnabled = false; // disable the load GCode button
-
-                btnCycleStart.IsEnabled = false;
-                RestoreStoppedState = false;
-                btnMDI.IsEnabled = false;
-                ExecutionInProgress = true;
-                SingleStepping = true;
-                btnFeedHold.IsEnabled = true;
-                btnHalt.IsEnabled = true;
-                KM.CoordMotion.Interpreter.Interpret(GCodeFileName, CurrentLineNo, CurrentLineNo, 0);
             }
-
         }
 
 
@@ -1528,7 +1582,10 @@ namespace KFLOP_Test3
         // Manual Data Input - Single GCode Line
         private void btnMDI_Click(object sender, RoutedEventArgs e)
         {
-            SendGCodeLine(tbManualGcode.Text);
+            if (CheckStatus())
+            {
+                SendGCodeLine(tbManualGcode.Text);
+            }
         }
 
         // send a single command line to the Interpreter

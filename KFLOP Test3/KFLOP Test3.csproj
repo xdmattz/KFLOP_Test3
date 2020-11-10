@@ -116,6 +116,9 @@
     </Compile>
     <Compile Include="Fixtuers.cs" />
     <Compile Include="HiLight_Lines.cs" />
+    <Compile Include="LED_Indicator.xaml.cs">
+      <DependentUpon>LED_Indicator.xaml</DependentUpon>
+    </Compile>
     <Compile Include="LightButton.xaml.cs">
       <DependentUpon>LightButton.xaml</DependentUpon>
     </Compile>
@@ -148,6 +151,10 @@
       <Generator>MSBuild:Compile</Generator>
     </Page>
     <Page Include="DROBox.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="LED_Indicator.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>

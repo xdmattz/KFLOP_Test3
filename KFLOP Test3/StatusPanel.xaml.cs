@@ -27,12 +27,16 @@ namespace KFLOP_Test3
         private KM_Controller KMx { get; set; }
 
         BitOps B;
+        
 
         public StatusPanel(ref KM_Controller X)
         {
             InitializeComponent();
             KMx = X;
             B = new BitOps();
+          //  LED1.LED_Label = "test lable1";
+          //  LED1.LED_Image.Source = new BitmapImage(new Uri("Small LED Off.png"));
+
         }
 
         public void CheckHome(ref KM_MainStatus MStat)
