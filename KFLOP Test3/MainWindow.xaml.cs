@@ -985,6 +985,22 @@ namespace KFLOP_Test3
                     MessageBox.Show("Unable to execute C Program in KFLOP\r\r" + ex.InnerException.Message);
                 }
             }
+            openFileDlg.FileName = GetStr(CFiles.KThread3);
+            if (openFileDlg.ShowDialog() == true)
+            {
+                CFiles.KThread3 = System.IO.Path.GetFileName(openFileDlg.FileName); // save the filename for next time
+                CFiles.KFlopCCodePath = System.IO.Path.GetDirectoryName(openFileDlg.FileName);
+                try
+                {
+                    KM.SetUserData(0, 100); // this is a test - 100 should be the init value
+                    KM.ExecuteProgram(3, openFileDlg.FileName, true);
+                    cbT3.IsEnabled = true;
+                }
+                catch (DMException ex)
+                {
+                    MessageBox.Show("Unable to execute C Program in KFLOP\r\r" + ex.InnerException.Message);
+                }
+            }
         }
 
         private void btnProgHalt_Click(object sender, RoutedEventArgs e)
@@ -1734,7 +1750,7 @@ namespace KFLOP_Test3
                 MessageBox.Show("True!");
                 // get the results back from the dialog box
                 KM.CoordMotion.Interpreter.CanResume = true;
-                KM.CoordMotion.Interpreter.ResumeFeedSafeZ = Resume.SafeZ;
+                KM.CoordMotion.Interpreter.ResumeSafeZ = Resume.SafeZ;
                 if(Resume.SafeRelAbs)
                 { KM.CoordMotion.Interpreter.ResumeSafeRelAbs = 1; }
                 else { KM.CoordMotion.Interpreter.ResumeSafeRelAbs = 0; }
