@@ -18,13 +18,65 @@
             <ColumnDefinition Width="2*" />
             <ColumnDefinition Width="1*" />
         </Grid.ColumnDefinitions>
-<!-- Status Indicators 
-        <local:LED_Indicator LED_Label="Test LED1">
-            
-        </local:LED_Indicator>
--->
-        
-<!-- Limit control -->
+        <!-- Status Indicators -->
+        <StackPanel Grid.Row="0" Grid.Column="0" Grid.RowSpan="3" Orientation="Vertical" >
+            <Border BorderBrush="Black" BorderThickness="2" CornerRadius="3" Margin="3"  >
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="*" />
+                        <RowDefinition Height="*" />
+                        <RowDefinition Height="*" />
+                        <RowDefinition Height="*" />
+                    </Grid.RowDefinitions>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="3*" />
+                        <ColumnDefinition Width="2*" />
+                    </Grid.ColumnDefinitions>
+                    <local:LED_Indicator x:Name="ESRelay_LED" Grid.Row="0" Grid.Column="0"/>
+                    <local:LED_Indicator x:Name="EStop_LED" Grid.Row="0" Grid.Column="1"/>
+                    <local:LED_Indicator x:Name="SEnable_LED" Grid.Row="1" Grid.Column="0"/>
+                    <local:LED_Indicator x:Name="SFault_LED" Grid.Row="1" Grid.Column="1"/>
+                    <local:LED_Indicator x:Name="PwrMod_LED" Grid.Row="2" Grid.Column="0"/>
+                    <local:LED_Indicator x:Name="AxisFault_LED" Grid.Row="2" Grid.Column="1"/>
+                </Grid>
+            </Border>
+            <Border BorderBrush="Black" BorderThickness="2" CornerRadius="3" Margin="3">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="*" />
+                        <RowDefinition Height="*" />
+                        <RowDefinition Height="*" />
+                        <RowDefinition Height="*" />
+                    </Grid.RowDefinitions>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+                    <local:LED_Indicator x:Name="ToolRel_LED" Grid.Row="0" />
+                    <local:LED_Indicator x:Name="xToolRel_LED" Grid.Row="1" />
+                </Grid>
+            </Border>
+            <Border BorderBrush="Black" BorderThickness="2" CornerRadius="3" Margin="3">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="*" />
+                        <RowDefinition Height="*" />
+                        <RowDefinition Height="*" />
+                        <RowDefinition Height="*" />
+                        <RowDefinition Height="*" />
+                    </Grid.RowDefinitions>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+                    <local:LED_Indicator x:Name="Oiler_LED" Grid.Row="0" />
+                    <local:LED_Indicator x:Name="OilLevel_LED" Grid.Row="1" />
+                    <local:LED_Indicator x:Name="AirPres_LED" Grid.Row="2" />
+                    <local:LED_Indicator x:Name="DoorFan_LED" Grid.Row="3" />
+                    <local:LED_Indicator x:Name="FloodMotor_LED" Grid.Row="4" />
+                </Grid>
+            </Border>
+        </StackPanel>
+
+        <!-- Limit control -->
         <Grid Grid.Row="1" Grid.Column="1">
             <Grid.RowDefinitions>
                 <RowDefinition Height="2*" />
@@ -35,7 +87,7 @@
                 <ColumnDefinition Width="1*" />
                 <ColumnDefinition Width="1*" />
             </Grid.ColumnDefinitions>
-            
+
             <!-- X Axis Limit -->
             <CheckBox x:Name="cbLimX" Content="X Limit" Grid.Row="0" Grid.Column="0" HorizontalAlignment="Left" VerticalAlignment="Bottom" Margin="0,5,0,0" />
             <StackPanel Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="3" Orientation="Horizontal" Margin="25,0,0,0" >
@@ -51,7 +103,7 @@
                 </Button>
 
             </StackPanel>
-            
+
             <!-- Y Axis Limit -->
             <StackPanel Grid.Row="0" Grid.Column="1" Grid.RowSpan="3" >
                 <CheckBox x:Name="cbLimY" Content="Y Limit" HorizontalAlignment="Left" VerticalAlignment="Top"/>
@@ -66,7 +118,7 @@
                     </StackPanel>
                 </Button>
             </StackPanel>
-            
+
             <!-- Z Axis Limit -->
             <StackPanel Grid.Row="0" Grid.Column="2" Grid.RowSpan="3" >
                 <CheckBox x:Name="cbLimZ" Content="Z Limit" HorizontalAlignment="Left"  VerticalAlignment="Top"/>
@@ -82,10 +134,10 @@
                 </Button>
             </StackPanel>
         </Grid>
-        
-<!-- Homing buttons -->
+
+        <!-- Homing buttons -->
         <Grid Grid.Row="0" Grid.Column="2" Grid.RowSpan="2">
-            <Border BorderBrush="Black" BorderThickness="2" CornerRadius="2" Padding="5" Margin="3">
+            <Border BorderBrush="Black" BorderThickness="2" CornerRadius="3" Padding="5" Margin="3,3,3,30">
                 <StackPanel Orientation="Vertical">
                     <Label Content="Home" HorizontalAlignment="Center"  VerticalAlignment="Top" Height="25" Width="50"/>
                     <Button x:Name="btnHomeX" Content="X" HorizontalAlignment="Stretch"  VerticalAlignment="Top" Height="21" Click="btnHomeX_Click"/>
@@ -99,8 +151,12 @@
             </Border>
         </Grid>
 
-<!-- Status Word from KFLOP -->
-        <TextBox x:Name="tbStatus1" Grid.Row="2"  HorizontalAlignment="Left" Height="23" TextWrapping="Wrap" Text="TextBox" VerticalAlignment="Top" Width="120"/>
+        <!-- Status Word from KFLOP -->
+        <TextBox x:Name="tbStatus1" Grid.Row="2"  HorizontalAlignment="Left" Height="23" TextWrapping="Wrap" Text="TextBox" VerticalAlignment="Top" Width="120" Margin="10,59,0,0"/>
+        <Button Content="Button" Grid.Column="1" HorizontalAlignment="Left" Margin="45,18,0,0" Grid.Row="2" VerticalAlignment="Top" Width="75" Click="Button_Click"/>
+        <TextBlock x:Name="tbKanIn" Grid.Column="2" HorizontalAlignment="Left" Margin="10,10,0,0" Grid.Row="2" TextWrapping="Wrap" Text="TextBlock" VerticalAlignment="Top"/>
+        <TextBlock x:Name="tbKanOut" Grid.Column="2" HorizontalAlignment="Left" Margin="10,27,0,0" Grid.Row="2" TextWrapping="Wrap" Text="TextBlock" VerticalAlignment="Top"/>
+        <TextBlock x:Name="tbKonnIO" Grid.Column="2" HorizontalAlignment="Left" Margin="10,43,0,0" Grid.Row="2" TextWrapping="Wrap" Text="TextBlock" VerticalAlignment="Top"/>
 
     </Grid>
 </UserControl>

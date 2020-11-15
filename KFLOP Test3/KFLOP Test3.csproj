@@ -245,11 +245,17 @@
     <Resource Include="LimX-_sm.png" />
     <Resource Include="LimY+ sm.png" />
     <Resource Include="LimY- sm.png" />
-    <Resource Include="Small LED Green.png" />
     <Resource Include="Small LED OFF.png" />
-    <Resource Include="Small LED OFFa.png" />
-    <Resource Include="Small LED Off_b.png" />
     <Resource Include="Small LED Red.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="Small LED Yellow.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="Small LED Blue.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="Small LED Green.png" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

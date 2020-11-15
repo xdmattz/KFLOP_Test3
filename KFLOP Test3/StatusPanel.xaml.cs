@@ -27,15 +27,58 @@ namespace KFLOP_Test3
         private KM_Controller KMx { get; set; }
 
         BitOps B;
-        
+
+        // Status flags used in check machine status
+        static int Prev_KanalogInputs;    // Kanalog Inputs
+        static int Prev_KanalogOutputs;   // Kanalog Outputs
+        static int Prev_KonnectIO;    // Connect Inputs
+
+        static int LED_Count;
+
 
         public StatusPanel(ref KM_Controller X)
         {
             InitializeComponent();
             KMx = X;
             B = new BitOps();
-          //  LED1.LED_Label = "test lable1";
-          //  LED1.LED_Image.Source = new BitmapImage(new Uri("Small LED Off.png"));
+            //  LED1.LED_Label = "test lable1";
+            //  LED1.LED_Image.Source = new BitmapImage(new Uri("Small LED Off.png"));
+            LED_Count = 0;
+
+            // initialize the status LEDs
+            ESRelay_LED.Set_Label("EStop EN");
+            EStop_LED.Set_Label("ESTOP");
+            SEnable_LED.Set_Label("Spindle EN");
+            SFault_LED.Set_Label("Fault");
+            PwrMod_LED.Set_Label("Axis EN");
+            AxisFault_LED.Set_Label("Fault");
+
+            ToolRel_LED.Set_Label("Tool Release");
+            xToolRel_LED.Set_Label("");
+
+            Oiler_LED.Set_Label("Oiler");
+            OilLevel_LED.Set_Label("Level");
+            AirPres_LED.Set_Label("Air Pressure");
+            DoorFan_LED.Set_Label("Door Fan");
+            FloodMotor_LED.Set_Label("Flood Motor");
+
+
+            ESRelay_LED.Set_State(LED_State.Off);
+            EStop_LED.Set_State(LED_State.Off);
+            SEnable_LED.Set_State(LED_State.Off);
+            SFault_LED.Set_State(LED_State.Off);
+            PwrMod_LED.Set_State(LED_State.Off);
+            AxisFault_LED.Set_State(LED_State.Off);
+
+            ToolRel_LED.Set_State(LED_State.Off);
+            xToolRel_LED.Set_State(LED_State.Off);
+
+            Oiler_LED.Set_State(LED_State.Off);
+            OilLevel_LED.Set_State(LED_State.Off);
+            AirPres_LED.Set_State(LED_State.Off);
+            DoorFan_LED.Set_State(LED_State.Off);
+            FloodMotor_LED.Set_State(LED_State.Off);
+
 
         }
 
@@ -100,6 +143,47 @@ namespace KFLOP_Test3
                 else { cbLimZ.IsChecked = true; }
    //         }
 
+        }
+
+        public void CheckMachineStatus(ref KM_MainStatus MStat)
+        {
+            tbKanIn.Text = string.Format("{0:X8}", MStat.KanalogBitsStateInputs);
+            tbKanOut.Text = string.Format("{0:X8}", MStat.KanalogBitsStateOutputs);
+            tbKonnIO.Text = string.Format("{0:X8}", MStat.VirtualBitsEx0);
+
+            if ((MStat.KanalogBitsStateInputs != Prev_KanalogInputs) || (MStat.KanalogBitsStateOutputs != Prev_KanalogOutputs))
+            {
+                Prev_KanalogInputs = MStat.KanalogBitsStateInputs;
+                Prev_KanalogOutputs = MStat.KanalogBitsStateOutputs;
+
+                // process all the LEDs on the Kanalog inputs/outputs
+                if ((Prev_KanalogOutputs & IOConst.ESTOP_RELAY_MASK) == IOConst.ESTOP_RELAY_MASK)
+                { ESRelay_LED.Set_State(LED_State.On_Green); }
+                else { ESRelay_LED.Set_State(LED_State.Off); }
+
+                if ((Prev_KanalogInputs & IOConst.ESTOP_MASK) == IOConst.ESTOP_MASK)
+                { EStop_LED.Set_State(LED_State.On_Red); }
+                else { EStop_LED.Set_State(LED_State.Off); }
+
+                if ((Prev_KanalogOutputs & IOConst.SPINDLE_ENABLE_MASK) == IOConst.SPINDLE_ENABLE_MASK)
+                { SEnable_LED.Set_State(LED_State.On_Green); }
+                else { SEnable_LED.Set_State(LED_State.Off); }
+
+                if ((Prev_KanalogInputs & IOConst.SPINDLEF_FAULT_MASK) == IOConst.SPINDLEF_FAULT_MASK)
+                { SFault_LED.Set_State(LED_State.On_Red); }
+                else { SFault_LED.Set_State(LED_State.Off); }
+            }
+
+            if((MStat.VirtualBitsEx0 & IOConst.KON_STATUS_MASK) != Prev_KonnectIO)
+            {
+                Prev_KonnectIO = (MStat.VirtualBitsEx0 & IOConst.KON_STATUS_MASK);
+                // process all the LEDs on the Konnect IO
+            }
+            // check the machine status for things like the 
+            // Konnect
+            // Oiler monitor
+            // Air monitor
+            // 
         }
 
 
@@ -198,5 +282,29 @@ namespace KFLOP_Test3
             UnLimit(T2Const.T2_LIM_XN);
         }
         #endregion
+
+        private void Button_Click(object sender, RoutedEventArgs e)
+        {
+            switch (LED_Count)
+            {
+                case 0:
+                    EStop_LED.Set_State(LED_State.On_Red);
+                    LED_Count++;  break;
+                case 1:
+                    EStop_LED.Set_State(LED_State.On_Blue);
+                    LED_Count++; break;
+                case 2:
+                    EStop_LED.Set_State(LED_State.On_Green);
+                    LED_Count++; break;
+                case 3:
+                    EStop_LED.Set_State(LED_State.On_Yellow);
+                    LED_Count++; break;
+                case 4:
+                    EStop_LED.Set_State(LED_State.Off);
+                    LED_Count = 0; break;
+                default: LED_Count = 0; break;
+            }
+
+        }
     }
 }

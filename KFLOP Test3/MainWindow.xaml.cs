@@ -68,6 +68,12 @@ namespace KFLOP_Test3
         static bool m_M30 = false;
         static bool Halted1 = false;
 
+        // Status flags used in check status
+        static int Prev_P_STATUS;   // Persistant variable 104 status
+        static int Prev_P_STATUS1;   // Persistant variable 104 status
+        static int Prev_StatusEnables;
+
+
 
         // machine offsets
         // 
@@ -724,41 +730,44 @@ namespace KFLOP_Test3
 
             // check the status of the Machine P_STATUS is in PC_comm[4];
             int status = KStat.PC_comm[CSConst.P_STATUS];
-            if (B.AnyInMask(status, PVConst.SB_ACTIVE_MASK))   // Active bit is set in P_STATUS means thread 1 is running properly 
+            if (status != Prev_P_STATUS)    // check for a change in status - only do the following if that status has changed
             {
-                T1Active = true;
-                // check the estop
-                if (B.AnyInMask(status, PVConst.SB_ESTOP_MASK))
+                Prev_P_STATUS = status;     // save the status for next time through.
+                if (B.AnyInMask(status, PVConst.SB_ACTIVE_MASK))   // Active bit is set in P_STATUS means thread 1 is running properly 
                 {
-                    ESTOP_FLAG = false; // SB_ESTOP bit set means everything is OK - not in ESTOP
-                    if(B.AnyInMask(status, PVConst.SB_WARNING_STATUS_MASK))
-                    { MachineWarning = true; }
+                    T1Active = true;
+                    // check the estop
+                    if (B.AnyInMask(status, PVConst.SB_ESTOP_MASK))
+                    {
+                        ESTOP_FLAG = false; // SB_ESTOP bit set means everything is OK - not in ESTOP
+                        if (B.AnyInMask(status, PVConst.SB_WARNING_STATUS_MASK))
+                        { MachineWarning = true; }
+                        else
+                        { MachineWarning = false; }
+                        if (B.AllInMask(status, PVConst.SB_ERROR_STATUS_MASK))
+                        { MachineError = false; }
+                        else { MachineError = true; }
+                        // check if the machine has been homed - don't trust any coordinates until it is!
+                        if (B.AnyInMask(status, PVConst.SB_HOME_STATUS_MASK))
+                        { MachineIsHomed = false; }
+                        else { MachineIsHomed = true; }
+                        if (B.AllInMask(status, PVConst.SB_LIMIT_MASK))
+                        { MachineAxisLimit = false; }   // all the limits must be 1 to operate - 0 = on the limit switch
+                        else { MachineAxisLimit = true; }
+                    }
                     else
-                    { MachineWarning = false; }
-                    if(B.AllInMask(status, PVConst.SB_ERROR_STATUS_MASK))
-                    { MachineError = false; }
-                    else { MachineError = true; }
-                    // check if the machine has been homed - don't trust any coordinates until it is!
-                    if (B.AnyInMask(status, PVConst.SB_HOME_STATUS_MASK))
-                    { MachineIsHomed = false; }
-                    else { MachineIsHomed = true; }
-                    if(B.AllInMask(status, PVConst.SB_LIMIT_MASK))
-                    { MachineAxisLimit = false; }   // all the limits must be 1 to operate - 0 = on the limit switch
-                    else { MachineAxisLimit = true; }
+                    {
+                        ESTOP_FLAG = true;  // in ESTOP! don't do anything else!
+                    }
+
+
                 }
                 else
                 {
-                    ESTOP_FLAG = true;  // in ESTOP! don't do anything else!
+                    // if Active is not set, don't bother with anything else because there is nothing to talk to.
+                    T1Active = false;
                 }
-
-
             }
-            else
-            {
-                // if Active is not set, don't bother with anything else because there is nothing to talk to.
-                T1Active = false;
-            }
-
         }
 
         // Check operational status flags
@@ -805,34 +814,40 @@ namespace KFLOP_Test3
         #endregion
 
         #region User Interface updates
+
+        
         private void UpdateUI(ref KM_MainStatus KStat)
         {
-            // Set DRO Colors - based on active axis
-            if ((KStat.Enables & AXConst.A_AXIS) != 0)
+            #region DRO update
+            if (KStat.Enables != Prev_StatusEnables)
             {
-                XDRO.SetBigColor(Brushes.Green);
+                Prev_StatusEnables = KStat.Enables;
+                // Set DRO Colors - based on active axis
+                if ((KStat.Enables & AXConst.A_AXIS) != 0)
+                {
+                    XDRO.SetBigColor(Brushes.Green);
+                }
+                else
+                {
+                    XDRO.SetBigColor(Brushes.Red);
+                }
+                if ((KStat.Enables & AXConst.Y_AXIS_MASK) != 0)
+                {
+                    YDRO.SetBigColor(Brushes.Green);
+                }
+                else
+                {
+                    YDRO.SetBigColor(Brushes.Red);
+                }
+                if ((KStat.Enables & AXConst.Z_AXIS_MASK) != 0)
+                {
+                    ZDRO.SetBigColor(Brushes.Green);
+                }
+                else
+                {
+                    ZDRO.SetBigColor(Brushes.Red);
+                }
             }
-            else
-            {
-                XDRO.SetBigColor(Brushes.Red);
-            }
-            if ((KStat.Enables & AXConst.Y_AXIS_MASK) != 0)
-            {
-                YDRO.SetBigColor(Brushes.Green);
-            }
-            else
-            {
-                YDRO.SetBigColor(Brushes.Red);
-            }
-            if ((KStat.Enables & AXConst.Z_AXIS_MASK) != 0)
-            {
-                ZDRO.SetBigColor(Brushes.Green);
-            }
-            else
-            {
-                ZDRO.SetBigColor(Brushes.Red);
-            }
-
             // Get Ablosule Machine Coordinates
             double x = 0, y = 0, z = 0, a = 0, b = 0, c = 0;
             KM.CoordMotion.UpdateCurrentPositionsABS(ref x, ref y, ref z, ref a, ref b, ref c, false);
@@ -860,6 +875,8 @@ namespace KFLOP_Test3
             YDRO.SetUnits(units);
             ZDRO.SetUnits(units);
 
+            #endregion
+
             // manage the current line number for the gcode listing
             if (ExecutionInProgress && (m_MDI == false))
             {
@@ -885,8 +902,14 @@ namespace KFLOP_Test3
             { if (KM.ThreadExecuting(7)) cbT7.IsChecked = true; }
 
             // update limit switches 
-            StatusPanel1.CheckLimit(ref KStat);
-            StatusPanel1.CheckHome(ref KStat);
+            if (KStat.PC_comm[CSConst.P_STATUS] != Prev_P_STATUS1) // only do this if the status has changed.
+            {
+                Prev_P_STATUS1 = KStat.PC_comm[CSConst.P_STATUS];
+                StatusPanel1.CheckLimit(ref KStat);
+                StatusPanel1.CheckHome(ref KStat);
+            }
+
+            StatusPanel1.CheckMachineStatus(ref KStat);
 
             // update the Spindle enable
             if ((KStat.Enables & AXConst.SPINDLE_AXIS_MASK) != 0)

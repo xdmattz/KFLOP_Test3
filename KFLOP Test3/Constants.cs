@@ -17,6 +17,8 @@ namespace KFLOP_Test3
         public const int P_RPM = 5;
     }
 
+
+
     // constants relating to the persist variables
     // see also BP308_Persist.h in KFLOP Code (Thread1 and Thread2 code etc.)
     class PVConst
@@ -129,8 +131,22 @@ namespace KFLOP_Test3
         public const int HEAD_YELLOW = 143;     // OPTO_15
         public const int TOOL_RELEASE = 140;     // same as red wire.
 
+        public const int ESTOP_MASK = 0x00000001;
+        public const int SPINDLEF_FAULT_MASK = 0x00000002;
+        public const int POWER_MODULE_READY_MASK = 0x00000004;
+        public const int AXIS_FAULT_MASK = 0x00000008;
+        public const int AXIS_HOMELIMIT_MASK = 0x000003f0;
+        public const int OPTO_9_MASK = 0x00000400;
+        public const int HEAD_WHITE_MASK = 0x00000800;
+        public const int HEAD_RED_MASK = 0x00001000;
+        public const int TOOL_RELEASE_MASK = 0x00001000;
+        public const int HEAD_GREEN_MASK = 0x00002000;
+        public const int HEAD_BLUE_MASK = 0x00004000;
+        public const int HEAD_YELLOW_MASK = 0x00008000;
+
         // Outputs
         // 24V FET drive
+        // outputs 144 - 151 are not currently used
         public const int ESTOP_RELAY = 152;     // 24V FET 0
         public const int SPINDLE_ENABLE = 153;  // 24V FET 1
         public const int RELAY3 = 154;      // 24V FET 2
@@ -139,6 +155,15 @@ namespace KFLOP_Test3
         public const int FET5 = 157;
         public const int FET6 = 158;
         public const int FET7 = 159;
+
+        public const int ESTOP_RELAY_MASK = 0x00000100;
+        public const int SPINDLE_ENABLE_MASK = 0x00000200;
+        public const int RELAY3_MASK = 0x00000400;
+        public const int Z_BRAKE_MASK = 0x00000800;
+        public const int FET4_MASK = 0x00001000;
+        public const int FET5_MASK = 0x00002000;
+        public const int FET6_MASK = 0x00004000;
+        public const int FET7_MASK = 0x00008000;
 
         // Isolated AC Control
         // the first four AC controls are 110V
@@ -152,10 +177,17 @@ namespace KFLOP_Test3
         public const int AC6_220 = 166;     // available
         public const int AC7_220 = 167;     // available
 
+        public const int OIL_LUB_MASK = 0x00010000;
+        public const int FLOOD_MOTOR_MASK = 0x00020000;
+        public const int DOOR_FAN_MASK = 0x00040000;
+        public const int AC3_119_MASK = 0x00080000;
+
         // KONNECT Connections
         // 32 Inputs
         // Board 0 addresses
         // Extended IO
+        // public const int VituralBitsEX0_Base = 1024;
+
         public const int ENC_X_R = 1024;    // X_Axis Index
         public const int ENC_Y_R = 1025;    // Y_Axis Index
         public const int ENC_Z_R = 1026;    // Z_Axis Index
@@ -188,6 +220,12 @@ namespace KFLOP_Test3
         public const int KON_IN_1053 = 1053;
         public const int KON_IN_1054 = 1054;
         public const int KON_IN_1055 = 1055;
+
+        // indivual bit masks 
+        public const int LUBE_MON_MASK = 0x00100000;
+        public const int COOLANT_MON_MASK = 0x00200000;
+        public const int AIR_MON_MASK = 0x00400000;
+        public const int KON_STATUS_MASK = 0x00FF0000;
 
         // 16 Konnect outputs 
         // Board 0 addresses
