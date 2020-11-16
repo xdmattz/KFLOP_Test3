@@ -13,9 +13,9 @@
   "KThread2": "BP308_Home.c",
   "KThread3": "BP308_Thread3_S_Cmd.C",
   "KFlopCCodePath": "C:\\Dan\\Eng Projects\\BP308\\KFLOP\\KFLOP C Code",
-  "LastGCode": "Square_Inch1.gcode",
+  "LastGCode": "Alive 100.gcode",
   "Highlight": "GCode-Mode.xshd",
-  "GCodePath": "C:\\KMotion435d\\PC VCS",
+  "GCodePath": "C:\\Dan\\Projects\\First G Code",
   "MDIFile": "MDI.gcode",
   "ConfigPath": "C:\\KMotion435d\\PC VCS\\KFLOP Test\\KFLOP_Test3\\KFLOP Test3\\bin\\Debug1\\Config",
   "ThisFile": "KTestConfig.json"

@@ -50,8 +50,9 @@ namespace KFLOP_Test3
             EStop_LED.Set_Label("ESTOP");
             SEnable_LED.Set_Label("Spindle EN");
             SFault_LED.Set_Label("Fault");
-            PwrMod_LED.Set_Label("Axis EN");
+            PwrMod_LED.Set_Label("Pwr Module EN");
             AxisFault_LED.Set_Label("Fault");
+            ZBrake_LED.Set_Label("Z-Brake");
 
             ToolRel_LED.Set_Label("Tool Release");
             xToolRel_LED.Set_Label("");
@@ -69,6 +70,7 @@ namespace KFLOP_Test3
             SFault_LED.Set_State(LED_State.Off);
             PwrMod_LED.Set_State(LED_State.Off);
             AxisFault_LED.Set_State(LED_State.Off);
+            ZBrake_LED.Set_State(LED_State.Off);
 
             ToolRel_LED.Set_State(LED_State.Off);
             xToolRel_LED.Set_State(LED_State.Off);
@@ -157,27 +159,67 @@ namespace KFLOP_Test3
                 Prev_KanalogOutputs = MStat.KanalogBitsStateOutputs;
 
                 // process all the LEDs on the Kanalog inputs/outputs
+                // EStop Relay
                 if ((Prev_KanalogOutputs & IOConst.ESTOP_RELAY_MASK) == IOConst.ESTOP_RELAY_MASK)
                 { ESRelay_LED.Set_State(LED_State.On_Green); }
                 else { ESRelay_LED.Set_State(LED_State.Off); }
-
+                // EStop State
                 if ((Prev_KanalogInputs & IOConst.ESTOP_MASK) == IOConst.ESTOP_MASK)
                 { EStop_LED.Set_State(LED_State.On_Red); }
                 else { EStop_LED.Set_State(LED_State.Off); }
-
+                // Spindle Enable
                 if ((Prev_KanalogOutputs & IOConst.SPINDLE_ENABLE_MASK) == IOConst.SPINDLE_ENABLE_MASK)
                 { SEnable_LED.Set_State(LED_State.On_Green); }
                 else { SEnable_LED.Set_State(LED_State.Off); }
-
-                if ((Prev_KanalogInputs & IOConst.SPINDLEF_FAULT_MASK) == IOConst.SPINDLEF_FAULT_MASK)
+                // Spindle Fault
+                if ((Prev_KanalogInputs & IOConst.SPINDLEF_FAULT_MASK) == 0)    // spindle fault: 1 = OK, 0 = Fault.
                 { SFault_LED.Set_State(LED_State.On_Red); }
                 else { SFault_LED.Set_State(LED_State.Off); }
+                // Power Module Enable
+                if ((Prev_KanalogInputs & IOConst.POWER_MODULE_READY_MASK) == IOConst.POWER_MODULE_READY_MASK)
+                { PwrMod_LED.Set_State(LED_State.On_Green); }
+                else { PwrMod_LED.Set_State(LED_State.Off); }
+                // Power Module Fault
+                if ((Prev_KanalogInputs & IOConst.AXIS_FAULT_MASK) == 0)    // Power Module fault: 1 = OK, 0 = Fault.
+                { AxisFault_LED.Set_State(LED_State.On_Red); }
+                else { AxisFault_LED.Set_State(LED_State.Off); }
+                // Z Brake
+                if ((Prev_KanalogOutputs & IOConst.Z_BRAKE_MASK) == IOConst.Z_BRAKE_MASK)  // Brake is on when not energized 
+                { ZBrake_LED.Set_State(LED_State.On_Green); }
+                else { ZBrake_LED.Set_State(LED_State.On_Red); }
+                // Tool Release
+                if ((Prev_KanalogInputs & IOConst.TOOL_RELEASE_MASK) == IOConst.TOOL_RELEASE_MASK)   
+                { ToolRel_LED.Set_State(LED_State.On_Blue); }
+                else { ToolRel_LED.Set_State(LED_State.Off); }
+                // Oiler
+                if ((Prev_KanalogOutputs & IOConst.OIL_LUB_MASK) == IOConst.OIL_LUB_MASK)
+                { Oiler_LED.Set_State(LED_State.On_Green); }
+                else { Oiler_LED.Set_State(LED_State.Off); }
+                // Electrical Cabinet Door Fan
+                if ((Prev_KanalogOutputs & IOConst.DOOR_FAN_MASK) == IOConst.DOOR_FAN_MASK)
+                { DoorFan_LED.Set_State(LED_State.On_Green); }
+                else { DoorFan_LED.Set_State(LED_State.Off); }
+                // Flood Coolant Motor
+                if ((Prev_KanalogOutputs & IOConst.FLOOD_MOTOR_MASK) == IOConst.FLOOD_MOTOR_MASK)
+                { FloodMotor_LED.Set_State(LED_State.On_Green); }
+                else { FloodMotor_LED.Set_State(LED_State.Off); }
+
+
             }
 
             if((MStat.VirtualBitsEx0 & IOConst.KON_STATUS_MASK) != Prev_KonnectIO)
             {
                 Prev_KonnectIO = (MStat.VirtualBitsEx0 & IOConst.KON_STATUS_MASK);
                 // process all the LEDs on the Konnect IO
+                // Oil Level - Yellow is OK, Red is Low
+                if ((Prev_KonnectIO & IOConst.LUBE_MON_MASK) == IOConst.LUBE_MON_MASK)
+                { OilLevel_LED.Set_State(LED_State.On_Yellow); }
+                else { OilLevel_LED.Set_State(LED_State.On_Red); }
+                // Air Pressure Monitor
+                if ((Prev_KonnectIO & IOConst.AIR_MON_MASK) == IOConst.AIR_MON_MASK)
+                { AirPres_LED.Set_State(LED_State.On_Yellow); }
+                else { AirPres_LED.Set_State(LED_State.On_Red); }
+
             }
             // check the machine status for things like the 
             // Konnect
