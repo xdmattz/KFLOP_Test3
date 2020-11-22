@@ -123,6 +123,14 @@ namespace KFLOP_Test3
             {
                 btnHomeS.Background = new SolidColorBrush(Colors.LightGreen);
             }
+            if (B.BitIsSet(status, PVConst.SB_TLAUX_OK))
+            {
+                btnHomeTC.Background = new SolidColorBrush(Colors.Red);
+            }
+            else
+            {
+                btnHomeTC.Background = new SolidColorBrush(Colors.LightGreen);
+            }
 
         }
 
@@ -250,10 +258,17 @@ namespace KFLOP_Test3
             Homing(T2Const.T2_HOME_SPINDLE);
         }
 
+        private void btnHomeTC_Click(object sender, RoutedEventArgs e)
+        {
+            Homing(T2Const.T2_TO0L_HOME);
+        }
+
         private void btnHomeAll_Click(object sender, RoutedEventArgs e)
         {
             Homing(T2Const.T2_HOME_ALL);
         }
+
+
 
         private void Homing(int AxisCmd)
         {
@@ -348,5 +363,7 @@ namespace KFLOP_Test3
             }
 
         }
+
+
     }
 }

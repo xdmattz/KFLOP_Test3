@@ -6,7 +6,7 @@
         xmlns:avalonEdit="http://icsharpcode.net/sharpdevelop/avalonedit"
         xmlns:local="clr-namespace:KFLOP_Test3"
         mc:Ignorable="d"
-        Title="MainWindow" Height="826" Width="900" Closed="Window_Closed">
+        Title="MainWindow" Height="826" Width="1200" Closed="Window_Closed">
     <!--  this is a comment -->
     <Grid Height="780" VerticalAlignment="Top" Margin="0,0,-8,0">
         <Grid.ColumnDefinitions>
@@ -32,51 +32,84 @@
         <Label Content="" Margin="0,109,213,0" VerticalAlignment="Top" HorizontalAlignment="Right" FontSize="36" Width="44"/>
 
 
-        <avalonEdit:TextEditor x:Name="GCodeView" FontFamily="Consolas" FontSize="12" IsReadOnly="True" Margin="34,69,343,453">
+        <avalonEdit:TextEditor x:Name="GCodeView" FontFamily="Consolas" FontSize="12" IsReadOnly="True" Margin="34,69,558,453">
 
         </avalonEdit:TextEditor>
         <Button x:Name="btnProgHalt" Content="Prog Halt" HorizontalAlignment="Left" Margin="517,10,0,0" VerticalAlignment="Top" Width="74" Click="btnProgHalt_Click"/>
-        <TextBox x:Name="tbStatus" HorizontalAlignment="Left" Height="23" Margin="576,379,0,0" TextWrapping="Wrap" Text="TextBox" VerticalAlignment="Top" Width="120"/>
-        <TextBox x:Name="tbLineNo" HorizontalAlignment="Left" Height="23" Margin="576,407,0,0" TextWrapping="Wrap" Text="TextBox" VerticalAlignment="Top" Width="120"/>
-        <TextBox x:Name="tbSeq" HorizontalAlignment="Left" Height="23" Margin="576,435,0,0" TextWrapping="Wrap" Text="TextBox" VerticalAlignment="Top" Width="120"/>
-        <TextBox x:Name="tbErr" HorizontalAlignment="Left" Height="23" Margin="576,463,0,0" TextWrapping="Wrap" Text="TextBox" VerticalAlignment="Top" Width="120"/>
-        <CheckBox x:Name="cbSimulate" Content="Simulate" HorizontalAlignment="Left" Margin="572,270,0,0" VerticalAlignment="Top"/>
-        <TextBlock x:Name="tbExTime" HorizontalAlignment="Left" Margin="576,553,0,0" TextWrapping="Wrap" Text="TextBlock" VerticalAlignment="Top" RenderTransformOrigin="0.76,-0.844"/>
+        <TextBox x:Name="tbStatus" HorizontalAlignment="Left" Height="23" Margin="891,331,0,0" TextWrapping="Wrap" Text="TextBox" VerticalAlignment="Top" Width="120"/>
+        <TextBox x:Name="tbLineNo" HorizontalAlignment="Left" Height="23" Margin="891,359,0,0" TextWrapping="Wrap" Text="TextBox" VerticalAlignment="Top" Width="120"/>
+        <TextBox x:Name="tbSeq" HorizontalAlignment="Left" Height="23" Margin="891,387,0,0" TextWrapping="Wrap" Text="TextBox" VerticalAlignment="Top" Width="120"/>
+        <TextBox x:Name="tbErr" HorizontalAlignment="Left" Height="23" Margin="891,415,0,0" TextWrapping="Wrap" Text="TextBox" VerticalAlignment="Top" Width="120"/>
+        <CheckBox x:Name="cbSimulate" Content="Simulate" HorizontalAlignment="Left" Margin="705,294,0,0" VerticalAlignment="Top" RenderTransformOrigin="2.595,0.438"/>
+        <TextBlock x:Name="tbExTime" HorizontalAlignment="Left" Margin="891,505,0,0" TextWrapping="Wrap" Text="TextBlock" VerticalAlignment="Top" RenderTransformOrigin="0.76,-0.844"/>
         <Button x:Name="btnConsole" Content="Console" HorizontalAlignment="Left" Margin="331,40,0,0" VerticalAlignment="Top" Width="75" Click="btnConsole_Click"/>
-        <TabControl x:Name="tcMainTab" HorizontalAlignment="Left" Height="373" Margin="34,332,0,0" VerticalAlignment="Top" Width="494">
+        <TabControl x:Name="tcMainTab" HorizontalAlignment="Left" Height="373" Margin="34,332,0,0" VerticalAlignment="Top" Width="569">
             <!-- fill the tabs in from the "Code Behind" -->
         </TabControl>
         <Button Content="Thread3" HorizontalAlignment="Left" Margin="612,10,0,0" VerticalAlignment="Top" Width="75" Click="Button_Click"/>
-        <Label Content="Tick Time" HorizontalAlignment="Left" Margin="576,504,0,0" VerticalAlignment="Top"/>
-        <TextBox x:Name="tbTickTime" HorizontalAlignment="Left" Height="23" Margin="641,506,0,0" TextWrapping="Wrap" Text="0.000" VerticalAlignment="Top" Width="120"/>
-        <TextBlock x:Name="tbStatus1" HorizontalAlignment="Left" Margin="576,588,0,0" TextWrapping="Wrap" Text="0" VerticalAlignment="Top" Width="74"/>
-        <Rectangle Fill="#FFF4F4F5" HorizontalAlignment="Left" Height="117" Margin="727,377,0,0" Stroke="Black" VerticalAlignment="Top" Width="79"/>
-        <Label Content="Active Threads" HorizontalAlignment="Left" Margin="727,377,0,0" VerticalAlignment="Top" FontSize="10" Width="79"/>
-        <CheckBox x:Name="cbT1" Content="Thread1" HorizontalAlignment="Left" Margin="732,395,0,0" VerticalAlignment="Top" FontSize="10" Width="66" IsEnabled="False"/>
-        <CheckBox x:Name="cbT2" Content="Thread2" HorizontalAlignment="Left" Margin="732,408,0,0" VerticalAlignment="Top" FontSize="10" Width="66" IsEnabled="False"/>
-        <CheckBox x:Name="cbT3" Content="Thread3" HorizontalAlignment="Left" Margin="732,421,0,0" VerticalAlignment="Top" FontSize="10" Width="66" IsThreeState="True" IsEnabled="False"/>
-        <CheckBox x:Name="cbT4" Content="Thread4" HorizontalAlignment="Left" Margin="732,434,0,0" VerticalAlignment="Top" FontSize="10" Width="66" IsEnabled="False"/>
-        <CheckBox x:Name="cbT5" Content="Thread5" HorizontalAlignment="Left" Margin="732,447,0,0" VerticalAlignment="Top" FontSize="10" Width="66" IsEnabled="False"/>
-        <CheckBox x:Name="cbT6" Content="Thread6" HorizontalAlignment="Left" Margin="732,460,0,0" VerticalAlignment="Top" FontSize="10" Width="66" IsEnabled="False"/>
-        <CheckBox x:Name="cbT7" Content="Thread7" HorizontalAlignment="Left" Margin="732,473,0,0" VerticalAlignment="Top" FontSize="10" Width="66" IsEnabled="False"/>
-        <TextBox x:Name="tbSpindleSpeedSet" HorizontalAlignment="Left" Height="24" Margin="612,655,0,0" TextWrapping="Wrap" Text="1000" VerticalAlignment="Top" Width="69" RenderTransformOrigin="1.21,0.083" PreviewKeyDown="tbSpindleSpeedSet_PreviewKeyDown"/>
-        <Label Content="Spindle Speed (RPM)" HorizontalAlignment="Left" Margin="552,624,0,0" VerticalAlignment="Top"/>
-        <CheckBox x:Name="cbSpindleEnable" Content="" HorizontalAlignment="Left" Margin="769,630,0,0" VerticalAlignment="Top" RenderTransformOrigin="-2.097,2.844"/>
-        <Button x:Name="btnSpindleCW" Content="Start CW" HorizontalAlignment="Left" Margin="692,655,0,0" VerticalAlignment="Top" Width="69" Click="btnSpindleCW_Click"/>
-        <Button x:Name="btnSpindleCCW" Content="Start CCW" HorizontalAlignment="Left" Margin="692,677,0,0" VerticalAlignment="Top" Width="69" Click="btnSpindleCCW_Click"/>
-        <Button x:Name="btnSpindleStop" Content="Stop" HorizontalAlignment="Left" Margin="692,699,0,0" VerticalAlignment="Top" Width="69" Click="btnSpindleStop_Click"/>
-        <Label Content="Set" HorizontalAlignment="Left" Margin="576,655,0,0" VerticalAlignment="Top"/>
-        <TextBox x:Name="tbSpindleSpeedRPM" HorizontalAlignment="Left" Height="24" Margin="692,630,0,0" TextWrapping="Wrap" Text="1000" VerticalAlignment="Top" Width="69" RenderTransformOrigin="1.21,0.083"/>
+        <Label Content="Tick Time" HorizontalAlignment="Left" Margin="891,456,0,0" VerticalAlignment="Top"/>
+        <TextBox x:Name="tbTickTime" HorizontalAlignment="Left" Height="23" Margin="955,458,0,0" TextWrapping="Wrap" Text="0.000" VerticalAlignment="Top" Width="120"/>
+        <TextBlock x:Name="tbStatus1" HorizontalAlignment="Left" Margin="891,540,0,0" TextWrapping="Wrap" Text="0" VerticalAlignment="Top" Width="74"/>
+        <Rectangle Fill="#FFF4F4F5" HorizontalAlignment="Left" Height="117" Margin="1041,329,0,0" Stroke="Black" VerticalAlignment="Top" Width="80"/>
+        <Label Content="Active Threads" HorizontalAlignment="Left" Margin="1041,329,0,0" VerticalAlignment="Top" FontSize="10" Width="80"/>
+        <CheckBox x:Name="cbT1" Content="Thread1" HorizontalAlignment="Left" Margin="1047,347,0,0" VerticalAlignment="Top" FontSize="10" Width="66" IsEnabled="False"/>
+        <CheckBox x:Name="cbT2" Content="Thread2" HorizontalAlignment="Left" Margin="1047,360,0,0" VerticalAlignment="Top" FontSize="10" Width="66" IsEnabled="False"/>
+        <CheckBox x:Name="cbT3" Content="Thread3" HorizontalAlignment="Left" Margin="1047,373,0,0" VerticalAlignment="Top" FontSize="10" Width="66" IsThreeState="True" IsEnabled="False"/>
+        <CheckBox x:Name="cbT4" Content="Thread4" HorizontalAlignment="Left" Margin="1047,386,0,0" VerticalAlignment="Top" FontSize="10" Width="66" IsEnabled="False"/>
+        <CheckBox x:Name="cbT5" Content="Thread5" HorizontalAlignment="Left" Margin="1047,399,0,0" VerticalAlignment="Top" FontSize="10" Width="66" IsEnabled="False"/>
+        <CheckBox x:Name="cbT6" Content="Thread6" HorizontalAlignment="Left" Margin="1047,412,0,0" VerticalAlignment="Top" FontSize="10" Width="66" IsEnabled="False"/>
+        <CheckBox x:Name="cbT7" Content="Thread7" HorizontalAlignment="Left" Margin="1047,425,0,0" VerticalAlignment="Top" FontSize="10" Width="66" IsEnabled="False"/>
+        <TextBox x:Name="tbSpindleSpeedSet" HorizontalAlignment="Left" Height="24" Margin="880,634,0,0" TextWrapping="Wrap" Text="1000" VerticalAlignment="Top" Width="68" RenderTransformOrigin="1.21,0.083" PreviewKeyDown="tbSpindleSpeedSet_PreviewKeyDown"/>
+        <Label Content="Spindle Speed (RPM)" HorizontalAlignment="Left" Margin="834,607,0,0" VerticalAlignment="Top"/>
+        <CheckBox x:Name="cbSpindleEnable" Content="" HorizontalAlignment="Left" Margin="1036,609,0,0" VerticalAlignment="Top" RenderTransformOrigin="-2.097,2.844"/>
+        <Button x:Name="btnSpindleCW" Content="Start CW" HorizontalAlignment="Left" Margin="960,634,0,0" VerticalAlignment="Top" Width="68" Click="btnSpindleCW_Click"/>
+        <Button x:Name="btnSpindleCCW" Content="Start CCW" HorizontalAlignment="Left" Margin="960,656,0,0" VerticalAlignment="Top" Width="68" Click="btnSpindleCCW_Click"/>
+        <Button x:Name="btnSpindleStop" Content="Stop" HorizontalAlignment="Left" Margin="960,678,0,0" VerticalAlignment="Top" Width="68" Click="btnSpindleStop_Click"/>
+        <Label Content="Set" HorizontalAlignment="Left" Margin="844,634,0,0" VerticalAlignment="Top"/>
+        <TextBox x:Name="tbSpindleSpeedRPM" HorizontalAlignment="Left" Height="24" Margin="960,609,0,0" TextWrapping="Wrap" Text="1000" VerticalAlignment="Top" Width="68" RenderTransformOrigin="1.21,0.083"/>
         <TextBox x:Name="tbManualGcode" HorizontalAlignment="Left" Margin="48,754,0,0" TextWrapping="Wrap" Text="G28" VerticalAlignment="Top" Width="248"/>
         <Button x:Name="btnMDI" Content="MDI" HorizontalAlignment="Left" Margin="318,754,0,0" VerticalAlignment="Top" Width="46" Click="btnMDI_Click"/>
 
-        <local:DROBox x:Name="XDRO" Height="60" Width="320" Grid.ColumnSpan="2" Margin="540,49,10,671" />
-        <local:DROBox x:Name="YDRO" Height="60" Width="320" Grid.ColumnSpan="2" Margin="540,114,10,606" />
-        <local:DROBox x:Name="ZDRO" Height="60" Width="320" Grid.ColumnSpan="2" Margin="540,179,10,541" />
-        <Label Content="status" HorizontalAlignment="Left" Margin="535,379,0,0" VerticalAlignment="Top"/>
-        <Label Content="line no" HorizontalAlignment="Left" Margin="530,407,0,0" VerticalAlignment="Top" RenderTransformOrigin="0.688,0.462"/>
-        <Label Content="Seq" HorizontalAlignment="Left" Margin="541,435,0,0" VerticalAlignment="Top"/>
-        <Label Content="Err" HorizontalAlignment="Left" Margin="547,463,0,0" VerticalAlignment="Top"/>
+        <local:DROBox x:Name="XDRO" Height="60" Margin="705,49,10,671" />
+        <local:DROBox x:Name="YDRO" Height="60" Margin="705,114,10,606" />
+        <local:DROBox x:Name="ZDRO" Height="60" Margin="705,179,10,541" />
+        <Label Content="status" HorizontalAlignment="Left" Margin="849,331,0,0" VerticalAlignment="Top"/>
+        <Label Content="line no" HorizontalAlignment="Left" Margin="845,359,0,0" VerticalAlignment="Top" RenderTransformOrigin="0.688,0.462"/>
+        <Label Content="Seq" HorizontalAlignment="Left" Margin="855,387,0,0" VerticalAlignment="Top"/>
+        <Label Content="Err" HorizontalAlignment="Left" Margin="861,415,0,0" VerticalAlignment="Top"/>
+
+        <Grid Margin="1072,567,43,31">
+            <local:LogSliderV x:Name="slSpindleOverride" Margin="0,-15,0,0" />
+        </Grid>
+
+        <Grid Margin="705,472,347,31">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="25" />
+                <RowDefinition Height="25" />
+                <RowDefinition Height="25" />
+                <RowDefinition Height="25" />
+                <RowDefinition Height="*" />
+            </Grid.RowDefinitions>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="5"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+            <StackPanel Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="3" Orientation="Horizontal">
+                <Label Content="FR: " />
+                <TextBox x:Name="tbFeedRate" Text="0.000" />
+            </StackPanel>
+            <StackPanel Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="3" Orientation="Horizontal">
+                <Label Content="CR: " />
+                <TextBox x:Name="tbCurrentRate" Text="0.000" />
+            </StackPanel>
+            <Label Content="Rate Override" Grid.Row="2" Grid.Column="0" Grid.ColumnSpan="3" HorizontalAlignment="Center" />
+            <Label Content="Rapid" Grid.Column="0" Grid.Row="3"/>
+            <local:LogSliderV x:Name="slRapidOverride" Grid.Column="0" Grid.Row="4"/>
+            <Label Content="Feed" Grid.Column="2" Grid.Row="3"/>
+            <local:LogSliderV x:Name="slFeedOverride" Grid.Column="2" Grid.Row="4"/>
+        </Grid>
+
 
     </Grid>
 </Window>

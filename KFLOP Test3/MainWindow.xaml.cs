@@ -136,6 +136,9 @@ namespace KFLOP_Test3
 
         // more tab items here...
 
+
+
+
         #endregion
 
 
@@ -268,6 +271,17 @@ namespace KFLOP_Test3
             // hide the fwd and rev buttons
             HideFR();
 
+
+            // Feedrate Sliderbars
+            slSpindleOverride.SliderClickedCallback += SpindleFeedrate;
+            slSpindleOverride.slvalue = 1.0;
+
+            slRapidOverride.SliderClickedCallback += FeedrateRapidUpdate;
+            slRapidOverride.slvalue = 1.0;
+
+            slFeedOverride.SliderClickedCallback += FeedrateUpdate;
+            slFeedOverride.slvalue = 1.0;
+
             #endregion
         }
 
@@ -399,6 +413,12 @@ namespace KFLOP_Test3
             ConWin.AddSomeText(msg);
         }
 
+        public void Console_SendMessage(string msg)
+        {
+            KM.WriteLineReadLine(msg);  // send the message to KFLOP!
+        }
+
+
         public void KM_ErrorUpdated(string msg)
         {
             Dispatcher.BeginInvoke(new System.Threading.ThreadStart(() => KM_ErrorUpdated2(msg)));
@@ -423,49 +443,52 @@ namespace KFLOP_Test3
         // 'code' is the action# see https://www.dynomotion.com/wiki/index.php/KMotion_Libraries_-_GCode_Interpreter_-_Trajectory_Planner_-_Coordinated_Motion_-_.NET#GCode_Actions
         private int MCode8Callback(int code)    
         {
+            // if Thread 2 is already doing something then wait just a bit to see if it will clear.
             if (KM.ThreadExecuting(2))
             {
-                MessageBox.Show("Thread2 already executing!");
-            }
-            else
-            {
-                switch (code)
+                if (KM.WaitForThreadComplete(2, 2000) == false)
                 {
-                    case 2: // M2 End Program
-                        m_M30 = true;   // set the end of program flag
-                        break;
-                    case 3: // M3 callback - Spindle CW
-                        KM.SetUserData(PVConst.P_NOTIFY, T2Const.T2_SPINDLE_CW);
-                        KM.ExecuteProgram(2);
-                        break;
-                    case 4: // M4 callback - Spindle CCW
-                        KM.SetUserData(PVConst.P_NOTIFY, T2Const.T2_SPINDLE_CCW);
-                        KM.ExecuteProgram(2);
-                        break;
-                    case 5: // M5 Callback - Spindle Stop
-                        KM.SetUserData(PVConst.P_NOTIFY, T2Const.T2_SPINDLE_STOP);
-                        KM.ExecuteProgram(2);
-                        break;
-                    case 6: // M6 Callback - Tool Change
-                        // lots to do in this function.
-                        break;
-                    case 7: // M7 Callback - Mist Coolant On?
-                    case 8: // M8 Callback - Coolant On
-                    case 9: // M9 Callback -Coolant Off
-                        break;
-                    case 24:    // M30 End Program
-                        m_M30 = true; // set the end of program flag
-                        break;
-                    case 42: // Cycle start
-                    case 43: // Halt
-                    case 44: // Stop
-                    case 45: // FeedHold
-                    case 46: // Resume
-                    case 47: // Prog Start
-                    case 48: // Prog Exit
-                        break;
-                    default: break;
+                    string msg = string.Format("Thread 2 is still running -{0} operation skipped!", code);
+                    MessageBox.Show(msg);
+                    return 0;
                 }
+            }
+            switch (code)
+            {
+                case 2: // M2 End Program
+                    m_M30 = true;   // set the end of program flag
+                    break;
+                case 3: // M3 callback - Spindle CW
+                    KM.SetUserData(PVConst.P_NOTIFY, T2Const.T2_SPINDLE_CW);
+                    KM.ExecuteProgram(2);
+                    break;
+                case 4: // M4 callback - Spindle CCW
+                    KM.SetUserData(PVConst.P_NOTIFY, T2Const.T2_SPINDLE_CCW);
+                    KM.ExecuteProgram(2);
+                    break;
+                case 5: // M5 Callback - Spindle Stop
+                    KM.SetUserData(PVConst.P_NOTIFY, T2Const.T2_SPINDLE_STOP);
+                    KM.ExecuteProgram(2);
+                    break;
+                case 6: // M6 Callback - Tool Change
+                    // lots to do in this function.
+                    break;
+                case 7: // M7 Callback - Mist Coolant On?
+                case 8: // M8 Callback - Coolant On
+                case 9: // M9 Callback -Coolant Off
+                    break;
+                case 24:    // M30 End Program
+                    m_M30 = true; // set the end of program flag
+                    break;
+                case 42: // Cycle start
+                case 43: // Halt
+                case 44: // Stop
+                case 45: // FeedHold
+                case 46: // Resume
+                case 47: // Prog Start
+                case 48: // Prog Exit
+                    break;
+                default: break;
             }
             // MessageBox.Show(String.Format("Code = {0}", code));
             return 0;
@@ -928,6 +951,12 @@ namespace KFLOP_Test3
                 
             }
             OffsetPanel1.SetOffsetDisplay();
+
+            // update the feedrate
+            double fr = KM.CoordMotion.Interpreter.SetupParams.FeedRate;
+            double cr = KM.CoordMotion.FeedRateOverride;
+            tbFeedRate.Text = String.Format("{0:F1}", fr);
+            tbCurrentRate.Text = String.Format("{0:F1}", fr * cr);
         }
         #endregion
 
@@ -1837,9 +1866,15 @@ namespace KFLOP_Test3
             else
             {
                 ConWin = new ConsolWindow();
+                ConWin.SendButtonClickedCallback += Console_SendMessage;    // add the delegate handler for when the button is clicked
                 ConWin.Show();
             }
             
+        }
+
+        private void ConWin_SendButtonClickedCallback(string msg)
+        {
+            throw new NotImplementedException();
         }
 
 
@@ -1942,6 +1977,28 @@ namespace KFLOP_Test3
                 tbSpindleSpeedSet.Background = Brushes.Pink;
             }
         }
+
+        private void SpindleFeedrate(double rate)
+        {
+            KM.CoordMotion.SpindleRateOverride = rate;
+            KM.CoordMotion.Interpreter.InvokeAction(10, false); // run the MCode Action for an S command (action 10)
+            // see here: https://www.dynomotion.com/wiki/index.php/KMotion_Libraries_-_GCode_Interpreter_-_Trajectory_Planner_-_Coordinated_Motion_-_.NET#GCode_Actions
+            // look at the bottom of the page!
+        }
+        #endregion
+
+        #region Feedrate
+
+        private void FeedrateRapidUpdate(double rate)
+        {
+            KM.CoordMotion.FeedRateRapidOverride = rate;
+        }
+
+        private void FeedrateUpdate(double rate)
+        {
+            KM.CoordMotion.FeedRateOverride = rate;
+        }
+
         #endregion
 
         #region Zero and offsets

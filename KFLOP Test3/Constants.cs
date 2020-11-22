@@ -294,7 +294,9 @@ namespace KFLOP_Test3
         public const int T2_TOOL_RELA = 0x0d02;
         public const int T2_TOOL_REL = 0x0d03;
         public const int T2_TOOL_GRAB = 0x0d04;
-        public const int T2_TOLL_ARM = 0x0E00;
+        public const int T2_TO0L_ARM_IN = 0x0d05;
+        public const int T2_TO0L_ARM_OUT = 0x0d06;
+        public const int T2_TO0L_HOME = 0x0d0f;
 
         // Spindle commands - command byte 0x0500
         public const int T2_SPINDLE = 0x0500;

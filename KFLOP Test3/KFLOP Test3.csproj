@@ -122,6 +122,9 @@
     <Compile Include="LightButton.xaml.cs">
       <DependentUpon>LightButton.xaml</DependentUpon>
     </Compile>
+    <Compile Include="LogSliderV.xaml.cs">
+      <DependentUpon>LogSliderV.xaml</DependentUpon>
+    </Compile>
     <Compile Include="Machine.cs" />
     <Compile Include="MotionParams_Copy.cs" />
     <Compile Include="MotionParamWindow.xaml.cs">
@@ -159,6 +162,10 @@
       <Generator>MSBuild:Compile</Generator>
     </Page>
     <Page Include="LightButton.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="LogSliderV.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>

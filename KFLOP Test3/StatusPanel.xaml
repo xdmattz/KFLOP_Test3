@@ -146,6 +146,7 @@
                     <Button x:Name="btnHomeZ" Content="Z" HorizontalAlignment="Stretch"  VerticalAlignment="Top" Height="21" Click="btnHomeZ_Click"/>
                     <Button x:Name="btnHomeA" Content="A" HorizontalAlignment="Stretch"  VerticalAlignment="Top" Height="21"/>
                     <Button x:Name="btnHomeS" Content="Spindle" HorizontalAlignment="Stretch"  VerticalAlignment="Top" Height="21" IsCancel="True" Click="btnHomeS_Click"/>
+                    <Button x:Name="btnHomeTC" Content="TLAUX" HorizontalAlignment="Stretch"  VerticalAlignment="Top" Height="21" IsCancel="True" Click="btnHomeTC_Click"/>
                     <Rectangle HorizontalAlignment="Stretch" Height="10" />
                     <Button x:Name="btnHomeAll" Content="All" HorizontalAlignment="Stretch"  VerticalAlignment="Top" Height="21" Click="btnHomeAll_Click"/>
                 </StackPanel>

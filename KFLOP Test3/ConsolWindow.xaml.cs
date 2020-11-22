@@ -20,6 +20,11 @@ namespace KFLOP_Test3
     public partial class ConsolWindow : Window
     {
         const int MaxLines = 1000;
+
+        public delegate void SendCallback(string msg);
+
+        public event SendCallback SendButtonClickedCallback;
+
         public ConsolWindow()
         {
             InitializeComponent();
@@ -47,6 +52,12 @@ namespace KFLOP_Test3
         private void btnHide_Click(object sender, RoutedEventArgs e)
         {
             this.Hide();
+        }
+
+        private void btnCCmdSend_Click(object sender, RoutedEventArgs e)
+        {
+            // call the delegated event handler - only if it has been properly initalized.
+            SendButtonClickedCallback?.Invoke(tbConsoleCommand.Text);
         }
     }
 }

@@ -5,12 +5,13 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:KFLOP_Test3"
         mc:Ignorable="d"
-        Title="Consol Window" Height="300" Width="360">
+        Title="Consol Window" Height="500" Width="450">
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="22" />
             <RowDefinition Height="*" />
             <RowDefinition Height="22" />
+            <RowDefinition Height="30" />
         </Grid.RowDefinitions>
         <Grid Grid.Row="0" Margin="10,0">
             <Grid.RowDefinitions>
@@ -31,6 +32,16 @@
         </ScrollViewer>
         <TextBlock x:Name="ConsoleLines"  Grid.Row="2" HorizontalAlignment="Left" Margin="0,3" />
         <TextBlock HorizontalAlignment="Left"  Grid.Row="1" TextWrapping="Wrap"  VerticalAlignment="Top"/>
+        <Grid HorizontalAlignment="Stretch" Grid.Row="3">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="68" />
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="60" />
+            </Grid.ColumnDefinitions>
+            <Label Content="Command:" HorizontalAlignment="Left"/>
+            <TextBox x:Name="tbConsoleCommand" Grid.Column="1" Margin="0,3" />
+            <Button x:Name="btnCCmdSend" Content="Send" Grid.Column="2" Margin="5" Click="btnCCmdSend_Click"/>
 
+        </Grid>
     </Grid>
 </Window>

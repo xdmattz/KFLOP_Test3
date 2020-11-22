@@ -5,7 +5,7 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
              xmlns:local="clr-namespace:KFLOP_Test3"
              mc:Ignorable="d" 
-             d:DesignHeight="60" d:DesignWidth="350">
+             d:DesignHeight="60" d:DesignWidth="420">
     
     <Grid >
         <Border BorderBrush="Black" BorderThickness="3" CornerRadius="8">
