@@ -1,0 +1,23 @@
+﻿<UserControl x:Class="KFLOP_Test3.LogSliderV"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:local="clr-namespace:KFLOP_Test3"
+             mc:Ignorable="d" 
+             d:DesignHeight="200" d:DesignWidth="40">
+    <Grid Width="40">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="30"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="30"/>
+        </Grid.RowDefinitions>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="*"/>
+        </Grid.ColumnDefinitions>
+        <TextBox x:Name="tbValue" Grid.Row="0" Grid.Column="0" Margin="3"/>
+        <ProgressBar x:Name="pb1" Value="{Binding ElementName=sl1, Path=Value }" Grid.Row="1" Orientation="Vertical" Margin="5,0"/>
+        <Slider x:Name="sl1" Minimum="0" Maximum="100" Width="Auto" Orientation="Vertical" Grid.Row="1" TickFrequency="10" HorizontalAlignment="Center" ValueChanged="sl1_ValueChanged" PreviewMouseUp="sl1_PreviewMouseUp"/>
+        <Button x:Name="btnReset" Content="Reset" Grid.Row="2" Margin="2" Click="btnReset_Click" />
+    </Grid>
+</UserControl>

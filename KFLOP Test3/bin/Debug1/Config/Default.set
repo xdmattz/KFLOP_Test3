@@ -26,4 +26,4 @@ speed_feed_mode			INDEPENDENT SYNCHED
 spindle_speed			1000.0		any non-negative real number
 spindle_turning			STOPPED		CLOCKWISE, COUNTERCLOCKWISE
 tool_length_offset		0.0			any non-negative real number
-traverse_rate			199.0		any positive real number
+traverse_rate			300.0		any positive real number
