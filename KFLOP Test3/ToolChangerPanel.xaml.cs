@@ -80,6 +80,7 @@ namespace KFLOP_Test3
                 tempZ = cZ;
             }
             KMx.CoordMotion.StraightFeed(2.0 ,cX, cY, tempZ, cA, cB, cC, 0, 0);
+            KMx.CoordMotion.FlushSegments();
   //          KMx.CoordMotion.WaitForMoveXYZABCFinished();
             // rotate the carousel to tool number XX
             // enable and zero Spindle

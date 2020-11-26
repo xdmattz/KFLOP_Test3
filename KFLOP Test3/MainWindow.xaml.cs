@@ -662,10 +662,15 @@ namespace KFLOP_Test3
         #region Motion Callback Handlers
         private void StraightMotionHandler(double FR, double x, double y, double z, int seq, int ID)
         {
-            // do I need the pinvoke here?
-            tbSFCB.Text = string.Format("{0:F2} {1:F2} {2:F2} {3:F2} {4} {5}", FR, x, y, z, seq, ID);
-        }
+            Dispatcher.BeginInvoke(new System.Threading.ThreadStart(() => StraightMotionHandler2(FR, x, y, z, seq, ID)));
 
+            // do I need the pinvoke here?
+        }
+        private void StraightMotionHandler2(double FR, double x, double y, double z, int seq, int ID)
+        {
+            tbSFCB.Text = string.Format("{0:F2} {1:F2} {2:F2} {3:F2} {4} {5}", FR, x, y, z, seq, ID);
+
+        }
         #endregion
 
         private void AddHandlers()
