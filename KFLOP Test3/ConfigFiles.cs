@@ -27,11 +27,15 @@ namespace KFLOP_Test3
         public string EMCVarsFile_inch { get; set; } // the EMDVars file all in inches
         public string EMCSetupFile { get; set; }    // the in KMCNC this is the default.set file  
         // 
-        public string ToolTable { get; set; }
-        public string ToolFile { get; set; }        
-        public string ToolFile_mm { get; set; } // tool file 
-        public string ToolFile_inch { get; set; }
+        public string ToolTable { get; set; } // standard EMC tool table - current copy of inch or metric
+        public string ToolTable_mm { get; set; } // tool table in mm
+        public string ToolTable_inch { get; set; } // tool table in inches
+        public string ToolFile { get; set; }  // Fusion 360 (json) tool file
+        public string ToolFilePath { get; set; } // path to the ToolFile
+        public string ToolChangeParams { get; set; } // json file with the tool changer settings
+
         public string MotionParams { get; set; }
+        
         // KFLOP C Programs - C programs to run in each thread
         public string KThread1 { get; set; }    // the main thread - always running
         public string KThread2 { get; set; }    // the secondary thread - commands from this program
@@ -47,7 +51,7 @@ namespace KFLOP_Test3
         public string GCodePath { get; set; }   // the G Code file path name
         public string MDIFile { get; set; }
         // Configuration files 
-        public string ConfigPath { get; set; }  
+        public string ConfigPath { get; set; }  // the path for all the config files 
         public string ThisFile { get; set; }    // the name of the configuration file 
 
 

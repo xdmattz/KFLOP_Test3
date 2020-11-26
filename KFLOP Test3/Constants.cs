@@ -60,6 +60,7 @@ namespace KFLOP_Test3
         public const int SB_PWR_MODULE_OK   = 9;
         public const int SB_AXIS_OK         = 10;
 
+        
         public const int SB_WARNING_STATUS_MASK = 0x0000f000;
         public const int SB_OIL_OK          = 11;
         public const int SB_HOME            = 12;
@@ -83,7 +84,22 @@ namespace KFLOP_Test3
         public const int SB_SPINDLE_PID     = 26;   // Spindle mode = PID when set
         public const int SB_SPINDLE_ON      = 27;
         public const int SB_SPINDLE_CW      = 28;
-        public const int SB_SPINDLE_CCW     = 29; 
+        public const int SB_SPINDLE_CCW     = 29;
+
+        // P_TLUX_STATUS bit definitions
+        // Tool Changer Status Query 
+        // Current state of the tool changer
+        // 16 LSBs contain the status of the tool changer
+        //      |         Fault Bits         |  Clamp Relays   |     ARM Bits      | Carousel Bits         |
+        // | NC | Timeout | ESTOP | 24V | AC | UnClamp | Clamp | Arm Out |  ARM In | Car Motion | Tool Pos |
+        // | 15 |    14   |  13   |  12 | 11 |    10   |   9   |    8    |    7    |     6      |  5 - 0   | 
+        public const int TLAUX_ERROR_MASK = 0x7800;
+        public const int TLAUX_TOOL_MASK = 0x003f;
+        public const int TLAUX_ARM_IN = 7;
+        public const int TLAUX_ARM_OUT = 8;
+        public const int TLAUX_CLAMP = 9;
+        public const int TLAUX_UNCLAMP = 10;
+
     }
 
     class AXConst

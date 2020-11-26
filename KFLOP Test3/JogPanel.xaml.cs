@@ -39,7 +39,7 @@ namespace KFLOP_Test3
         public JogPanel(ref KM_Controller X)
         {
             InitializeComponent();
-            KMx = X;
+            KMx = X;    // point to the KM controller - this exposes all the KFLOP .net library functions
         }
 
 

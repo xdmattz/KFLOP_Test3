@@ -115,6 +115,7 @@
       <DependentUpon>DROBox.xaml</DependentUpon>
     </Compile>
     <Compile Include="Fixtuers.cs" />
+    <Compile Include="FusionTools.cs" />
     <Compile Include="HiLight_Lines.cs" />
     <Compile Include="LED_Indicator.xaml.cs">
       <DependentUpon>LED_Indicator.xaml</DependentUpon>
@@ -144,6 +145,14 @@
     </Compile>
     <Compile Include="StatusPanel.xaml.cs">
       <DependentUpon>StatusPanel.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="ToolChangeParameters.cs" />
+    <Compile Include="ToolChangeParams.cs" />
+    <Compile Include="ToolChangerPanel.xaml.cs">
+      <DependentUpon>ToolChangerPanel.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="ToolTablePanel.xaml.cs">
+      <DependentUpon>ToolTablePanel.xaml</DependentUpon>
     </Compile>
     <Page Include="ButtonGrid.xaml">
       <SubType>Designer</SubType>
@@ -202,6 +211,14 @@
       <Generator>MSBuild:Compile</Generator>
     </Page>
     <Page Include="StatusPanel.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="ToolChangerPanel.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="ToolTablePanel.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>

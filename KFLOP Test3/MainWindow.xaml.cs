@@ -104,6 +104,7 @@ namespace KFLOP_Test3
 
         static KMotion_dotNet.KM_Controller KM; // this is the controller instance!
         static MotionParams_Copy Xparam;
+        static ToolChangeParams TCParam;
         // static ConfigFiles CFiles;
         ConfigFiles CFiles;
 
@@ -133,6 +134,8 @@ namespace KFLOP_Test3
         JogPanel JogPanel1;
         StatusPanel StatusPanel1;
         OffsetPanel OffsetPanel1;
+        ToolChangerPanel ToolChangerPanel1;
+        ToolTablePanel ToolTablePanel1;
 
         // more tab items here...
 
@@ -189,7 +192,9 @@ namespace KFLOP_Test3
             // get the configuration file names
             CFiles = new ConfigFiles();
             OpenConfig(ref CFiles);
-
+            // get the tool changer parameters
+            TCParam = new ToolChangeParams();
+            ToolChangerFiles(ref CFiles, ref TCParam);
             // Initialize the GCode Interpreter
             GetInterpVars();    // load the emcvars and tool files
             // copy of the motion parameters that the JSON reader can use.
@@ -241,7 +246,7 @@ namespace KFLOP_Test3
             // The Jog Panel
             JogPanel1 = new JogPanel(ref KM);
             var Tab1 = new TabItem();
-            Tab1.Name = "tabItemContent";
+            Tab1.Name = "tabItemContent1";
             Tab1.Header = "Jog";
             Tab1.Content = JogPanel1;
             tcMainTab.Items.Add(Tab1);
@@ -249,7 +254,7 @@ namespace KFLOP_Test3
             // The Status Panel
             StatusPanel1 = new StatusPanel(ref KM);
             var Tab2 = new TabItem();
-            Tab2.Name = "tabItemContent1";
+            Tab2.Name = "tabItemContent2";
             Tab2.Header = "Status";
             Tab2.Content = StatusPanel1;
             tcMainTab.Items.Add(Tab2);
@@ -257,12 +262,28 @@ namespace KFLOP_Test3
             // the Work Offset Panel
             OffsetPanel1 = new OffsetPanel(ref KM);
             var Tab3 = new TabItem();
-            Tab3.Name = "tabItemContent2";
+            Tab3.Name = "tabItemContent3";
             Tab3.Header = "Work Offsets";
             Tab3.Content = OffsetPanel1;
             tcMainTab.Items.Add(Tab3);
             OffsetPanel1.InitG28(fixG28);
             OffsetPanel1.InitG30(fixG30);
+
+            // Tool Change Panel
+            ToolChangerPanel1 = new ToolChangerPanel(ref KM);
+            var Tab4 = new TabItem();
+            Tab4.Name = "tabItemContent4";
+            Tab4.Header = "Tool Changer";
+            Tab4.Content = ToolChangerPanel1;
+            tcMainTab.Items.Add(Tab4);
+
+            // Tool Table Panel
+            ToolTablePanel1 = new ToolTablePanel(ref KM);
+            var Tab5 = new TabItem();
+            Tab5.Name = "tabItemContent4";
+            Tab5.Header = "Tool Table";
+            Tab5.Content = ToolTablePanel1;
+            tcMainTab.Items.Add(Tab5);
 
 
             // Probing tab panel
@@ -415,7 +436,33 @@ namespace KFLOP_Test3
 
         public void Console_SendMessage(string msg)
         {
-            KM.WriteLineReadLine(msg);  // send the message to KFLOP!
+            // copied this from SimpleFormsCS example works great!
+            // this is a good example of how to use the WaitToken
+            var result = KM.WaitToken(1000);
+            if(result == KMOTION_TOKEN.KMOTION_LOCKED)
+            {
+                KM.WriteLineWithEcho(msg);
+                while(true)
+                {
+                    var status = KM.CheckIsReady();
+                    if(status == KMOTION_CHECK_READY.READY)
+                    {
+                        KM.ReleaseToken();
+                        break;
+                    }
+                    if((status == KMOTION_CHECK_READY.TIMEOUT) || (status == KMOTION_CHECK_READY.ERROR))
+                    {
+                        KM.ReleaseToken();
+                        MessageBox.Show("Console Response Error!");
+                        break;
+                    }
+                    Thread.Sleep(10);
+                }
+            }
+            else
+            {
+                MessageBox.Show("Unable to Send Command to KFLOP!");
+            }
         }
 
 
@@ -612,6 +659,15 @@ namespace KFLOP_Test3
         }
         #endregion
 
+        #region Motion Callback Handlers
+        private void StraightMotionHandler(double FR, double x, double y, double z, int seq, int ID)
+        {
+            // do I need the pinvoke here?
+            tbSFCB.Text = string.Format("{0:F2} {1:F2} {2:F2} {3:F2} {4} {5}", FR, x, y, z, seq, ID);
+        }
+
+        #endregion
+
         private void AddHandlers()
         {
             // set the callback for various functions
@@ -634,6 +690,8 @@ namespace KFLOP_Test3
 
             // Call backs for motion
             // add the motion callbacks here for 3D plotting of paths
+            KM.CoordMotion.CoordMotionStraightFeed += new KM_CoordMotionStraightFeedHandler(StraightMotionHandler);
+
 
 
         }
@@ -873,7 +931,7 @@ namespace KFLOP_Test3
             }
             // Get Ablosule Machine Coordinates
             double x = 0, y = 0, z = 0, a = 0, b = 0, c = 0;
-            KM.CoordMotion.UpdateCurrentPositionsABS(ref x, ref y, ref z, ref a, ref b, ref c, false);
+            KM.CoordMotion.UpdateCurrentPositionsABS(ref x, ref y, ref z, ref a, ref b, ref c, true); // don't know whether true or false on snap is prefered
 
 
             // Machine Coordinates
@@ -1483,6 +1541,30 @@ namespace KFLOP_Test3
         //    KM.CoordMotion.Interpreter.ReadCurMachinePosition(ref Stopped_X, ref Stopped_Y, ref Stopped_Z, ref Stopped_A, ref Stopped_B, ref Stopped_C);
         //}
 
+        // get tool changer files
+        private void ToolChangerFiles(ref ConfigFiles cf, ref ToolChangeParams tp)
+        {
+            // load the tool changer files
+            try
+            {
+                string CombinedPath = GetPathFile(cf.ConfigPath, cf.ToolChangeParams);
+                // MessageBox.Show(CombinedPath);
+
+                if (System.IO.File.Exists(CombinedPath) == true)
+                {
+                    JsonSerializer Jser = new JsonSerializer();
+                    StreamReader sr = new StreamReader(CombinedPath);
+                    JsonReader Jreader = new JsonTextReader(sr);
+                    tp = Jser.Deserialize<ToolChangeParams>(Jreader);
+                    sr.Close();
+                }
+            }
+            catch
+            {
+                MessageBox.Show(cf.ToolChangeParams, "TLAUX Parameters Error!");
+            }
+        }
+
         private void btnHalt_Click(object sender, RoutedEventArgs e)
         {
             KM.CoordMotion.Interpreter.Halt();
@@ -2037,6 +2119,15 @@ namespace KFLOP_Test3
 
         }
         #endregion
+
+        #region Tool Changer Methods
+        // should all these all be in the ToolChangerPanel?
+
+        // get a tool from the carousel tool
+
+        // put a tool back in the carousel
+
+        #endregion - end of Tool Changer
 
     }
 }

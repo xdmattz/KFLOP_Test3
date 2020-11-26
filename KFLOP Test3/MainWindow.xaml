@@ -32,7 +32,7 @@
         <Label Content="" Margin="0,109,213,0" VerticalAlignment="Top" HorizontalAlignment="Right" FontSize="36" Width="44"/>
 
 
-        <avalonEdit:TextEditor x:Name="GCodeView" FontFamily="Consolas" FontSize="12" IsReadOnly="True" Margin="34,69,558,453">
+        <avalonEdit:TextEditor x:Name="GCodeView" FontFamily="Consolas" FontSize="12" IsReadOnly="True" Margin="34,69,527,453">
 
         </avalonEdit:TextEditor>
         <Button x:Name="btnProgHalt" Content="Prog Halt" HorizontalAlignment="Left" Margin="517,10,0,0" VerticalAlignment="Top" Width="74" Click="btnProgHalt_Click"/>
@@ -43,12 +43,12 @@
         <CheckBox x:Name="cbSimulate" Content="Simulate" HorizontalAlignment="Left" Margin="705,294,0,0" VerticalAlignment="Top" RenderTransformOrigin="2.595,0.438"/>
         <TextBlock x:Name="tbExTime" HorizontalAlignment="Left" Margin="891,505,0,0" TextWrapping="Wrap" Text="TextBlock" VerticalAlignment="Top" RenderTransformOrigin="0.76,-0.844"/>
         <Button x:Name="btnConsole" Content="Console" HorizontalAlignment="Left" Margin="331,40,0,0" VerticalAlignment="Top" Width="75" Click="btnConsole_Click"/>
-        <TabControl x:Name="tcMainTab" HorizontalAlignment="Left" Height="373" Margin="34,332,0,0" VerticalAlignment="Top" Width="569">
+        <TabControl x:Name="tcMainTab" HorizontalAlignment="Left" Height="370" Margin="34,332,0,0" VerticalAlignment="Top" Width="600">
             <!-- fill the tabs in from the "Code Behind" -->
         </TabControl>
         <Button Content="Thread3" HorizontalAlignment="Left" Margin="612,10,0,0" VerticalAlignment="Top" Width="75" Click="Button_Click"/>
-        <Label Content="Tick Time" HorizontalAlignment="Left" Margin="891,456,0,0" VerticalAlignment="Top"/>
-        <TextBox x:Name="tbTickTime" HorizontalAlignment="Left" Height="23" Margin="955,458,0,0" TextWrapping="Wrap" Text="0.000" VerticalAlignment="Top" Width="120"/>
+        <Label Content="Tick Time" HorizontalAlignment="Left" Margin="888,477,0,0" VerticalAlignment="Top"/>
+        <TextBox x:Name="tbTickTime" HorizontalAlignment="Left" Height="23" Margin="953,480,0,0" TextWrapping="Wrap" Text="0.000" VerticalAlignment="Top" Width="120"/>
         <TextBlock x:Name="tbStatus1" HorizontalAlignment="Left" Margin="891,540,0,0" TextWrapping="Wrap" Text="0" VerticalAlignment="Top" Width="74"/>
         <Rectangle Fill="#FFF4F4F5" HorizontalAlignment="Left" Height="117" Margin="1041,329,0,0" Stroke="Black" VerticalAlignment="Top" Width="80"/>
         <Label Content="Active Threads" HorizontalAlignment="Left" Margin="1041,329,0,0" VerticalAlignment="Top" FontSize="10" Width="80"/>
@@ -109,6 +109,8 @@
             <Label Content="Feed" Grid.Column="2" Grid.Row="3"/>
             <local:LogSliderV x:Name="slFeedOverride" Grid.Column="2" Grid.Row="4"/>
         </Grid>
+        <Label Content="straight CB" HorizontalAlignment="Left" Margin="690,446,0,0" VerticalAlignment="Top"/>
+        <TextBox x:Name="tbSFCB" HorizontalAlignment="Left" Height="24" Margin="763,446,0,0" TextWrapping="Wrap" Text="TextBox" VerticalAlignment="Top" Width="248"/>
 
 
     </Grid>
