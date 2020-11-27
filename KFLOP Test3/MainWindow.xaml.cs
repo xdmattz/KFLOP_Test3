@@ -2151,13 +2151,13 @@ namespace KFLOP_Test3
                 pos = 1000;
                 tbSPPos.Text = "1000";
             }
-          //  SpindleAxis.JogVelocity = 1400;
-          //  SpindleAxis.StartMoveTo(pos);
+            SpindleAxis.Velocity = 1400;
+            SpindleAxis.StartMoveTo(pos);
 
             // if the above doesn't work try this...
-            string spmsg;
-            spmsg = string.Format("MoveAtVel7={0} {1}", pos, 1400.0);
-            KM.WriteLine(spmsg);
+            // string spmsg;
+            // spmsg = string.Format("MoveAtVel7={0} {1}", pos, 1400.0);
+            // KM.WriteLine(spmsg);
 
 
         }
