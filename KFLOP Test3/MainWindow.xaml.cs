@@ -1011,6 +1011,7 @@ namespace KFLOP_Test3
             // update the Spindle RPM
             tbSpindleSpeedRPM.Text = KStat.PC_comm[CSConst.P_RPM].ToString();
             tbSpindleEncoder.Text = String.Format("{0:F}", SpindleAxis.GetActualPositionCounts());
+            SPMotion.Content = SpindleAxis.MotionComplete().ToString();
 
             // check the current work offset and set the button color
             // see if this will reflect the GCode setting...
@@ -2157,6 +2158,8 @@ namespace KFLOP_Test3
             string spmsg;
             spmsg = string.Format("MoveAtVel7={0} {1}", pos, 1400.0);
             KM.WriteLine(spmsg);
+
+
         }
     }
 }
