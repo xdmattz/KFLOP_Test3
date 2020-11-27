@@ -70,12 +70,15 @@ namespace KFLOP_Test3
         public const int SB_Z_LIMIT         = 15;
 
         // Bit definitions of P_HOME_STATUS 
-        public const int SB_HOME_STATUS_MASK = 0x00870000;
+        public const int SB_HOME_STATUS_MASK = 0x00C70000;
         public const int SB_X_HOME          = 16;
         public const int SB_Y_HOME          = 17;
         public const int SB_Z_HOME          = 18;
         public const int SB_A_HOME          = 19;
         // blank space for added axis if necessary
+        public const int SB_B_HOME          = 20;
+        public const int SB_C_HOME          = 21;
+        public const int SB_TLAUX_HOME      = 22;
         public const int SB_SPIN_HOME       = 23;
         // Spindle Specific flags
         public const int SB_SPINDLE_STATUS_MASK = 0x3f000000;
@@ -310,9 +313,9 @@ namespace KFLOP_Test3
         public const int T2_TOOL_RELA = 0x0d02;
         public const int T2_TOOL_REL = 0x0d03;
         public const int T2_TOOL_GRAB = 0x0d04;
-        public const int T2_TO0L_ARM_IN = 0x0d05;
-        public const int T2_TO0L_ARM_OUT = 0x0d06;
-        public const int T2_TO0L_HOME = 0x0d0f;
+        public const int T2_TOOL_ARM_IN = 0x0d05;
+        public const int T2_TOOL_ARM_OUT = 0x0d06;
+        public const int T2_TOOL_HOME = 0x0d0f;
 
         // Spindle commands - command byte 0x0500
         public const int T2_SPINDLE = 0x0500;

@@ -115,6 +115,14 @@ namespace KFLOP_Test3
             {
                 btnHomeZ.Background = new SolidColorBrush(Colors.LightGreen);
             }
+            if (B.BitIsSet(status, PVConst.SB_TLAUX_HOME))
+            {
+                btnHomeTC.Background = new SolidColorBrush(Colors.Red);
+            }
+            else
+            {
+                btnHomeTC.Background = new SolidColorBrush(Colors.LightGreen);
+            }
             if (B.BitIsSet(status, PVConst.SB_SPIN_HOME))
             {
                 btnHomeS.Background = new SolidColorBrush(Colors.Red);
@@ -123,15 +131,6 @@ namespace KFLOP_Test3
             {
                 btnHomeS.Background = new SolidColorBrush(Colors.LightGreen);
             }
-            if (B.BitIsSet(status, PVConst.SB_TLAUX_OK))
-            {
-                btnHomeTC.Background = new SolidColorBrush(Colors.Red);
-            }
-            else
-            {
-                btnHomeTC.Background = new SolidColorBrush(Colors.LightGreen);
-            }
-
         }
 
         public void CheckLimit(ref KM_MainStatus MStat)
@@ -260,12 +259,13 @@ namespace KFLOP_Test3
 
         private void btnHomeTC_Click(object sender, RoutedEventArgs e)
         {
-            Homing(T2Const.T2_TO0L_HOME);
+            Homing(T2Const.T2_TOOL_HOME);
         }
 
         private void btnHomeAll_Click(object sender, RoutedEventArgs e)
         {
             Homing(T2Const.T2_HOME_ALL);
+            Homing(T2Const.T2_TOOL_HOME);
         }
 
 

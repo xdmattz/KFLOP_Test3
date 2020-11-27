@@ -362,7 +362,9 @@ namespace KFLOP_Test3
                         //   This should include managing the GCode viewer - KMotionCNC manages
                         //   the viewer separatly in a Mutex block 
                         UpdateUI(ref MainStatus);
+
                         //
+                        ToolChangerPanel1.TLAUX_Status(ref MainStatus);
                         // KMotionCNC also services a JoyStick 
                         //
                     }
