@@ -124,6 +124,8 @@ namespace KFLOP_Test3
         public const double MAX_SPINDLE_RPM = 6000;
         public const double MIN_SPINDLE_RPM = 0;
 
+        public const double SPINDLE_HOME_RATE = 1500;
+
     }
 
     // constants for the IO locations - see also BP308_IO.h in the KFLOP C code.

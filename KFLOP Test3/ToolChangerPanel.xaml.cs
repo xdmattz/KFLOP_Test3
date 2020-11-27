@@ -32,19 +32,21 @@ namespace KFLOP_Test3
 
         // a copy of the KM controller 
         private KM_Controller KMx { get; set; }
+        private KM_Axis SPx { get; set; }
         private BitOps B;
 
-        public ToolChangerPanel(ref KM_Controller X)
+        public ToolChangerPanel(ref KM_Controller X, ref KM_Axis SP)
         {
             InitializeComponent();
             KMx = X;    // point to the KM controller - this exposes all the KFLOP .net library functions
+            SPx = SP;   // point to the Spindle Axis for fine control
             B = new BitOps();
             ledClamp.Set_State(LED_State.Off);
             ledClamp.Set_Label("Tool Clamp");
 
         }
 
-        
+
         public void TLAUX_Status(ref KM_MainStatus KStat)
         {
             int TStatus = KMx.GetUserData(PVConst.P_TLAUX_STATUS);
@@ -52,7 +54,7 @@ namespace KFLOP_Test3
             TC_Clamped = B.BitIsSet(TStatus, PVConst.TLAUX_CLAMP);
             Carousel_Position = TStatus & PVConst.TLAUX_TOOL_MASK;
 
-            if(TC_Clamped)
+            if (TC_Clamped)
             { ledClamp.Set_State(LED_State.Off); }
             else { ledClamp.Set_State(LED_State.On_Blue); }
 
@@ -63,6 +65,8 @@ namespace KFLOP_Test3
 
             SpindleEnabled = B.BitIsSet(PVStatus, PVConst.SB_SPINDLE_ON);
             SpindlePID = B.BitIsSet(PVStatus, PVConst.SB_SPINDLE_PID);
+
+            tbSPCPU.Text = String.Format("{0:F}", SPx.CPU);
 
 
 
@@ -252,12 +256,28 @@ namespace KFLOP_Test3
         private void btnSpindle_Click(object sender, RoutedEventArgs e)
         {
             // send the spindle to XXXX
-            var SP = KMx.GetAxis(AXConst.SPINDLE_AXIS, "Spindle");
-            double SpPosition;
-            if (double.TryParse(tbZ4.Text, out SpPosition) == false)
+            // check that the axis is enabled and in PID mode
+            if (SpindleEnabled && SpindlePID)
             {
-                SpPosition = 0;
+                double SpPosition;
+                if (double.TryParse(tbSPtoPos.Text, out SpPosition) == false)
+                {
+                    SpPosition = 0;
+                    tbSPtoPos.Text = "0.0";
+                }
+                double JogRate;
+                if (double.TryParse(tbSPJogRate.Text, out JogRate) == false)
+                {
+                    JogRate = AXConst.SPINDLE_HOME_RATE;
+                    tbSPJogRate.Text = JogRate.ToString();
+                }
+                SPx.StartMoveTo(SpPosition);
             }
+            else
+            {
+                MessageBox.Show("Spindle not Enabled!");
+            }
+
             // Move to the spindle position
             // SP.StartMoveTo(SpPosition);
         }

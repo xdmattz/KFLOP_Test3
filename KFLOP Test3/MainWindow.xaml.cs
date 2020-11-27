@@ -103,6 +103,7 @@ namespace KFLOP_Test3
 
 
         static KMotion_dotNet.KM_Controller KM; // this is the controller instance!
+        static KMotion_dotNet.KM_Axis SpindleAxis;
         static MotionParams_Copy Xparam;
         static ToolChangeParams TCParam;
         // static ConfigFiles CFiles;
@@ -176,6 +177,9 @@ namespace KFLOP_Test3
                 System.Windows.Application.Current.Shutdown();  // and shut down the application...
                 return;
             }
+
+            // get the spindle axis
+            SpindleAxis = KM.GetAxis(AXConst.SPINDLE_AXIS, "Spindle");
 
             // Initialize the global variables
             PVars = new int[14];
@@ -270,7 +274,7 @@ namespace KFLOP_Test3
             OffsetPanel1.InitG30(fixG30);
 
             // Tool Change Panel
-            ToolChangerPanel1 = new ToolChangerPanel(ref KM);
+            ToolChangerPanel1 = new ToolChangerPanel(ref KM, ref SpindleAxis);
             var Tab4 = new TabItem();
             Tab4.Name = "tabItemContent4";
             Tab4.Header = "Tool Changer";
@@ -1006,6 +1010,7 @@ namespace KFLOP_Test3
             { cbSpindleEnable.IsChecked = false; }
             // update the Spindle RPM
             tbSpindleSpeedRPM.Text = KStat.PC_comm[CSConst.P_RPM].ToString();
+            tbSpindleEncoder.Text = String.Format("{0:F}", SpindleAxis.GetActualPositionCounts());
 
             // check the current work offset and set the button color
             // see if this will reflect the GCode setting...

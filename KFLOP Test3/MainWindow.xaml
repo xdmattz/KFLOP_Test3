@@ -61,6 +61,8 @@
         <CheckBox x:Name="cbT7" Content="Thread7" HorizontalAlignment="Left" Margin="1047,425,0,0" VerticalAlignment="Top" FontSize="10" Width="66" IsEnabled="False"/>
         <TextBox x:Name="tbSpindleSpeedSet" HorizontalAlignment="Left" Height="24" Margin="880,634,0,0" TextWrapping="Wrap" Text="1000" VerticalAlignment="Top" Width="68" RenderTransformOrigin="1.21,0.083" PreviewKeyDown="tbSpindleSpeedSet_PreviewKeyDown"/>
         <Label Content="Spindle Speed (RPM)" HorizontalAlignment="Left" Margin="834,607,0,0" VerticalAlignment="Top"/>
+        <TextBox x:Name="tbSpindleEncoder" HorizontalAlignment="Left" Height="24" Margin="960,578,0,0" TextWrapping="Wrap" Text="1000" VerticalAlignment="Top" Width="68" RenderTransformOrigin="1.21,0.083"/>
+        <Label Content="Spindle Encoder" HorizontalAlignment="Left" Margin="852,576,0,0" VerticalAlignment="Top" RenderTransformOrigin="0.508,-1.135"/>
         <CheckBox x:Name="cbSpindleEnable" Content="" HorizontalAlignment="Left" Margin="1036,609,0,0" VerticalAlignment="Top" RenderTransformOrigin="-2.097,2.844"/>
         <Button x:Name="btnSpindleCW" Content="Start CW" HorizontalAlignment="Left" Margin="960,634,0,0" VerticalAlignment="Top" Width="68" Click="btnSpindleCW_Click"/>
         <Button x:Name="btnSpindleCCW" Content="Start CCW" HorizontalAlignment="Left" Margin="960,656,0,0" VerticalAlignment="Top" Width="68" Click="btnSpindleCCW_Click"/>

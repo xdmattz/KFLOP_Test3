@@ -75,7 +75,7 @@
             <!-- Row of coordinates-->
             <StackPanel Grid.Row="4" Grid.Column="1" Orientation="Horizontal">
                 <Label Content="Rate:"/>
-                <TextBox x:Name="tbX4" Text="0.0" HorizontalAlignment="Stretch"/>
+                <TextBox x:Name="tbSPJogRate" Text="0.0" HorizontalAlignment="Stretch"/>
             </StackPanel>
             <StackPanel Grid.Row="4" Grid.Column="2" Orientation="Horizontal">
                 <Label Content="C SP:"/>
@@ -83,7 +83,7 @@
             </StackPanel>
             <StackPanel Grid.Row="4" Grid.Column="3" Orientation="Horizontal">
                 <Label Content="SP:"/>
-                <TextBox x:Name="tbZ4" Text="0.000" HorizontalAlignment="Stretch"/>
+                <TextBox x:Name="tbSPtoPos" Text="0.000" HorizontalAlignment="Stretch"/>
             </StackPanel>
             <Label  Content="Start Pos" Grid.Row="1" Grid.Column="0"/>
             <Label  Content="Move1" Grid.Row="2" Grid.Column="0"/>
@@ -101,5 +101,6 @@
         <TextBox x:Name="tbTLAUXStatus" HorizontalAlignment="Left" Height="23" Margin="276,307,0,0" TextWrapping="Wrap" Text="TextBox" VerticalAlignment="Top" Width="120"/>
         <Label Content="TLAUX Status:" HorizontalAlignment="Left" Margin="188,304,0,0" VerticalAlignment="Top"/>
         <local:LED_Indicator x:Name="ledClamp" Margin="444,124,10,191" />
+        <TextBlock x:Name="tbSPCPU" Text="xxxx" HorizontalAlignment="Left" Margin="276,288,0,0" TextWrapping="Wrap" VerticalAlignment="Top"/>
     </Grid>
 </UserControl>
