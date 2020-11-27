@@ -264,8 +264,10 @@ namespace KFLOP_Test3
 
         private void btnHomeAll_Click(object sender, RoutedEventArgs e)
         {
-            Homing(T2Const.T2_HOME_ALL);
             Homing(T2Const.T2_TOOL_HOME);
+            System.Threading.Thread.Sleep(50);
+            Homing(T2Const.T2_HOME_ALL);
+            
         }
 
 
