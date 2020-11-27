@@ -271,6 +271,7 @@ namespace KFLOP_Test3
                     JogRate = AXConst.SPINDLE_HOME_RATE;
                     tbSPJogRate.Text = JogRate.ToString();
                 }
+                MessageBox.Show(String.Format("SP Move at {0} to {1}", JogRate, SpPosition));
                 SPx.StartMoveTo(SpPosition);
             }
             else

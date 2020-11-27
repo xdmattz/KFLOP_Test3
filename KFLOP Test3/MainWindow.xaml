@@ -113,7 +113,8 @@
         </Grid>
         <Label Content="straight CB" HorizontalAlignment="Left" Margin="690,446,0,0" VerticalAlignment="Top"/>
         <TextBox x:Name="tbSFCB" HorizontalAlignment="Left" Height="24" Margin="763,446,0,0" TextWrapping="Wrap" Text="TextBox" VerticalAlignment="Top" Width="248"/>
-
+        <TextBox x:Name="tbSPPos" Text="1234" Margin="861,729,234,31" />
+        <Button x:Name="btnSPGoto" Content="SP Goto" HorizontalAlignment="Left" Margin="937,728,0,0" VerticalAlignment="Top" Width="74" Click="btnSPGoto_Click"/>
 
     </Grid>
 </Window>

@@ -2141,5 +2141,22 @@ namespace KFLOP_Test3
 
         #endregion - end of Tool Changer
 
+        private void btnSPGoto_Click(object sender, RoutedEventArgs e)
+        {
+            // get the goto position
+            double pos;
+            if(double.TryParse(tbSPPos.Text, out pos) == false)
+            {
+                pos = 1000;
+                tbSPPos.Text = "1000";
+            }
+          //  SpindleAxis.JogVelocity = 1400;
+          //  SpindleAxis.StartMoveTo(pos);
+
+            // if the above doesn't work try this...
+            string spmsg;
+            spmsg = string.Format("MoveAtVel7={0} {1}", pos, 1400.0);
+            KM.WriteLine(spmsg);
+        }
     }
 }
