@@ -49,7 +49,7 @@ namespace KFLOP_Test3
         public string LastGCode { get; set; }   // the last G Code file that was loaded
         public string Highlight { get; set; }   // G Code Highlighting for Avalon Edit
         public string GCodePath { get; set; }   // the G Code file path name
-        public string MDIFile { get; set; }
+        public string MDIFile { get; set; }     // don't remember what this was for....
         // Configuration files 
         public string ConfigPath { get; set; }  // the path for all the config files 
         public string ThisFile { get; set; }    // the name of the configuration file 

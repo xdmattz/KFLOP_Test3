@@ -16,42 +16,43 @@
         <TextBox HorizontalAlignment="Left" Height="23" Margin="212,69,0,0" TextWrapping="Wrap" Text="TextBox" VerticalAlignment="Top" Width="75"/>
         <Label Content="Current Tool in the Spindle" HorizontalAlignment="Left" Margin="205,38,0,0" VerticalAlignment="Top"/>
 
-        <Grid Margin="32,173,228,52">
+        <Grid Margin="32,162,228,41">
             <Grid.RowDefinitions>
                 <RowDefinition Height="*"/>
                 <RowDefinition Height="*"/>
                 <RowDefinition Height="*"/>
                 <RowDefinition Height="*"/>
                 <RowDefinition Height="*"/>
-                
+                <RowDefinition Height="*"/>
             </Grid.RowDefinitions>
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="*"/>
-                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="0.5*"/>
                 <ColumnDefinition Width="*"/>
                 <ColumnDefinition Width="*"/>
             </Grid.ColumnDefinitions>
             <!-- Row of coordinates-->
-            <StackPanel Grid.Row="1" Grid.Column="1" Orientation="Horizontal">
-                <Label Content="X:"/>
-                <TextBox x:Name="tbX1" Text="0.000" HorizontalAlignment="Stretch"/>
+            <StackPanel Grid.Row="1" Grid.Column="0" Orientation="Horizontal">
+                <Label Content="H1:"/>
+                <TextBox x:Name="tbTCH1" Text="0.000" HorizontalAlignment="Stretch"/>
             </StackPanel>
+            
             <StackPanel Grid.Row="1" Grid.Column="2" Orientation="Horizontal">
-                <Label Content="Y:"/>
-                <TextBox x:Name="tbY1" Text="0.000" HorizontalAlignment="Stretch"/>
+                <Label Content="X:"/>
+                <TextBox x:Name="tbTSX" Text="0.000" HorizontalAlignment="Stretch"/>
             </StackPanel>
             <StackPanel Grid.Row="1" Grid.Column="3" Orientation="Horizontal">
                 <Label Content="Z:"/>
                 <TextBox x:Name="tbZ1" Text="0.000" HorizontalAlignment="Stretch"/>
             </StackPanel>
             <!-- Row of coordinates-->
-            <StackPanel Grid.Row="2" Grid.Column="1" Orientation="Horizontal">
-                <Label Content="Rate:"/>
-                <TextBox x:Name="tbX2" Text="0.000" HorizontalAlignment="Stretch"/>
+            <StackPanel Grid.Row="2" Grid.Column="0" Orientation="Horizontal">
+                <Label Content="H2:"/>
+                <TextBox x:Name="tbTCH2" Text="0.000" HorizontalAlignment="Stretch"/>
             </StackPanel>
             <StackPanel Grid.Row="2" Grid.Column="2" Orientation="Horizontal">
                 <Label Content="Y:"/>
-                <TextBox x:Name="tbY2" Text="0.000" HorizontalAlignment="Stretch"/>
+                <TextBox x:Name="tbTSY" Text="0.000" HorizontalAlignment="Stretch"/>
             </StackPanel>
             <StackPanel Grid.Row="2" Grid.Column="3" Orientation="Horizontal">
                 <Label Content="Z:"/>
@@ -59,13 +60,13 @@
             </StackPanel>
 
             <!-- Row of coordinates-->
-            <StackPanel Grid.Row="3" Grid.Column="1" Orientation="Horizontal">
-                <Label Content="Rate:"/>
-                <TextBox x:Name="tbX3" Text="0.000" HorizontalAlignment="Stretch"/>
+            <StackPanel Grid.Row="3" Grid.Column="0" Orientation="Horizontal">
+                <Label Content="Index:"/>
+                <TextBox x:Name="tbSPIndex" Text="0.000" HorizontalAlignment="Stretch"/>
             </StackPanel>
             <StackPanel Grid.Row="3" Grid.Column="2" Orientation="Horizontal">
-                <Label Content="Y:"/>
-                <TextBox x:Name="tbY3" Text="0.000" HorizontalAlignment="Stretch"/>
+                <Label Content="Z:"/>
+                <TextBox x:Name="tbTSZ" Text="0.000" HorizontalAlignment="Stretch"/>
             </StackPanel>
             <StackPanel Grid.Row="3" Grid.Column="3" Orientation="Horizontal">
                 <Label Content="Z:"/>
@@ -73,22 +74,34 @@
             </StackPanel>
 
             <!-- Row of coordinates-->
-            <StackPanel Grid.Row="4" Grid.Column="1" Orientation="Horizontal">
-                <Label Content="Rate:"/>
-                <TextBox x:Name="tbSPJogRate" Text="0.0" HorizontalAlignment="Stretch"/>
-            </StackPanel>
             <StackPanel Grid.Row="4" Grid.Column="2" Orientation="Horizontal">
-                <Label Content="C SP:"/>
-                <TextBox x:Name="tbY4" Text="0.000" HorizontalAlignment="Stretch"/>
+                <Label Content="Index:"/>
+                <TextBox x:Name="tbTSIndex" Text="0.000" HorizontalAlignment="Stretch"/>
             </StackPanel>
+            <StackPanel Grid.Row="5" Grid.Column="0" Orientation="Horizontal">
+                <Label Content="Rate1:" Height="23" VerticalAlignment="Bottom"/>
+                <TextBox x:Name="tbTSRate1" Text="0.00" HorizontalAlignment="Stretch"/>
+            </StackPanel>
+            <StackPanel Grid.Row="5" Grid.Column="2" Orientation="Horizontal">
+                <Label Content="Rate2:" Height="23" VerticalAlignment="Bottom"/>
+                <TextBox x:Name="tbTSRate2" Text="0.00" HorizontalAlignment="Stretch"/>
+            </StackPanel>            
             <StackPanel Grid.Row="4" Grid.Column="3" Orientation="Horizontal">
                 <Label Content="SP:"/>
                 <TextBox x:Name="tbSPtoPos" Text="0.000" HorizontalAlignment="Stretch"/>
             </StackPanel>
-            <Label  Content="Start Pos" Grid.Row="1" Grid.Column="0"/>
-            <Label  Content="Move1" Grid.Row="2" Grid.Column="0"/>
-            <Label  Content="Move2" Grid.Row="3" Grid.Column="0"/>
-            <Label Content="Spindle" Grid.Row="4" Grid.Column="0" />
+            <StackPanel Grid.Row="5" Grid.Column="3" Orientation="Horizontal">
+                <Label Content="Rate:" Height="23" VerticalAlignment="Bottom"/>
+                <TextBox x:Name="tbSPJogRate" Text="0.00" HorizontalAlignment="Stretch"/>
+            </StackPanel>
+            <Label Content="TC Params" Grid.Row="0" Grid.Column="0" />
+            <Label Content="Rate:" Grid.Row="0" Grid.Column="1" />
+            <Label Content="Tool Setter" Grid.Row="0" Grid.Column="2" />
+
+            <TextBox x:Name="tbTCH1FR" Text="0.00" Grid.Row="1" Grid.Column="1" />
+            <TextBox x:Name="tbTCH2FR" Text="0.00" Grid.Row="2" Grid.Column="1" />
+            <TextBox x:Name="tbSPRate" Text="0.00" Grid.Row="3" Grid.Column="1" />
+
         </Grid>
         <Button x:Name="btnTC_H1" Content="Move to 1 Z" HorizontalAlignment="Left" Margin="350,149,0,0" VerticalAlignment="Top" Width="75" Click="btnTC_H1_Click"/>
         <Button x:Name="btnTC_H2" Content="Move to 2 Z" HorizontalAlignment="Left" Margin="350,176,0,0" VerticalAlignment="Top" Width="75" RenderTransformOrigin="0.483,3.585" Click="btnTC_H2_Click"/>
@@ -101,6 +114,6 @@
         <TextBox x:Name="tbTLAUXStatus" HorizontalAlignment="Left" Height="23" Margin="276,307,0,0" TextWrapping="Wrap" Text="TextBox" VerticalAlignment="Top" Width="120"/>
         <Label Content="TLAUX Status:" HorizontalAlignment="Left" Margin="188,304,0,0" VerticalAlignment="Top"/>
         <local:LED_Indicator x:Name="ledClamp" Margin="444,124,10,191" />
-        <TextBlock x:Name="tbSPCPU" Text="xxxx" HorizontalAlignment="Left" Margin="276,288,0,0" TextWrapping="Wrap" VerticalAlignment="Top"/>
+        <Button x:Name="btnSave" Content="Save" HorizontalAlignment="Left" Margin="48,304,0,0" VerticalAlignment="Top" Width="75" Click="btnSave_Click"/>
     </Grid>
 </UserControl>

@@ -146,7 +146,6 @@
     <Compile Include="StatusPanel.xaml.cs">
       <DependentUpon>StatusPanel.xaml</DependentUpon>
     </Compile>
-    <Compile Include="ToolChangeParameters.cs" />
     <Compile Include="ToolChangeParams.cs" />
     <Compile Include="ToolChangerPanel.xaml.cs">
       <DependentUpon>ToolChangerPanel.xaml</DependentUpon>

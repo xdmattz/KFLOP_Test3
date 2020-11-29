@@ -6,7 +6,8 @@
         xmlns:avalonEdit="http://icsharpcode.net/sharpdevelop/avalonedit"
         xmlns:local="clr-namespace:KFLOP_Test3"
         mc:Ignorable="d"
-        Title="MainWindow" Height="826" Width="1200" Closed="Window_Closed">
+        Title="MainWindow" Height="826" Width="1200" Closed="Window_Closed" >
+    
     <!--  this is a comment -->
     <Grid Height="780" VerticalAlignment="Top" Margin="0,0,-8,0">
         <Grid.ColumnDefinitions>
@@ -119,3 +120,4 @@
 
     </Grid>
 </Window>
+

@@ -105,7 +105,6 @@ namespace KFLOP_Test3
         static KMotion_dotNet.KM_Controller KM; // this is the controller instance!
         static KMotion_dotNet.KM_Axis SpindleAxis;
         static MotionParams_Copy Xparam;
-        static ToolChangeParams TCParam;
         // static ConfigFiles CFiles;
         ConfigFiles CFiles;
 
@@ -138,6 +137,7 @@ namespace KFLOP_Test3
         ToolChangerPanel ToolChangerPanel1;
         ToolTablePanel ToolTablePanel1;
 
+
         // more tab items here...
 
 
@@ -148,6 +148,7 @@ namespace KFLOP_Test3
 
         public MainWindow()
         {
+
             InitializeComponent();
 
             // create an instance of the KM controller - same instance is used in the entire app
@@ -196,9 +197,7 @@ namespace KFLOP_Test3
             // get the configuration file names
             CFiles = new ConfigFiles();
             OpenConfig(ref CFiles);
-            // get the tool changer parameters
-            TCParam = new ToolChangeParams();
-            ToolChangerFiles(ref CFiles, ref TCParam);
+
             // Initialize the GCode Interpreter
             GetInterpVars();    // load the emcvars and tool files
             // copy of the motion parameters that the JSON reader can use.
@@ -274,7 +273,8 @@ namespace KFLOP_Test3
             OffsetPanel1.InitG30(fixG30);
 
             // Tool Change Panel
-            ToolChangerPanel1 = new ToolChangerPanel(ref KM, ref SpindleAxis);
+            string LPath = GetPathFile(CFiles.ConfigPath, CFiles.ToolChangeParams);
+            ToolChangerPanel1 = new ToolChangerPanel(ref KM, ref SpindleAxis, LPath);
             var Tab4 = new TabItem();
             Tab4.Name = "tabItemContent4";
             Tab4.Header = "Tool Changer";
@@ -1194,6 +1194,8 @@ namespace KFLOP_Test3
             }
         }
 
+
+
         #region Motion Parameters
         private void OpenMotionParams(ref ConfigFiles cf, ref MotionParams_Copy Xp)
         {
@@ -1229,7 +1231,17 @@ namespace KFLOP_Test3
                 JsonSerializer Jser = new JsonSerializer();
                 StreamReader sr = new StreamReader(combinedConfigFile);
                 JsonReader Jreader = new JsonTextReader(sr);
-                cf = Jser.Deserialize<ConfigFiles>(Jreader);
+                try
+                {
+                    cf = Jser.Deserialize<ConfigFiles>(Jreader);
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show($"problem opening the Configuration file '{ex}'");
+                    sr.Close();
+                    MessageBox.Show("Exiting the program");
+                    this.Close(); // exit the program
+                }
                 sr.Close();
             }
         }
@@ -1555,28 +1567,7 @@ namespace KFLOP_Test3
         //}
 
         // get tool changer files
-        private void ToolChangerFiles(ref ConfigFiles cf, ref ToolChangeParams tp)
-        {
-            // load the tool changer files
-            try
-            {
-                string CombinedPath = GetPathFile(cf.ConfigPath, cf.ToolChangeParams);
-                // MessageBox.Show(CombinedPath);
 
-                if (System.IO.File.Exists(CombinedPath) == true)
-                {
-                    JsonSerializer Jser = new JsonSerializer();
-                    StreamReader sr = new StreamReader(CombinedPath);
-                    JsonReader Jreader = new JsonTextReader(sr);
-                    tp = Jser.Deserialize<ToolChangeParams>(Jreader);
-                    sr.Close();
-                }
-            }
-            catch
-            {
-                MessageBox.Show(cf.ToolChangeParams, "TLAUX Parameters Error!");
-            }
-        }
 
         private void btnHalt_Click(object sender, RoutedEventArgs e)
         {
