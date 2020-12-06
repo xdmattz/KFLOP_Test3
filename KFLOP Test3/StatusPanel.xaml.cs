@@ -156,9 +156,14 @@ namespace KFLOP_Test3
 
         public void CheckMachineStatus(ref KM_MainStatus MStat)
         {
-            tbKanIn.Text = string.Format("{0:X8}", MStat.KanalogBitsStateInputs);
-            tbKanOut.Text = string.Format("{0:X8}", MStat.KanalogBitsStateOutputs);
-            tbKonnIO.Text = string.Format("{0:X8}", MStat.VirtualBitsEx0);
+
+            string tempS = "";
+            BinaryString(MStat.KanalogBitsStateInputs, ref tempS);
+            tbKanIn.Text = "   Kan In: " + tempS;
+            BinaryString(MStat.KanalogBitsStateOutputs, ref tempS);
+            tbKanOut.Text = "Kan Out: " + tempS;
+            BinaryString(MStat.VirtualBitsEx0, ref tempS);
+            tbKonnIO.Text = "Konn IO: " + tempS;
 
             if ((MStat.KanalogBitsStateInputs != Prev_KanalogInputs) || (MStat.KanalogBitsStateOutputs != Prev_KanalogOutputs))
             {
@@ -342,30 +347,19 @@ namespace KFLOP_Test3
         }
         #endregion
 
-        private void Button_Click(object sender, RoutedEventArgs e)
+        private void BinaryString(int X, ref string BString)
         {
-            switch (LED_Count)
-            {
-                case 0:
-                    EStop_LED.Set_State(LED_State.On_Red);
-                    LED_Count++;  break;
-                case 1:
-                    EStop_LED.Set_State(LED_State.On_Blue);
-                    LED_Count++; break;
-                case 2:
-                    EStop_LED.Set_State(LED_State.On_Green);
-                    LED_Count++; break;
-                case 3:
-                    EStop_LED.Set_State(LED_State.On_Yellow);
-                    LED_Count++; break;
-                case 4:
-                    EStop_LED.Set_State(LED_State.Off);
-                    LED_Count = 0; break;
-                default: LED_Count = 0; break;
-            }
+            int x0, x1, x2, x3;
+            x0 = X & 0x0f;
+            x1 = (X >> 4) & 0x0f;
+            x2 = (X >> 8) & 0x0f;
+            x3 = (X >> 12) & 0x0f;
 
+            BString = Convert.ToString(x3, 2).PadLeft(4,'0') + " " 
+                + Convert.ToString(x2, 2).PadLeft(4, '0') + " "
+                + Convert.ToString(x1, 2).PadLeft(4, '0') + " "
+                + Convert.ToString(x0, 2).PadLeft(4, '0');
         }
-
 
     }
 }

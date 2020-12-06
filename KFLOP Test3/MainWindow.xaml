@@ -117,6 +117,7 @@
         <TextBox x:Name="tbSPPos" Text="1234" Margin="861,729,234,31" />
         <Button x:Name="btnSPGoto" Content="SP Goto" HorizontalAlignment="Left" Margin="937,728,0,0" VerticalAlignment="Top" Width="74" Click="btnSPGoto_Click"/>
         <Label x:Name="SPMotion" Content="Label" HorizontalAlignment="Left" Margin="937,748,0,0" VerticalAlignment="Top"/>
+        <Label x:Name="ZMotion" Content="Label" HorizontalAlignment="Left" Margin="1011,750,0,0" VerticalAlignment="Top"/>
 
     </Grid>
 </Window>

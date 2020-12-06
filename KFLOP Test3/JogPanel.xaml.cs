@@ -33,7 +33,7 @@ namespace KFLOP_Test3
         private int JAxis_B;
         private int JAxis_C;
 
-        // a copy of the KM controller 
+        // a copy of the KM controller - really a pointer to the KM_controller 
         private KM_Controller KMx { get; set; }
 
         public JogPanel(ref KM_Controller X)

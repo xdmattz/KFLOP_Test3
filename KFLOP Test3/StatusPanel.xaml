@@ -90,20 +90,20 @@
             </Grid.ColumnDefinitions>
 
             <!-- X Axis Limit -->
-            
+
             <StackPanel Grid.Row="1" Grid.Column="1" Grid.ColumnSpan="2" Orientation="Vertical"  >
                 <CheckBox x:Name="cbLimX" Content="X Limit" Grid.Row="0" Grid.Column="0" HorizontalAlignment="Left" VerticalAlignment="Bottom" Margin="5,0,0,0" />
                 <StackPanel Orientation="Horizontal">
-                <Button x:Name="btnLimXn" HorizontalAlignment="Left" VerticalAlignment="Top" BorderThickness="0" Click="btnLimXn_Click">
-                    <StackPanel Height="50" Width="50">
-                        <Image Source="LimX-a sm.png" />
-                    </StackPanel>
-                </Button>
-                <Button x:Name="btnLimXp" HorizontalAlignment="Left"  VerticalAlignment="Top" BorderThickness="0" Click="btnLimXp_Click">
-                    <StackPanel Height="50" Width="50">
-                        <Image Source="LimX+ sm.png" />
-                    </StackPanel>
-                </Button>
+                    <Button x:Name="btnLimXn" HorizontalAlignment="Left" VerticalAlignment="Top" BorderThickness="0" Click="btnLimXn_Click">
+                        <StackPanel Height="50" Width="50">
+                            <Image Source="LimX-a sm.png" />
+                        </StackPanel>
+                    </Button>
+                    <Button x:Name="btnLimXp" HorizontalAlignment="Left"  VerticalAlignment="Top" BorderThickness="0" Click="btnLimXp_Click">
+                        <StackPanel Height="50" Width="50">
+                            <Image Source="LimX+ sm.png" />
+                        </StackPanel>
+                    </Button>
                 </StackPanel>
             </StackPanel>
 
@@ -156,11 +156,11 @@
         </Grid>
 
         <!-- Status Word from KFLOP -->
-        <TextBox x:Name="tbStatus1" Grid.Row="2"  HorizontalAlignment="Left" Height="23" TextWrapping="Wrap" Text="TextBox" VerticalAlignment="Top" Width="120" Margin="19,49,0,0" Grid.Column="1"/>
-        <Button Content="Button" Grid.Column="1" HorizontalAlignment="Left" Margin="45,18,0,0" Grid.Row="2" VerticalAlignment="Top" Width="75" Click="Button_Click"/>
-        <TextBlock x:Name="tbKanIn" Grid.Column="2" HorizontalAlignment="Left" Margin="10,10,0,0" Grid.Row="2" TextWrapping="Wrap" Text="TextBlock" VerticalAlignment="Top"/>
-        <TextBlock x:Name="tbKanOut" Grid.Column="2" HorizontalAlignment="Left" Margin="10,27,0,0" Grid.Row="2" TextWrapping="Wrap" Text="TextBlock" VerticalAlignment="Top"/>
-        <TextBlock x:Name="tbKonnIO" Grid.Column="2" HorizontalAlignment="Left" Margin="10,43,0,0" Grid.Row="2" TextWrapping="Wrap" Text="TextBlock" VerticalAlignment="Top"/>
+        <TextBox x:Name="tbStatus1" Grid.Row="2"  HorizontalAlignment="Left" Height="23" TextWrapping="Wrap" Text="TextBox" VerticalAlignment="Top" Width="76" Margin="84,58,0,-1" Grid.Column="1"/>
+        <TextBlock x:Name="tbKanIn" Grid.Column="1" HorizontalAlignment="Left" Margin="84,5,0,0" Grid.Row="2" TextWrapping="Wrap" Text="TextBlock" VerticalAlignment="Top" RenderTransformOrigin="-0.281,1.213" Width="181"/>
+        <TextBlock x:Name="tbKanOut" Grid.Column="1" HorizontalAlignment="Left" Margin="84,21,0,0" Grid.Row="2" TextWrapping="Wrap" Text="TextBlock" VerticalAlignment="Top" RenderTransformOrigin="-2.432,0.706" Width="181"/>
+        <TextBlock x:Name="tbKonnIO" Grid.Column="1" HorizontalAlignment="Left" Margin="84,37,0,0" Grid.Row="2" TextWrapping="Wrap" Text="TextBlock" VerticalAlignment="Top" RenderTransformOrigin="-2.334,0.569" Width="181"/>
+        <Label Content="P_Status" Grid.Column="1" HorizontalAlignment="Left" Margin="35,56,0,0" Grid.Row="2" VerticalAlignment="Top"/>
 
     </Grid>
 </UserControl>

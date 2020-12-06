@@ -104,6 +104,8 @@ namespace KFLOP_Test3
 
         static KMotion_dotNet.KM_Controller KM; // this is the controller instance!
         static KMotion_dotNet.KM_Axis SpindleAxis;
+        static KMotion_dotNet.KM_Axis _ZAxis;
+
         static MotionParams_Copy Xparam;
         // static ConfigFiles CFiles;
         ConfigFiles CFiles;
@@ -181,6 +183,12 @@ namespace KFLOP_Test3
 
             // get the spindle axis
             SpindleAxis = KM.GetAxis(AXConst.SPINDLE_AXIS, "Spindle");
+            _ZAxis = KM.GetAxis(AXConst.Z_AXIS, "ZAxis");
+
+            // get the axis group
+
+
+
 
             // Initialize the global variables
             PVars = new int[14];
@@ -330,7 +338,7 @@ namespace KFLOP_Test3
             // Timer Tick sections
             // If the board is connected then 
             // check some things once every second 
-            // check certain things every cycle
+            // check some things every cycle like the DROs and update the rest of the User Interface
 
             if (KFLOP_Connected)
             {
@@ -344,13 +352,13 @@ namespace KFLOP_Test3
 
                 // these actions happen every cycle
 
-                tickTimer.Restart();
+                tickTimer.Restart();    // the tickTimer is used to determine how long this process takes
                 // lock the KFLOP board until the MainStatus is read.
                 if (KM.WaitToken(100) == KMOTION_TOKEN.KMOTION_LOCKED) // KMOTION_LOCKED means the board is available
                 {
                     try
                     {
-                        // note that KMotionCNC does a KM.ServiceConsole() here... 
+                        // note that KMotionCNC does a KM.ServiceConsole() here. but in .NET we do a .GetStatus()
                         KM_MainStatus MainStatus = KM.GetStatus(false); // passing false does not lock to board while generating status
                         KM.ReleaseToken();
 
@@ -371,6 +379,9 @@ namespace KFLOP_Test3
                         ToolChangerPanel1.TLAUX_Status(ref MainStatus);
                         // KMotionCNC also services a JoyStick 
                         //
+                        // tickTimer.Stop();
+                        // all done - show how long the timer tick took to process everything.
+                        tbTickTime.Text = ($"{tickTimer.ElapsedMilliseconds} ms");
                     }
                     catch (DMException)  // in case disconnect in the middle of reading status
                     {
@@ -816,8 +827,7 @@ namespace KFLOP_Test3
             // this first little bit is just for testing
             //int X = KM.GetUserData(120);
             tbStatus1.Text = KStat.GetPC_comm(4).ToString("X");
-            // tickTimer.Stop();
-            tbTickTime.Text = ($"{tickTimer.ElapsedMilliseconds} ms");
+
             //tbStatus1.Text = X.ToString("X");
 
             // check the status of the Machine P_STATUS is in PC_comm[4];
@@ -1012,6 +1022,7 @@ namespace KFLOP_Test3
             tbSpindleSpeedRPM.Text = KStat.PC_comm[CSConst.P_RPM].ToString();
             tbSpindleEncoder.Text = String.Format("{0:F}", SpindleAxis.GetActualPositionCounts());
             SPMotion.Content = SpindleAxis.MotionComplete().ToString();
+            ZMotion.Content = _ZAxis.MotionComplete().ToString();
 
             // check the current work offset and set the button color
             // see if this will reflect the GCode setting...

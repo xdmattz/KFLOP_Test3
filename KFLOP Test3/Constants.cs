@@ -364,5 +364,13 @@ namespace KFLOP_Test3
             return false;
         }
     }
+
+    class Timeout
+    {
+        public const long T3Sec = 3000;
+        public const long T5Sec = 3000;
+        public const long T20ms = 20;
+        public const long T50ms = 50; 
+    }
     
 }
