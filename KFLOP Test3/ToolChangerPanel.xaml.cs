@@ -603,7 +603,7 @@ namespace KFLOP_Test3
 
         private void MoveZCompleted(object sender, RunWorkerCompletedEventArgs e)
         {
-            MessageBox.Show(e.Result.ToString());
+            // MessageBox.Show(e.Result.ToString());
             _bw.DoWork -= MoveZWorker;
             _bw.ProgressChanged -= MoveZProgressChanged;
             _bw.RunWorkerCompleted -= MoveZCompleted;
@@ -664,7 +664,7 @@ namespace KFLOP_Test3
             _bw.DoWork -= Carousel_Worker;
             _bw.ProgressChanged -= Carousel_ProgressChanged;
             _bw.RunWorkerCompleted -= Carousel_Completed;
-            MessageBox.Show(e.Result.ToString());
+            // MessageBox.Show(e.Result.ToString());
         }
 
         // Index Spindle background process
@@ -712,7 +712,7 @@ namespace KFLOP_Test3
                     Thread.Sleep(20);
                 }
                 SPx.Velocity = SAs.Rate;
-                SPx.StartMoveTo(SAs.Rate);
+                SPx.StartMoveTo(SAs.Pos);
                 timeoutCnt = 0;
                 do {    // Wait until done or timeout
                     Thread.Sleep(100);
@@ -723,9 +723,9 @@ namespace KFLOP_Test3
                     }
                 } while (SPx.MotionComplete() != true);
 
-            // note - this leaves the spindle enabled!
-            // All Done!
-            e.Result = "Done";
+                // note - this leaves the spindle enabled!
+                // All Done!
+                e.Result = "Done";
                 return;
 //            }
         }
@@ -805,7 +805,7 @@ namespace KFLOP_Test3
 
         private void TLAUX_ARM_Completed(object sender, RunWorkerCompletedEventArgs e)
         {
-            MessageBox.Show(e.Result.ToString());
+           //  MessageBox.Show(e.Result.ToString());
             _bw.DoWork -= TLAUX_ARM_Worker;
             _bw.ProgressChanged -= TLAUX_ARM_ProgressChanged;
             _bw.RunWorkerCompleted -= TLAUX_ARM_Completed;
@@ -870,49 +870,7 @@ namespace KFLOP_Test3
             _bw.ProgressChanged -= TClamp_ProgressChanged;
             _bw.RunWorkerCompleted -= TClamp_Completed;
 
-            MessageBox.Show(e.Result.ToString());
-        }
-
-        // these methods need to be run in a different thread if the UI thread is going to be updated while they are running
-        // need to figure out how to synch the thread so a tool change happens efficiently 
-        private bool TLAUX_Arm_In()
-        {
-            KMx.SetUserData(PVConst.P_NOTIFY, T2Const.T2_TOOL_ARM_IN);
-            KMx.ExecuteProgram(2);
-            // wait till arm is in!
-            Stopwatch WaitTimer = new Stopwatch();
-            WaitTimer.Restart();
-            while(true)
-            {
-                if(WaitTimer.ElapsedMilliseconds > Timeout.T3Sec)
-                {
-                    return false;
-                }
-                if (bTLAUX_ARM_IN) break; // TLAUX_ARM_IN is updated in TLAUX_Status - which is called by the UI updater
-                Thread.Sleep(20);
-            }
-            WaitTimer.Stop();
-            return true;
-        }
-
-        private bool TLAUX_Arm_Out()
-        {
-            KMx.SetUserData(PVConst.P_NOTIFY, T2Const.T2_TOOL_ARM_OUT);
-            KMx.ExecuteProgram(2);
-            // wait till arm is in!
-            Stopwatch WaitTimer = new Stopwatch();
-            WaitTimer.Restart();
-            while (true)
-            {
-                if (WaitTimer.ElapsedMilliseconds > Timeout.T3Sec)
-                {
-                    return false;
-                }
-                if (bTLAUX_ARM_OUT) break; // TLAUX_ARM_IN is updated in TLAUX_Status - which is called by the UI updater
-                Thread.Sleep(20);
-            }
-            WaitTimer.Stop();
-            return true;
+           //  MessageBox.Show(e.Result.ToString());
         }
 
         #endregion
