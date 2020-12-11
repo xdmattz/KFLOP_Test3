@@ -184,6 +184,7 @@ namespace KFLOP_Test3
             _bw2.WorkerReportsProgress = true;
             _bw2.DoWork += GetToolWorker;
             _bw2.ProgressChanged += GetToolProgressedChanged;
+            _bw2.RunWorkerCompleted += GetToolCompleted;
             _bw2.RunWorkerAsync(ToolNumber);
 
         }
@@ -275,6 +276,7 @@ namespace KFLOP_Test3
             _bw2.ProgressChanged -= GetToolProgressedChanged;
             _bw2.RunWorkerCompleted -= GetToolCompleted;
             // report that the tool change was a success!
+            // MessageBox.Show("In Get Completed");
         }
         #endregion
         
@@ -296,8 +298,11 @@ namespace KFLOP_Test3
         private void Start_PutTool(int ToolNumber)
         {
             _bw2.WorkerReportsProgress = true;
+            _bw2.WorkerSupportsCancellation = true;
+
             _bw2.DoWork += PutToolWorker;
             _bw2.ProgressChanged += PutToolProgressedChanged;
+            _bw2.RunWorkerCompleted += PutToolCompleted;
             _bw2.RunWorkerAsync(ToolNumber);
         }
 
@@ -387,6 +392,7 @@ namespace KFLOP_Test3
             _bw2.DoWork -= PutToolWorker;
             _bw2.ProgressChanged -= PutToolProgressedChanged;
             _bw2.RunWorkerCompleted -= PutToolCompleted;
+            // MessageBox.Show("In Put Completed");
             // report that the tool change was a success!
         }
         #endregion
