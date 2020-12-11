@@ -1,4 +1,6 @@
-﻿using System;
+﻿#define TESTBENCH
+
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -24,8 +26,13 @@ using System.ComponentModel;
 // for KMotion
 using KMotion_dotNet;
 
+
+
 namespace KFLOP_Test3
 {
+    // defining this will allow operation on the testbench
+
+
     /// <summary>
     /// Interaction logic for ToolChangerPanel.xaml
     /// </summary>
@@ -558,15 +565,19 @@ namespace KFLOP_Test3
             SX.Rate = Srate;
 
             getSpindle_Status();
+
+#if TESTBENCH
+            Start_Spindle_Process(SX);
+#else
             if (SpindleEnabled && SpindlePID)
             { 
-                if (_bw.IsBusy) { _bw.CancelAsync(); }
                 Start_Spindle_Process(SX);
             }
             else
             {
                 MessageBox.Show("Spindle not Enabled!");
             }
+#endif
         }
 
         private void btnToolSel_Click(object sender, RoutedEventArgs e)
@@ -590,9 +601,9 @@ namespace KFLOP_Test3
                 Start_Carousel_Process(xSA);
             }
         }
-        #endregion
+#endregion
 
-        #region Configuration File methods
+#region Configuration File methods
         // Configuration file - get the tool changer variables saved in the JSON file
         public void LoadCfg(string LFileName)
         {
@@ -701,9 +712,9 @@ namespace KFLOP_Test3
             UpdateCfg();
             SaveCfg(CfgFName);
         }
-        #endregion
+#endregion
 
-        #region Status methods 
+#region Status methods 
         private void getTLAUX_Status()
         {
             lock (_Tlocker)  // lock this so only one thread can access it at a time.
@@ -733,9 +744,9 @@ namespace KFLOP_Test3
             }
         }
 
-        #endregion
+#endregion
 
-        #region Individual tool changer motions
+#region Individual tool changer motions
 
         // enable and align the spindle to the tool change position. 
         private bool AlignSpindle(double pos, double rate)
@@ -823,7 +834,7 @@ namespace KFLOP_Test3
         }
 
 
-        #region MoveZ background process
+#region MoveZ background process
         // the move Z background process
         private void Start_MoveZ_Process(SingleAxis SA)
         {
@@ -917,9 +928,9 @@ namespace KFLOP_Test3
                 lblTCP2.Content = "Z Motion Aborted";
             }
         }
-        #endregion
+#endregion
 
-        #region Carousel background process
+#region Carousel background process
         // Rotate Carousel background process
         private void Start_Carousel_Process(SingleAxis SA)
         {
@@ -978,9 +989,9 @@ namespace KFLOP_Test3
             _bw.RunWorkerCompleted -= Carousel_Completed;
             CompleteStatus((BWResults)e.Result);
         }
-        #endregion
+#endregion
 
-        #region Spindle Indexing process
+#region Spindle Indexing process
         // Index Spindle background process
         private void Start_Spindle_Process(SingleAxis SA)
         {
@@ -999,66 +1010,95 @@ namespace KFLOP_Test3
         {
             SingleAxis SAs = (SingleAxis)e.Argument;
 
-//            lock (_SPlocker)
-//            {
-                int timeoutCnt = 0;
-                // if the spindle has not been homed then home it.
-                // if the spindle index > 10000 or < -10000 (+/- 5 turns) then re-home it
-                getSpindle_Status();
+            //            lock (_SPlocker)
+            //            {
+#if !TESTBENCH
+            int timeoutCnt = 0;
+            // if the spindle has not been homed then home it.
+            // if the spindle index > 10000 or < -10000 (+/- 5 turns) then re-home it
+            getSpindle_Status();
 
-                if ((SpindleHomed == false)   // the spindle has not been homed.
-                    || (Spindle_Position > 10000)                       // or position is far high
-                    || (Spindle_Position < -10000))                     // or position is far low
+            if ((SpindleHomed == false)   // the spindle has not been homed.
+                || (Spindle_Position > 10000)                       // or position is far high
+                || (Spindle_Position < -10000))                     // or position is far low
+            {
+                KMx.SetUserData(PVConst.P_NOTIFY, T2Const.T2_HOME_SPINDLE);
+                KMx.ExecuteProgram(2);
+                // wait until it is done.
+                do
                 {
-                    KMx.SetUserData(PVConst.P_NOTIFY, T2Const.T2_HOME_SPINDLE);
-                    KMx.ExecuteProgram(2);
-                    // wait until it is done.
-                    do
-                    {
-                        Thread.Sleep(100);
-                        if (timeoutCnt++ > 50)
-                    {
-                        BWRes.Result = false;
-                        BWRes.Comment = "Spindle Timeout";
-                        e.Result = BWRes;
-                        return;
-                    }
-                    } while (SPx.MotionComplete() != true); // I think this will indicate a completed motion.
-                }
-                getSpindle_Status();
-                // if the spindle is not enabled then enable it
-                if (SpindlePID == false)
-                {
-                    KMx.SetUserData(PVConst.P_NOTIFY, T2Const.T2_SPINDLE_PID);
-                    KMx.ExecuteProgram(2);
-                    Thread.Sleep(50);
-                }
-                getSpindle_Status();
-                if (SpindleEnabled == false)
-                {
-                    KMx.SetUserData(PVConst.P_NOTIFY, T2Const.T2_SPINDLE_EN);
-                    KMx.ExecuteProgram(2);
-                    Thread.Sleep(20);
-                }
-                SPx.Velocity = SAs.Rate;
-                SPx.StartMoveTo(SAs.Pos);
-                timeoutCnt = 0;
-                do {    // Wait until done or timeout
                     Thread.Sleep(100);
                     if (timeoutCnt++ > 50)
                     {
                         BWRes.Result = false;
                         BWRes.Comment = "Spindle Timeout";
                         e.Result = BWRes;
-                    return;
+                        return;
                     }
-                } while (SPx.MotionComplete() != true);
+                    getSpindle_Status();
+                } while (Math.Abs(Spindle_Position) > 2); // I think this will indicate a completed Home routine
+            }
+            // getSpindle_Status();
+            // if the spindle is not enabled then enable it
+            if (SpindlePID == false)
+            {
+                timeoutCnt = 0;
+                KMx.SetUserData(PVConst.P_NOTIFY, T2Const.T2_SPINDLE_PID);  // send the command
+                KMx.ExecuteProgram(2);
+                do
+                {
+                    Thread.Sleep(50);
+                    if (timeoutCnt++ > 20)
+                    {
+                        BWRes.Result = false;
+                        BWRes.Comment = "Spindle PID Timeout";
+                        e.Result = BWRes;
+                        return;
+                    }
+                    getSpindle_Status();
+                } while (SpindlePID == false);
+            }
 
-                // note - this leaves the spindle enabled!
-                // All Done!
-                BWRes.Result = true;
-                BWRes.Comment = "Spindle Index Done";
-                e.Result = BWRes;
+            if (SpindleEnabled == false)
+            {
+                timeoutCnt = 0;
+                KMx.SetUserData(PVConst.P_NOTIFY, T2Const.T2_SPINDLE_EN);
+                KMx.ExecuteProgram(2);
+                do
+                {
+                    Thread.Sleep(50);
+                    if (timeoutCnt++ > 20)
+                    {
+                        BWRes.Result = false;
+                        BWRes.Comment = "Spindle Enable Timeout";
+                        e.Result = BWRes;
+                        return;
+                    }
+                    getSpindle_Status();
+                } while (SpindleEnabled == false);
+            }
+
+            SPx.Velocity = SAs.Rate;
+            SPx.StartMoveTo(SAs.Pos);
+            timeoutCnt = 0;
+            do {    // Wait until done or timeout
+                Thread.Sleep(100);
+                if (timeoutCnt++ > 50)
+                {
+                    BWRes.Result = false;
+                    BWRes.Comment = "Spindle Index Timeout";
+                    e.Result = BWRes;
+                return;
+                }
+            } while (SPx.MotionComplete() != true);
+
+            // note - this leaves the spindle enabled!
+            // All Done!
+#endif
+            BWRes.Result = true;
+            BWRes.Comment = "Spindle Index Done";
+            e.Result = BWRes;
+
             return;
 //            }
         }
@@ -1075,9 +1115,9 @@ namespace KFLOP_Test3
             _bw.RunWorkerCompleted -= Spindle_Completed;
             CompleteStatus((BWResults)e.Result);
         }
-        #endregion
+#endregion
 
-        #region Tool Changer Arm process
+#region Tool Changer Arm process
         // TC Arm In/Out background process
         private void Start_ARM_Process(SingleAxis SA)
         {
@@ -1169,9 +1209,9 @@ namespace KFLOP_Test3
             _bw.RunWorkerCompleted -= TLAUX_ARM_Completed;
             CompleteStatus((BWResults)e.Result);
         }
-        #endregion
+#endregion
 
-        #region Tool Clamp Process
+#region Tool Clamp Process
         // Tool Clamp background process
         private void Start_TClamp_Process(SingleAxis SA)
         {
@@ -1255,9 +1295,9 @@ namespace KFLOP_Test3
             _bw.RunWorkerCompleted -= TClamp_Completed;
             CompleteStatus((BWResults)e.Result);
         }
-        #endregion
+#endregion
 
-        #endregion
+#endregion
 
 
     }
