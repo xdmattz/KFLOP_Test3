@@ -105,6 +105,9 @@ namespace KFLOP_Test3
 
             UpdateCfgUI();
 
+            LED_SPEN.Set_Label("Spindle EN");
+            LED_SPEN.Set_State(LED_State.Off);
+
         }
 
         public void TLAUX_Status(ref KM_MainStatus KStat)
@@ -121,6 +124,8 @@ namespace KFLOP_Test3
 
             SpindleEnabled = B.BitIsSet(PVStatus, PVConst.SB_SPINDLE_ON);
             SpindlePID = B.BitIsSet(PVStatus, PVConst.SB_SPINDLE_PID);
+            if(SpindleEnabled) { LED_SPEN.Set_State(LED_State.On_Green); }
+            else { LED_SPEN.Set_State(LED_State.Off); }
         }
 
         private void btnGetTool_Click(object sender, RoutedEventArgs e)
@@ -450,8 +455,13 @@ namespace KFLOP_Test3
                     MessageBox.Show("Thread 2 stuck!");
                 }
                 // move to zero position
-                var SP = KMx.GetAxis(AXConst.SPINDLE_AXIS, "Spindle");
-                SP.StartMoveTo(0);
+              //  var SP = KMx.GetAxis(AXConst.SPINDLE_AXIS, "Spindle");
+              //  SP.StartMoveTo(0);
+                SingleAxis Sx = new SingleAxis();
+                Sx.Pos = 0;
+                Sx.Rate = 1500;
+                Start_Spindle_Process(Sx);
+  
             }
         }
 
