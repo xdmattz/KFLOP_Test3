@@ -27,6 +27,7 @@
                         <RowDefinition Height="*" />
                         <RowDefinition Height="*" />
                         <RowDefinition Height="*" />
+                        <RowDefinition Height="*" />
                     </Grid.RowDefinitions>
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="3*" />
@@ -36,9 +37,10 @@
                     <local:LED_Indicator x:Name="EStop_LED" Grid.Row="0" Grid.Column="1"/>
                     <local:LED_Indicator x:Name="SEnable_LED" Grid.Row="1" Grid.Column="0"/>
                     <local:LED_Indicator x:Name="SFault_LED" Grid.Row="1" Grid.Column="1"/>
-                    <local:LED_Indicator x:Name="PwrMod_LED" Grid.Row="2" Grid.Column="0"/>
-                    <local:LED_Indicator x:Name="AxisFault_LED" Grid.Row="2" Grid.Column="1"/>
-                    <local:LED_Indicator x:Name="ZBrake_LED" Grid.Row="3" Grid.Column="0"/>
+                    <local:LED_Indicator x:Name="SMode_LED" Grid.Row="2" Grid.Column="0" />
+                    <local:LED_Indicator x:Name="PwrMod_LED" Grid.Row="3" Grid.Column="0"/>
+                    <local:LED_Indicator x:Name="AxisFault_LED" Grid.Row="3" Grid.Column="1"/>
+                    <local:LED_Indicator x:Name="ZBrake_LED" Grid.Row="4" Grid.Column="0"/>
                 </Grid>
             </Border>
             <Border BorderBrush="Black" BorderThickness="2" CornerRadius="3" Margin="3">

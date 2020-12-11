@@ -1,4 +1,4 @@
-﻿#define TESTBENCH
+﻿// #define TESTBENCH
 
 using System;
 using System.Collections.Generic;
@@ -42,6 +42,7 @@ namespace KFLOP_Test3
         // global variables for the user control
         static bool SpindleEnabled;
         static bool SpindlePID;
+        static bool SpindleRPM;
         static bool SpindleHomed;
         static double Spindle_Position;
         static int iSpindle_Status;
@@ -185,7 +186,7 @@ namespace KFLOP_Test3
         }
 
 
-        #region Get a Tool from the Tool Changer
+#region Get a Tool from the Tool Changer
         private void Start_GetTool(int ToolNumber)
         {
             _bw2.WorkerReportsProgress = true;
@@ -270,6 +271,12 @@ namespace KFLOP_Test3
             { return; }
             _bw2.ReportProgress(progress_cnt++);
 
+            // Spindle back to RPM Mode
+            Start_SpindleRPM_Process(tSAx);
+            if (WaitForProgress() == false)
+            { return; }
+            _bw2.ReportProgress(progress_cnt++);
+
         }
         
         private void GetToolProgressedChanged(object sender, ProgressChangedEventArgs e)
@@ -285,7 +292,7 @@ namespace KFLOP_Test3
             // report that the tool change was a success!
             // MessageBox.Show("In Get Completed");
         }
-        #endregion
+#endregion
         
         private bool WaitForProgress()
         {
@@ -301,7 +308,7 @@ namespace KFLOP_Test3
             
         }
 
-        #region Put a tool in the Tool Changer
+#region Put a tool in the Tool Changer
         private void Start_PutTool(int ToolNumber)
         {
             _bw2.WorkerReportsProgress = true;
@@ -387,6 +394,12 @@ namespace KFLOP_Test3
             { return; }
             _bw2.ReportProgress(progress_cnt++);
 
+            // Spindle back to RPM Mode
+            Start_SpindleRPM_Process(tSAx);
+            if (WaitForProgress() == false)
+            { return; }
+            _bw2.ReportProgress(progress_cnt++);
+
         }
 
         private void PutToolProgressedChanged(object sender, ProgressChangedEventArgs e)
@@ -402,9 +415,9 @@ namespace KFLOP_Test3
             // MessageBox.Show("In Put Completed");
             // report that the tool change was a success!
         }
-        #endregion
+#endregion
 
-        #region Tool Changer Test buttons
+#region Tool Changer Test buttons
         private void btnSP_PID_Click(object sender, RoutedEventArgs e)
         {
             // set the spindle to PID mode. And leave it enabled!
@@ -741,6 +754,7 @@ namespace KFLOP_Test3
                 SpindleHomed = !B.BitIsSet(iSpindle_Status, PVConst.SB_SPIN_HOME);  // this inverts the logic of the bit in the status word. so true = homed
                 SpindleEnabled = B.BitIsSet(iSpindle_Status, PVConst.SB_SPINDLE_ON);
                 SpindlePID = B.BitIsSet(iSpindle_Status, PVConst.SB_SPINDLE_PID);
+                SpindleRPM = B.BitIsSet(iSpindle_Status, PVConst.SB_SPINDLE_RPM);
             }
         }
 
@@ -1115,9 +1129,82 @@ namespace KFLOP_Test3
             _bw.RunWorkerCompleted -= Spindle_Completed;
             CompleteStatus((BWResults)e.Result);
         }
-#endregion
+        #endregion
 
-#region Tool Changer Arm process
+        #region Spindle Return to RPM mode.
+        // return the Spindle back to RPM mode.
+        private void Start_SpindleRPM_Process(SingleAxis SA)
+        {
+            // start a new background worker with move to H1
+            _bw.WorkerReportsProgress = true;
+            _bw.WorkerSupportsCancellation = true;
+
+            _bw.DoWork += SpindleRPM_Worker;
+            _bw.ProgressChanged += SpindleRPM_ProgressChanged;
+            _bw.RunWorkerCompleted += SpindleRPM_Completed;
+
+            _bw.RunWorkerAsync(SA);
+        }
+
+        private void SpindleRPM_Worker(object sender, DoWorkEventArgs e)
+        {
+            int timeoutCnt;
+            // Disable the spindle and set the spindle back to RPM Mode 
+            getSpindle_Status();
+            if(SpindleEnabled == true)
+            {
+                timeoutCnt = 0;
+                KMx.SetUserData(PVConst.P_NOTIFY, T2Const.T2_SPINDLE_DIS);
+                KMx.ExecuteProgram(2);
+                do
+                {
+                    Thread.Sleep(50);
+                    if (timeoutCnt++ > 20)
+                    {
+                        BWRes.Result = false;
+                        BWRes.Comment = "Spindle Disable Timeout";
+                        e.Result = BWRes;
+                        return;
+                    }
+                    getSpindle_Status();
+                } while (SpindleEnabled == false);
+            }
+            if(SpindleRPM == false)
+            {
+                timeoutCnt = 0;
+                KMx.SetUserData(PVConst.P_NOTIFY, T2Const.T2_SPINDLE_RPM);
+                KMx.ExecuteProgram(2);
+                do
+                {
+                    Thread.Sleep(50);
+                    if (timeoutCnt++ > 20)
+                    {
+                        BWRes.Result = false;
+                        BWRes.Comment = "Spindle RPM Timeout";
+                        e.Result = BWRes;
+                        return;
+                    }
+                    getSpindle_Status();
+                } while (SpindleRPM == false);
+            }
+            BWRes.Result = true;
+            BWRes.Comment = "Spindle Disabled (RPM)";
+            e.Result = BWRes;
+        }
+
+        private void SpindleRPM_ProgressChanged(object sender, ProgressChangedEventArgs e)
+        { }
+
+        private void SpindleRPM_Completed(object sender, RunWorkerCompletedEventArgs e)
+        {
+            _bw.DoWork -= SpindleRPM_Worker;
+            _bw.ProgressChanged -= SpindleRPM_ProgressChanged;
+            _bw.RunWorkerCompleted -= SpindleRPM_Completed;
+            CompleteStatus((BWResults)e.Result);
+        }
+        #endregion
+
+        #region Tool Changer Arm process
         // TC Arm In/Out background process
         private void Start_ARM_Process(SingleAxis SA)
         {

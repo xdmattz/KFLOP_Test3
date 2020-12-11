@@ -32,6 +32,7 @@ namespace KFLOP_Test3
         static int Prev_KanalogInputs;    // Kanalog Inputs
         static int Prev_KanalogOutputs;   // Kanalog Outputs
         static int Prev_KonnectIO;    // Connect Inputs
+        static int Prev_Status;         // machine status
 
         static int LED_Count;
 
@@ -53,6 +54,7 @@ namespace KFLOP_Test3
             PwrMod_LED.Set_Label("Pwr Module EN");
             AxisFault_LED.Set_Label("Fault");
             ZBrake_LED.Set_Label("Z-Brake");
+            SMode_LED.Set_Label("RPM Mode");
 
             ToolRel_LED.Set_Label("Tool Release");
             xToolRel_LED.Set_Label("");
@@ -71,6 +73,7 @@ namespace KFLOP_Test3
             PwrMod_LED.Set_State(LED_State.Off);
             AxisFault_LED.Set_State(LED_State.Off);
             ZBrake_LED.Set_State(LED_State.Off);
+            SMode_LED.Set_State(LED_State.Off);
 
             ToolRel_LED.Set_State(LED_State.Off);
             xToolRel_LED.Set_State(LED_State.Off);
@@ -131,6 +134,7 @@ namespace KFLOP_Test3
             {
                 btnHomeS.Background = new SolidColorBrush(Colors.LightGreen);
             }
+            
         }
 
         public void CheckLimit(ref KM_MainStatus MStat)
@@ -165,7 +169,32 @@ namespace KFLOP_Test3
             BinaryString(MStat.VirtualBitsEx0, ref tempS);
             tbKonnIO.Text = "Konn IO: " + tempS;
 
-            if ((MStat.KanalogBitsStateInputs != Prev_KanalogInputs) || (MStat.KanalogBitsStateOutputs != Prev_KanalogOutputs))
+            int status = MStat.PC_comm[CSConst.P_STATUS];
+            if (status != Prev_Status)
+            {
+                Prev_Status = status;
+                // Spindle Mode LED 
+                if(B.BitIsSet(status, PVConst.SB_SPINDLE_PID) && B.BitIsSet(status, PVConst.SB_SPINDLE_RPM))
+                {
+                    SMode_LED.Set_Label("Mode Error");
+                    SMode_LED.Set_State(LED_State.On_Red);
+                } else if (B.BitIsSet(status, PVConst.SB_SPINDLE_PID))
+                {
+                    SMode_LED.Set_Label("Spindle PID");
+                    SMode_LED.Set_State(LED_State.On_Blue);
+                } else if(B.BitIsSet(status, PVConst.SB_SPINDLE_RPM))
+                {
+                    SMode_LED.Set_Label("Spindle RPM");
+                    SMode_LED.Set_State(LED_State.On_Yellow);
+                }
+                else
+                {
+                    SMode_LED.Set_Label("Mode");
+                    SMode_LED.Set_State(LED_State.Off);
+                }
+            }
+
+                if ((MStat.KanalogBitsStateInputs != Prev_KanalogInputs) || (MStat.KanalogBitsStateOutputs != Prev_KanalogOutputs))
             {
                 Prev_KanalogInputs = MStat.KanalogBitsStateInputs;
                 Prev_KanalogOutputs = MStat.KanalogBitsStateOutputs;
