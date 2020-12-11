@@ -46,6 +46,15 @@ namespace KFLOP_Test3
         static bool bTLAUX_FAULT;
         static int iTLAUX_STATUS;
 
+        // these static variable flags indicate tool change progress
+        static bool ToolChangeStatus; // true indicates everything OK false indcates an fault occured
+        static bool TCProgress; // true indicaes a process step is in progress, false indicates the process has finished. 
+
+        const bool bARM_IN = true;
+        const bool bARM_OUT = false;
+        const bool bCLAMP = true;
+        const bool bRELEASE = false;
+
         // these are used for locking the various stages of the tool changer 
         static readonly object _Tlocker = new object();
         static readonly object _Slocker = new object();
@@ -60,6 +69,7 @@ namespace KFLOP_Test3
         private BitOps B;
         private ToolChangeParams TCP;
         private string CfgFName;
+        static BWResults BWRes;
         
 
         public ToolChangerPanel(ref KM_Controller X, ref KM_Axis SP, string cfgFileName)
@@ -72,6 +82,8 @@ namespace KFLOP_Test3
 
             _bw = new BackgroundWorker();
             _bw2 = new BackgroundWorker();
+
+            BWRes = new BWResults();
                         
             TCP = new ToolChangeParams();   // get the tool changer parameters
             LoadCfg(cfgFileName);
@@ -105,6 +117,8 @@ namespace KFLOP_Test3
 
         private void btnGetTool_Click(object sender, RoutedEventArgs e)
         {
+            // get a tool from the carousel
+            // 
             // ensure that the TLAUX ARM is IN
             // is the spindle currently empty?
             MessageBoxResult result = MessageBox.Show("Is the Spindle Empty?", "Spindle Check", MessageBoxButton.YesNo);
@@ -120,23 +134,42 @@ namespace KFLOP_Test3
                 MessageBox.Show("Tool Changer Error!\nArm not retracted!\n(Try Re-Homing TLAUX)");
                 return;
             }
+            // get the tool number
+            int ToolNumber;
+            if (int.TryParse(tbSlotNumber.Text, out ToolNumber) == false)
+            {
+                tbSlotNumber.Text = "1";
+                MessageBox.Show("Invalid tool number - Reset");
+                return;
+            }
 
             // update the Tool change parameters
             UpdateCfg();    // this should load all the variables into the TCP class
             // start the process background worker for Get Tool
             // move Z to TC_Z1
-            _bw2.DoWork += GetToolWorker;
+            Start_GetTool(ToolNumber);
         }
-
-        private void GetToolWorker(object sender, DoWorkEventArgs e)
-        {
-
-        }
-
 
         private void btnPutTool_Click(object sender, RoutedEventArgs e)
         {
+            // put a tool from the spindle into the tool carousel
+            // insure that the ARM is in, the tool is in the spindle and the slot where it goes is empty
+            // first get the slot number from the UI
+            int ToolNumber;
+            if (int.TryParse(tbSlotNumber.Text, out ToolNumber) == false)
+            {
+                tbSlotNumber.Text = "1";
+                MessageBox.Show("Invalid tool number - Reset");
+                return;
+            }
 
+            MessageBoxResult result = MessageBox.Show("Is carousel slot #" + ToolNumber + " Empty?" , "Spindle Check", MessageBoxButton.YesNo);
+            if (result == MessageBoxResult.No)
+            {
+                return;
+            }
+            UpdateCfg();
+            Start_PutTool(ToolNumber);
         }
 
         private void btnExchangeTool_Click(object sender, RoutedEventArgs e)
@@ -144,6 +177,221 @@ namespace KFLOP_Test3
 
         }
 
+
+        #region Get a Tool from the Tool Changer
+        private void Start_GetTool(int ToolNumber)
+        {
+            _bw2.WorkerReportsProgress = true;
+            _bw2.DoWork += GetToolWorker;
+            _bw2.ProgressChanged += GetToolProgressedChanged;
+            _bw2.RunWorkerAsync(ToolNumber);
+
+        }
+
+        private void GetToolWorker(object sender, DoWorkEventArgs e)
+        {
+            // Assume the following state:
+            // 1. Spindle is empty
+            // 2. The tool arm is retracted.
+            // tool number to get is passed in the argument
+            SingleAxis tSAx = new SingleAxis();
+            // start a new background worker
+            if (_bw.IsBusy) // if the BW worker is busy
+            { return; }
+            TCProgress = true;
+            ToolChangeStatus = false;
+            int progress_cnt = 0;
+
+            _bw2.ReportProgress(progress_cnt++);
+            // Move to H1 
+            tSAx.Pos = TCP.TC_H1_Z; // Z Height position and feedrate
+            tSAx.Rate = TCP.TC_H1_FR;
+            Start_MoveZ_Process(tSAx);
+            if(WaitForProgress() == false)
+            { return; }
+            _bw2.ReportProgress(progress_cnt++);
+
+            // Index the spindle
+            tSAx.Pos = TCP.TC_Index;    // Spindle position and feedrate 
+            tSAx.Rate = TCP.TC_S_FR;
+            Start_Spindle_Process(tSAx);
+            if (WaitForProgress() == false)
+            { return; }
+            _bw2.ReportProgress(progress_cnt++);
+
+            // rotate carousel to tool number
+            tSAx.ToolNumber = (int)e.Argument;  // carousel position number
+            Start_Carousel_Process(tSAx);
+            if (WaitForProgress() == false)
+            { return; }
+            _bw2.ReportProgress(progress_cnt++);
+
+            // Arm Out
+            tSAx.Move = bARM_OUT;
+            Start_ARM_Process(tSAx);
+            if (WaitForProgress() == false)
+            { return; }
+            _bw2.ReportProgress(progress_cnt++);
+
+            // Clamp Release
+            tSAx.Move = bRELEASE;
+            Start_TClamp_Process(tSAx);
+            if (WaitForProgress() == false)
+            { return; }
+            _bw2.ReportProgress(progress_cnt++);
+
+            // move to H2
+            tSAx.Pos = TCP.TC_H2_Z;
+            tSAx.Rate = TCP.TC_H2_FR;
+            Start_MoveZ_Process(tSAx);
+            if (WaitForProgress() == false)
+            { return; }
+            _bw2.ReportProgress(progress_cnt++);
+
+            // Clamp Engage
+            tSAx.Move = bCLAMP;
+            Start_TClamp_Process(tSAx);
+            if (WaitForProgress() == false)
+            { return; }
+            _bw2.ReportProgress(progress_cnt++);
+
+            // Arm In
+            tSAx.Move = bARM_IN;
+            Start_ARM_Process(tSAx);
+            if (WaitForProgress() == false)
+            { return; }
+            _bw2.ReportProgress(progress_cnt++);
+
+        }
+        
+        private void GetToolProgressedChanged(object sender, ProgressChangedEventArgs e)
+        {
+            lblTCProgress.Content = "Progress :" + e.ProgressPercentage.ToString();
+        }
+
+        private void GetToolCompleted(object sender, AsyncCompletedEventArgs e)
+        {
+            _bw2.DoWork -= GetToolWorker;
+            _bw2.ProgressChanged -= GetToolProgressedChanged;
+            _bw2.RunWorkerCompleted -= GetToolCompleted;
+            // report that the tool change was a success!
+        }
+        #endregion
+        
+        private bool WaitForProgress()
+        {
+            // sleep while waiting for the global variable TCProgress to be set true by the 
+            // background worker thread.
+            do
+            {
+                Thread.Sleep(100);
+            } while (TCProgress);
+            TCProgress = true;
+            // check the results for faults and errors
+            return ToolChangeStatus;
+            
+        }
+
+        #region Put a tool in the Tool Changer
+        private void Start_PutTool(int ToolNumber)
+        {
+            _bw2.WorkerReportsProgress = true;
+            _bw2.DoWork += PutToolWorker;
+            _bw2.ProgressChanged += PutToolProgressedChanged;
+            _bw2.RunWorkerAsync(ToolNumber);
+        }
+
+        private void PutToolWorker(object sender, DoWorkEventArgs e)
+        {
+            // Assume the following state:
+            // 1. Spindle has a tool in it
+            // 2. The tool arm is retracted.
+            // tool number to get is passed in the argument
+            SingleAxis tSAx = new SingleAxis();
+            // start a new background worker
+            if (_bw.IsBusy) // if the BW worker is busy then don't do this. - should probably set some kind of flag here...
+            { return; }
+            TCProgress = true;
+            ToolChangeStatus = false;
+            int progress_cnt = 0;
+
+            _bw2.ReportProgress(progress_cnt++);
+            // Move to H2 
+            tSAx.Pos = TCP.TC_H2_Z; // Z Height position and feedrate
+            tSAx.Rate = TCP.TC_H2_FR;
+            Start_MoveZ_Process(tSAx);
+            if (WaitForProgress() == false)
+            { return; }
+            _bw2.ReportProgress(progress_cnt++);
+
+            // Index the spindle
+            tSAx.Pos = TCP.TC_Index;    // Spindle position and feedrate 
+            tSAx.Rate = TCP.TC_S_FR;
+            Start_Spindle_Process(tSAx);
+            if (WaitForProgress() == false)
+            { return; }
+            _bw2.ReportProgress(progress_cnt++);
+
+            // rotate carousel to tool number
+            tSAx.ToolNumber = (int)e.Argument;  // carousel position number
+            Start_Carousel_Process(tSAx);
+            if (WaitForProgress() == false)
+            { return; }
+            _bw2.ReportProgress(progress_cnt++);
+
+            // Arm Out
+            tSAx.Move = bARM_OUT;
+            Start_ARM_Process(tSAx);
+            if (WaitForProgress() == false)
+            { return; }
+            _bw2.ReportProgress(progress_cnt++);
+
+            // Clamp Release
+            tSAx.Move = bRELEASE;
+            Start_TClamp_Process(tSAx);
+            if (WaitForProgress() == false)
+            { return; }
+            _bw2.ReportProgress(progress_cnt++);
+
+            // move to H1
+            tSAx.Pos = TCP.TC_H1_Z;
+            tSAx.Rate = TCP.TC_H1_FR;
+            Start_MoveZ_Process(tSAx);
+            if (WaitForProgress() == false)
+            { return; }
+            _bw2.ReportProgress(progress_cnt++);
+
+            // Clamp Engage
+            tSAx.Move = bCLAMP;
+            Start_TClamp_Process(tSAx);
+            if (WaitForProgress() == false)
+            { return; }
+            _bw2.ReportProgress(progress_cnt++);
+
+            // Arm In
+            tSAx.Move = bARM_IN;
+            Start_ARM_Process(tSAx);
+            if (WaitForProgress() == false)
+            { return; }
+            _bw2.ReportProgress(progress_cnt++);
+
+        }
+
+        private void PutToolProgressedChanged(object sender, ProgressChangedEventArgs e)
+        {
+            lblTCProgress.Content = "Progress :" + e.ProgressPercentage.ToString();
+        }
+
+        private void PutToolCompleted(object sender, AsyncCompletedEventArgs e)
+        {
+            _bw2.DoWork -= PutToolWorker;
+            _bw2.ProgressChanged -= PutToolProgressedChanged;
+            _bw2.RunWorkerCompleted -= PutToolCompleted;
+            // report that the tool change was a success!
+        }
+        #endregion
+
+        #region Tool Changer Test buttons
         private void btnSP_PID_Click(object sender, RoutedEventArgs e)
         {
             // set the spindle to PID mode. And leave it enabled!
@@ -183,14 +431,10 @@ namespace KFLOP_Test3
 
         private void btnTC_H1_Click(object sender, RoutedEventArgs e)
         {
+            if(_bw.IsBusy)
+            { return; } // don't run if the _bw worker is busy
 
-            // start a new background worker with move to H1
-            _bw.WorkerReportsProgress = true;
-            _bw.WorkerSupportsCancellation = true;
 
-            _bw.DoWork += MoveZWorker; // Add the main thread method to call
-            _bw.ProgressChanged += MoveZProgressChanged; // add the progress changed method
-            _bw.RunWorkerCompleted += MoveZCompleted; // the the method to call when the function is done
 
             SingleAxis Zx = new SingleAxis();
             double tempZ;
@@ -209,19 +453,14 @@ namespace KFLOP_Test3
 
             // enable the abort button
             btnAbort.IsEnabled = true;
-            _bw.RunWorkerAsync(Zx);
+            Start_MoveZ_Process(Zx);
         }
 
         private void btnTC_H2_Click(object sender, RoutedEventArgs e)
         {
             // this is the same as btnTC_H1 except for the coordinates used
-            // start a new background worker with move to H1
-            _bw.WorkerReportsProgress = true;
-            _bw.WorkerSupportsCancellation = true;
-
-            _bw.DoWork += MoveZWorker; // Add the main thread method to call
-            _bw.ProgressChanged += MoveZProgressChanged; // add the progress changed method
-            _bw.RunWorkerCompleted += MoveZCompleted; // the the method to call when the function is done
+            if (_bw.IsBusy)
+            { return; } // don't run if the _bw worker is busy
 
             SingleAxis Zx = new SingleAxis();
             double tempZ;
@@ -240,55 +479,60 @@ namespace KFLOP_Test3
 
             // enable the abort button
             btnAbort.IsEnabled = true;
-            _bw.RunWorkerAsync(Zx);
+            Start_MoveZ_Process(Zx);
         }
 
         private void btnToolRel_Click(object sender, RoutedEventArgs e)
         {
-            // start a new background worker with move to H1
-            _bw.WorkerReportsProgress = true;
-            _bw.WorkerSupportsCancellation = true;
+            if (_bw.IsBusy)
+            { return; } // don't run if the _bw worker is busy
 
-            _bw.DoWork += TClamp_Worker;
-            _bw.ProgressChanged += TClamp_ProgressChanged;
-            _bw.RunWorkerCompleted += TClamp_Completed;
-
+            SingleAxis xSA = new SingleAxis();
             if (bTC_Clamped == true)
             {
                 btnToolRel.Content = "Tool Clamp";
-                _bw.RunWorkerAsync(false);  // Release the clamp
+                xSA.Move = bRELEASE;
             }
             else
             {
                 btnToolRel.Content = "Tool Release";
-                _bw.RunWorkerAsync(true);   // engage the clamp
+                xSA.Move = bCLAMP;
             }
+            Start_TClamp_Process(xSA);
         }
 
         private void btnArm_In_Click(object sender, RoutedEventArgs e)
         {
-            _bw.WorkerReportsProgress = true;
-            _bw.WorkerSupportsCancellation = true;
+            if (_bw.IsBusy)
+            { return; } // don't run if the _bw worker is busy
 
-            _bw.DoWork += TLAUX_ARM_Worker; // Add the main thread method to call
-            _bw.ProgressChanged += TLAUX_ARM_ProgressChanged; // add the progress changed method
-            _bw.RunWorkerCompleted += TLAUX_ARM_Completed; // the the method to call when the function is done
+            getTLAUX_Status();
+            if(bTLAUX_FAULT)
+            {
+                MessageBox.Show("Tool Changer Fault!\nRe-Home to clear");
+                return;
+            }
 
-            if (bTLAUX_ARM_IN == true)
+            SingleAxis xSA = new SingleAxis();
+
+            if (bTLAUX_ARM_IN == true)  // the current status in so move the arm out.
             {
                 btnArm_In.Content = "TC ARM IN";
+                xSA.Move = bARM_OUT;
             }
             else
             {
-                btnArm_In.Content = "TC ARM OUT";
+                btnArm_In.Content = "TC ARM OUT";   // the current status is out so move the arm in
+                xSA.Move = bARM_IN;
             }
-
-
-            _bw.RunWorkerAsync(!bTLAUX_ARM_IN);
+            Start_ARM_Process(xSA);
         }
 
         private void btnSpindle_Click(object sender, RoutedEventArgs e)
         {
+            if (_bw.IsBusy)
+            { return; } // don't run if the _bw worker is busy
+
             // send the spindle to XXXX
             // check that the axis is enabled and in PID mode
             double Spos, Srate;
@@ -311,15 +555,7 @@ namespace KFLOP_Test3
             if (SpindleEnabled && SpindlePID)
             { 
                 if (_bw.IsBusy) { _bw.CancelAsync(); }
-                // start a new background worker with move to H1
-                _bw.WorkerReportsProgress = true;
-                _bw.WorkerSupportsCancellation = true;
-
-                _bw.DoWork += Spindle_Worker;
-                _bw.ProgressChanged += Spindle_ProgressChanged;
-                _bw.RunWorkerCompleted += Spindle_Completed;
-
-                _bw.RunWorkerAsync(SX);
+                Start_Spindle_Process(SX);
             }
             else
             {
@@ -329,6 +565,9 @@ namespace KFLOP_Test3
 
         private void btnToolSel_Click(object sender, RoutedEventArgs e)
         {
+            if (_bw.IsBusy)
+            { return; } // don't run if the _bw worker is busy
+
             // get the tool number from the text box
             int ToolNumber;
             if(int.TryParse(tbSlotNumber.Text, out ToolNumber) == false)
@@ -340,19 +579,15 @@ namespace KFLOP_Test3
             // send the command to KFLOP
             if ((ToolNumber > 0) && (ToolNumber <= 8))
             {
-
-                // start a new background worker with move to H1
-                _bw.WorkerReportsProgress = true;
-                _bw.WorkerSupportsCancellation = true;
-
-                _bw.DoWork += Carousel_Worker;
-                _bw.ProgressChanged += Carousel_ProgressChanged;
-                _bw.RunWorkerCompleted += Carousel_Completed;
-
-                _bw.RunWorkerAsync(ToolNumber);
+                SingleAxis xSA = new SingleAxis();
+                xSA.ToolNumber = ToolNumber;
+                Start_Carousel_Process(xSA);
             }
         }
+        #endregion
 
+        #region Configuration File methods
+        // Configuration file - get the tool changer variables saved in the JSON file
         public void LoadCfg(string LFileName)
         {
             // load the tool changer files
@@ -460,6 +695,7 @@ namespace KFLOP_Test3
             UpdateCfg();
             SaveCfg(CfgFName);
         }
+        #endregion
 
         #region Status methods 
         private void getTLAUX_Status()
@@ -556,10 +792,46 @@ namespace KFLOP_Test3
             KMx.ExecuteProgram(2);
         }
 
+        private void CompleteStatus(BWResults res)
+        {
+            if (res.Result == true)  // process ended successfully - 
+            {
+                // maybe put something on a label - like the 
+                Dispatcher.Invoke(() =>
+                {
+                    lblTCP2.Content = res.Comment;
+                    ToolChangeStatus = true; // everything is OK
+                });
+            }
+            else
+            {
+                // process ended with a fault condition - set a flag???
+                // update the UI label
+                Dispatcher.Invoke(() =>
+                {
+                    lblTCP2.Content = res.Comment;
+                    ToolChangeStatus = false; // there was some kind of fault or error.
+                });
+            }
+            TCProgress = false; // the phase is done
+        }
 
-        // the move Z background process
+
         #region MoveZ background process
-        static void MoveZWorker(object sender, DoWorkEventArgs e)
+        // the move Z background process
+        private void Start_MoveZ_Process(SingleAxis SA)
+        {
+            // start a new background worker with move to H1
+            _bw.WorkerReportsProgress = true;
+            _bw.WorkerSupportsCancellation = true;
+
+            _bw.DoWork += MoveZ_Worker; // Add the main thread method to call
+            _bw.ProgressChanged += MoveZ_ProgressChanged; // add the progress changed method
+            _bw.RunWorkerCompleted += MoveZ_Completed; // the the method to call when the function is done
+            _bw.RunWorkerAsync(SA);
+        }
+
+        static void MoveZ_Worker(object sender, DoWorkEventArgs e)
         {
             SingleAxis SAx = (SingleAxis)e.Argument;    // this gets the 
 
@@ -578,13 +850,15 @@ namespace KFLOP_Test3
             KMx.CoordMotion.GetAxisDefinitions(ref ax, ref ay, ref az, ref aa, ref ab, ref ac);
             if(az == -1)
             {
-                e.Result = "Axis not enabled";
+                BWRes.Result = false;
+                BWRes.Comment = "Axis not enabled";
+                // e.Result = "Axis not enabled";
+                e.Result = BWRes;
                 return;
             }
 
             double cX, cY, cZ, cA, cB, cC;
             cX = cY = cZ = cA = cB = cC = 0;
-
 
             KMx.CoordMotion.ReadAndSyncCurPositions(ref cX, ref cY, ref cZ, ref cA, ref cB, ref cC);
             // may want to change the last two variables to pass information to the 3D path generation
@@ -592,22 +866,29 @@ namespace KFLOP_Test3
             KMx.CoordMotion.StraightFeed(SAx.Rate, cX, cY, SAx.Pos, cA, cB, cC, 0, 0);
             KMx.CoordMotion.FlushSegments();    // push the segments out the buffer and into the KFLOP
             KMx.CoordMotion.WaitForSegmentsFinished(false); // - this works, but blocks the calling thread - so how to check if it is done?
-            e.Result += "Motion done";
+            BWRes.Result = true;
+            BWRes.Comment = "Z Motion done";
+            // e.Result += "Motion done";
+            e.Result = BWRes;
 
         }
 
-        private void MoveZProgressChanged(object sender, ProgressChangedEventArgs e)
+        private void MoveZ_ProgressChanged(object sender, ProgressChangedEventArgs e)
         {
-            
+
         }
 
-        private void MoveZCompleted(object sender, RunWorkerCompletedEventArgs e)
+        private void MoveZ_Completed(object sender, RunWorkerCompletedEventArgs e)
         {
-            // MessageBox.Show(e.Result.ToString());
-            _bw.DoWork -= MoveZWorker;
-            _bw.ProgressChanged -= MoveZProgressChanged;
-            _bw.RunWorkerCompleted -= MoveZCompleted;
-            btnAbort.IsEnabled = false; // disable the abort button
+           // MessageBox.Show(xBWR.Comment + xBWR.Result.ToString());
+            _bw.DoWork -= MoveZ_Worker;
+            _bw.ProgressChanged -= MoveZ_ProgressChanged;
+            _bw.RunWorkerCompleted -= MoveZ_Completed;
+            //           btnAbort.IsEnabled = false; // disable the abort button -- this doesn't work... need a completely thread safe way to do this...
+            Dispatcher.Invoke(() =>    // Dispatcher to the rescue!
+                btnAbort.IsEnabled = false
+             );
+            CompleteStatus((BWResults)e.Result);
         }
 
        // the abort button.
@@ -618,24 +899,44 @@ namespace KFLOP_Test3
             {
                 // KMx.CoordMotion.Abort(); // stop the motion! - maybe try a halt here instead?
                 KMx.CoordMotion.Halt(); //  Halt seems to stop quicker than Abort does.
+                //  _bw.CancelAsync();  // stop the background worker.
+                // note here on canceling. This doesn't do anything because the async worker is not checking for the 
+                // .CancellationPending flag. - 
+                // The reason the Abort button works is because of the WaitForSegmentsFinished call ends the thread
+                // if there was a way to timeout, I wouldn't need the Abort button...
                 MessageBox.Show("Halted");
                 KMx.CoordMotion.ClearHalt();
-                _bw.CancelAsync();  // stop the background worker.
                 KMx.CoordMotion.ClearAbort(); // but Halt requies ClearAbort inorder to resume.
                 // MessageBox.Show("Abort Pressed");
+                lblTCP2.Content = "Z Motion Aborted";
             }
         }
-
         #endregion
 
+        #region Carousel background process
         // Rotate Carousel background process
+        private void Start_Carousel_Process(SingleAxis SA)
+        {
+            // start a new background worker with move to H1
+            _bw.WorkerReportsProgress = true;
+            _bw.WorkerSupportsCancellation = true;
+
+            _bw.DoWork += Carousel_Worker;
+            _bw.ProgressChanged += Carousel_ProgressChanged;
+            _bw.RunWorkerCompleted += Carousel_Completed;
+
+            _bw.RunWorkerAsync(SA.ToolNumber);
+        }
+
         private void Carousel_Worker(object sender, DoWorkEventArgs e)
         {
             int car_num = (int)e.Argument;
             getTLAUX_Status();
             if(Carousel_Position == car_num)
             {
-                e.Result = "Done";
+                BWRes.Result = true;
+                BWRes.Comment = "Carousel at " + car_num;
+                e.Result = BWRes;
                 return;
             }
             KMx.SetUserData(PVConst.P_NOTIFY, (T2Const.T2_SEL_TOOL | car_num));
@@ -647,13 +948,18 @@ namespace KFLOP_Test3
                 getTLAUX_Status();
                 if (timeoutCnt++ > 50)
                 {
-                    e.Result = "Timeout";
+                    BWRes.Result = false;
+                    BWRes.Comment = "Carousel Timeout";
+                    e.Result = BWRes;
                     return;
                 }
             } while (Carousel_Position != car_num);
-            e.Result = "Done";
+            BWRes.Result = true;
+            BWRes.Comment = "Carousel moved to " + car_num;
+            e.Result = BWRes;
             return;
         }
+
         private void Carousel_ProgressChanged(object sender, ProgressChangedEventArgs e)
         {
 
@@ -664,10 +970,25 @@ namespace KFLOP_Test3
             _bw.DoWork -= Carousel_Worker;
             _bw.ProgressChanged -= Carousel_ProgressChanged;
             _bw.RunWorkerCompleted -= Carousel_Completed;
-            // MessageBox.Show(e.Result.ToString());
+            CompleteStatus((BWResults)e.Result);
+        }
+        #endregion
+
+        #region Spindle Indexing process
+        // Index Spindle background process
+        private void Start_Spindle_Process(SingleAxis SA)
+        {
+            // start a new background worker with move to H1
+            _bw.WorkerReportsProgress = true;
+            _bw.WorkerSupportsCancellation = true;
+
+            _bw.DoWork += Spindle_Worker;
+            _bw.ProgressChanged += Spindle_ProgressChanged;
+            _bw.RunWorkerCompleted += Spindle_Completed;
+
+            _bw.RunWorkerAsync(SA);
         }
 
-        // Index Spindle background process
         private void Spindle_Worker(object sender, DoWorkEventArgs e)
         {
             SingleAxis SAs = (SingleAxis)e.Argument;
@@ -691,7 +1012,9 @@ namespace KFLOP_Test3
                         Thread.Sleep(100);
                         if (timeoutCnt++ > 50)
                     {
-                        e.Result = "Timeout";
+                        BWRes.Result = false;
+                        BWRes.Comment = "Spindle Timeout";
+                        e.Result = BWRes;
                         return;
                     }
                     } while (SPx.MotionComplete() != true); // I think this will indicate a completed motion.
@@ -718,15 +1041,19 @@ namespace KFLOP_Test3
                     Thread.Sleep(100);
                     if (timeoutCnt++ > 50)
                     {
-                        e.Result = "Timeout";
-                        return;
+                        BWRes.Result = false;
+                        BWRes.Comment = "Spindle Timeout";
+                        e.Result = BWRes;
+                    return;
                     }
                 } while (SPx.MotionComplete() != true);
 
                 // note - this leaves the spindle enabled!
                 // All Done!
-                e.Result = "Done";
-                return;
+                BWRes.Result = true;
+                BWRes.Comment = "Spindle Index Done";
+                e.Result = BWRes;
+            return;
 //            }
         }
         
@@ -740,24 +1067,42 @@ namespace KFLOP_Test3
             _bw.DoWork -= Spindle_Worker;
             _bw.ProgressChanged -= Spindle_ProgressChanged;
             _bw.RunWorkerCompleted -= Spindle_Completed;
+            CompleteStatus((BWResults)e.Result);
+        }
+        #endregion
+
+        #region Tool Changer Arm process
+        // TC Arm In/Out background process
+        private void Start_ARM_Process(SingleAxis SA)
+        {
+            _bw.WorkerReportsProgress = true;
+            _bw.WorkerSupportsCancellation = true;
+
+            _bw.DoWork += TLAUX_ARM_Worker; // Add the main thread method to call
+            _bw.ProgressChanged += TLAUX_ARM_ProgressChanged; // add the progress changed method
+            _bw.RunWorkerCompleted += TLAUX_ARM_Completed; // the the method to call when the function is done
+            _bw.RunWorkerAsync(SA.Move);
         }
 
-        // TC Arm In/Out background process
         private void TLAUX_ARM_Worker(object sender, DoWorkEventArgs e)
         {
             // get the TLAUX Status
             getTLAUX_Status();
             if(bTLAUX_FAULT)
             {
-                e.Result = "TLAUX FAULT!";
+                BWRes.Result = false;
+                BWRes.Comment = "TLAUX Fault";
+                e.Result = BWRes;
                 return;
             }
             int TimeoutCnt = 0;
             if ((bool)e.Argument)    // true is arm in, false is arm out
             {
+                BWRes.Comment = "TC Arm In";
                 if (bTLAUX_ARM_IN)  // if the arm in then already done
                 {
-                    e.Result = "Done";
+                    BWRes.Result = true;
+                    e.Result = BWRes;
                     return;
                 }
                 // send the command to move the arm in
@@ -769,15 +1114,19 @@ namespace KFLOP_Test3
                     getTLAUX_Status();
                     if (TimeoutCnt++ > 30) // about 3 seconds. 
                     {
-                        e.Result = "Timeout";
+                        BWRes.Result = false;
+                        BWRes.Comment = "TC Arm Timeout";
+                        e.Result = BWRes;
                         return;
                     }
                 } while (bTLAUX_ARM_IN == false);
             } else
             {
+                BWRes.Comment = "TC Arm Out";
                 if (bTLAUX_ARM_OUT)  // if the arm in then already done
                 {
-                    e.Result = "Done";
+                    BWRes.Result = true;
+                    e.Result = BWRes;
                     return;
                 }
 
@@ -790,12 +1139,15 @@ namespace KFLOP_Test3
                     getTLAUX_Status();
                     if (TimeoutCnt++ > 30) // about 3 seconds. 
                     {
-                        e.Result = "Timeout";
+                        BWRes.Result = false;
+                        BWRes.Comment = "TC Arm Timeout";
+                        e.Result = BWRes;
                         return;
                     }
                 } while (bTLAUX_ARM_OUT == false);
             }
-            e.Result = "Done";
+            BWRes.Result = true;
+            e.Result = BWRes;
         }
 
         private void TLAUX_ARM_ProgressChanged(object sender, ProgressChangedEventArgs e)
@@ -809,9 +1161,24 @@ namespace KFLOP_Test3
             _bw.DoWork -= TLAUX_ARM_Worker;
             _bw.ProgressChanged -= TLAUX_ARM_ProgressChanged;
             _bw.RunWorkerCompleted -= TLAUX_ARM_Completed;
+            CompleteStatus((BWResults)e.Result);
+        }
+        #endregion
+
+        #region Tool Clamp Process
+        // Tool Clamp background process
+        private void Start_TClamp_Process(SingleAxis SA)
+        {
+            // start a new background worker with move to H1
+            _bw.WorkerReportsProgress = true;
+            _bw.WorkerSupportsCancellation = true;
+
+            _bw.DoWork += TClamp_Worker;
+            _bw.ProgressChanged += TClamp_ProgressChanged;
+            _bw.RunWorkerCompleted += TClamp_Completed;
+            _bw.RunWorkerAsync(SA.Move);
         }
 
-        // Tool Clamp background process
         private void TClamp_Worker(object sender, DoWorkEventArgs e)
         {
             int timeoutCnt = 0;
@@ -819,9 +1186,11 @@ namespace KFLOP_Test3
             getTLAUX_Status();  // start by getting the latest TLAUX Status
             if((bool)e.Argument) // true = engage clamp, false = release clamp
             {
-                if(bTC_Clamped)
+                BWRes.Comment = "Tool Clamp Done";
+                if (bTC_Clamped)
                 {
-                    e.Result = "Done";
+                    BWRes.Result = true;
+                    e.Result = BWRes;
                     return;
                 }
                 KMx.SetUserData(PVConst.P_NOTIFY, T2Const.T2_TOOL_GRAB);
@@ -832,16 +1201,20 @@ namespace KFLOP_Test3
                     getTLAUX_Status();
                     if(timeoutCnt++ > 30)
                     {
-                        e.Result = "Timeout";
+                        BWRes.Result = false;
+                        BWRes.Comment = "Tool Clamp Timeout";
+                        e.Result = BWRes;
                         return;
                     }
                 } while (bTC_Clamped == false);
             }
             else
             {
-                if(bTC_UnClamped)
+                BWRes.Comment = "Tool Un-Clamp done";
+                if (bTC_UnClamped)
                 {
-                    e.Result = "Done";
+                    BWRes.Result = true;
+                    e.Result = BWRes;
                     return;
                 }
                 KMx.SetUserData(PVConst.P_NOTIFY, T2Const.T2_TOOL_RELA);    // release with a burst of air
@@ -852,36 +1225,49 @@ namespace KFLOP_Test3
                     getTLAUX_Status();
                     if (timeoutCnt++ > 30)
                     {
-                        e.Result = "Timeout";
+                        BWRes.Result = false;
+                        BWRes.Comment = "Tool Clamp Timeout";
+                        e.Result = BWRes;
                         return;
                     }
                 } while (bTC_UnClamped == false);
             }
-            e.Result = "Done";
+            BWRes.Result = true;
+            e.Result = BWRes;
             return;
         }
+
         private void TClamp_ProgressChanged(object sender, ProgressChangedEventArgs e)
         {
 
         }
+
         private void TClamp_Completed(object sender, RunWorkerCompletedEventArgs e)
         {
             _bw.DoWork -= TClamp_Worker;
             _bw.ProgressChanged -= TClamp_ProgressChanged;
             _bw.RunWorkerCompleted -= TClamp_Completed;
-
-           //  MessageBox.Show(e.Result.ToString());
+            CompleteStatus((BWResults)e.Result);
         }
+        #endregion
 
         #endregion
 
-        
+
     }
 
     class SingleAxis
     {
         public double Pos { get; set; }
         public double Rate { get; set; }
+        public bool Move { get; set; }  // in / out or clamp / release 
+        public int ToolNumber { get; set; }
+    }
+
+    class BWResults
+    {
+        public bool Result { get; set; }
+        public string Comment { get; set; }
     }
 
 }

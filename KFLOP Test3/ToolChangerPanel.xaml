@@ -116,6 +116,8 @@
         <local:LED_Indicator x:Name="ledClamp" Margin="444,124,10,191" />
         <Button x:Name="btnSave" Content="Save" HorizontalAlignment="Left" Margin="48,304,0,0" VerticalAlignment="Top" Width="75" Click="btnSave_Click"/>
         <Button x:Name="btnAbort" Content="Abort" HorizontalAlignment="Left" Margin="365,277,0,0" VerticalAlignment="Top" Width="46" Click="btnAbort_Click"/>
+        <Label x:Name="lblTCProgress" Content="Progress:" HorizontalAlignment="Left" Margin="212,106,0,0" VerticalAlignment="Top"/>
+        <Label x:Name="lblTCP2" Content="" HorizontalAlignment="Left" Margin="212,123,0,0" VerticalAlignment="Top"/>
 
     </Grid>
 </UserControl>
