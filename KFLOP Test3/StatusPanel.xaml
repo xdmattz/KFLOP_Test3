@@ -5,7 +5,7 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
              xmlns:local="clr-namespace:KFLOP_Test3"
              mc:Ignorable="d" 
-             d:DesignHeight="320" Width="550">
+             d:DesignHeight="350" Width="550">
     <!-- Main tab grid -->
     <Grid>
         <Grid.RowDefinitions>
@@ -19,7 +19,7 @@
             <ColumnDefinition Width="1*" />
         </Grid.ColumnDefinitions>
         <!-- Status Indicators -->
-        <StackPanel Grid.Row="0" Grid.Column="0" Grid.RowSpan="3" Orientation="Vertical" >
+        <StackPanel Grid.Row="0" Grid.Column="0" Grid.RowSpan="3" Orientation="Vertical"  >
             <Border BorderBrush="Black" BorderThickness="2" CornerRadius="3" Margin="3"  >
                 <Grid>
                     <Grid.RowDefinitions>
@@ -75,8 +75,10 @@
                     <local:LED_Indicator x:Name="AirPres_LED" Grid.Row="2" />
                     <local:LED_Indicator x:Name="DoorFan_LED" Grid.Row="3" />
                     <local:LED_Indicator x:Name="FloodMotor_LED" Grid.Row="4" />
+                    <Button x:Name="btnOiler" Content="ON/OFF" Grid.Row="0" Width="50" HorizontalAlignment="Right" Margin="5,2" Click="btnOiler_Click" />
                 </Grid>
             </Border>
+            <Button Content="Button"/>
         </StackPanel>
 
         <!-- Limit control -->

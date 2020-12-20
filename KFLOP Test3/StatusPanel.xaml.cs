@@ -390,5 +390,11 @@ namespace KFLOP_Test3
                 + Convert.ToString(x0, 2).PadLeft(4, '0');
         }
 
+        private void btnOiler_Click(object sender, RoutedEventArgs e)
+        {
+            // toggle the Oiler 
+            KM_IO CtrlBit = KMx.GetIO(IOConst.OIL_LUBE, IO_TYPE.DIGITAL_OUT, "Oiler");
+            CtrlBit.Toggle();
+        }
     }
 }

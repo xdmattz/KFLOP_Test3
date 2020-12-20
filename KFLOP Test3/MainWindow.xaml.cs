@@ -1032,7 +1032,6 @@ namespace KFLOP_Test3
             if (ExecutionInProgress == true)
             {
                 OffsetPanel1.OffsetButtons.SetButton(KM.CoordMotion.Interpreter.SetupParams.OriginIndex);
-                
             }
             OffsetPanel1.SetOffsetDisplay();
 

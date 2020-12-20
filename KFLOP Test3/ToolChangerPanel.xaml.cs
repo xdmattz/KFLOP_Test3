@@ -1,4 +1,4 @@
-﻿// #define TESTBENCH
+﻿// #define TESTBENCH  // defining this will allow operation on the testbench
 
 using System;
 using System.Collections.Generic;
@@ -30,8 +30,6 @@ using KMotion_dotNet;
 
 namespace KFLOP_Test3
 {
-    // defining this will allow operation on the testbench
-
 
     /// <summary>
     /// Interaction logic for ToolChangerPanel.xaml
@@ -126,6 +124,8 @@ namespace KFLOP_Test3
             SpindlePID = B.BitIsSet(PVStatus, PVConst.SB_SPINDLE_PID);
             if(SpindleEnabled) { LED_SPEN.Set_State(LED_State.On_Green); }
             else { LED_SPEN.Set_State(LED_State.Off); }
+            SpindleRPM = B.BitIsSet(PVStatus, PVConst.SB_SPINDLE_RPM);
+            SpindleHomed = !(B.BitIsSet(PVStatus, PVConst.SB_SPIN_HOME));
         }
 
         private void btnGetTool_Click(object sender, RoutedEventArgs e)
@@ -460,6 +460,7 @@ namespace KFLOP_Test3
                 SingleAxis Sx = new SingleAxis();
                 Sx.Pos = 0;
                 Sx.Rate = 1500;
+                MessageBox.Show("pid1 StartSpindle");
                 Start_Spindle_Process(Sx);
   
             }
@@ -567,7 +568,10 @@ namespace KFLOP_Test3
         private void btnSpindle_Click(object sender, RoutedEventArgs e)
         {
             if (_bw.IsBusy)
-            { return; } // don't run if the _bw worker is busy
+            {
+                MessageBox.Show("_bw.IsBusy!");
+                return;
+            } // don't run if the _bw worker is busy
 
             // send the spindle to XXXX
             // check that the axis is enabled and in PID mode
@@ -590,10 +594,12 @@ namespace KFLOP_Test3
             getSpindle_Status();
 
 #if TESTBENCH
+            MessageBox.Show("TB StartSpindle");
             Start_Spindle_Process(SX);
 #else
             if (SpindleEnabled && SpindlePID)
-            { 
+            {
+                MessageBox.Show("StartSpindle");
                 Start_Spindle_Process(SX);
             }
             else
@@ -761,10 +767,10 @@ namespace KFLOP_Test3
             {
                 Spindle_Position = SPx.GetActualPositionCounts();
                 iSpindle_Status = KMx.GetUserData(PVConst.P_STATUS_REPORT);
-                SpindleHomed = !B.BitIsSet(iSpindle_Status, PVConst.SB_SPIN_HOME);  // this inverts the logic of the bit in the status word. so true = homed
-                SpindleEnabled = B.BitIsSet(iSpindle_Status, PVConst.SB_SPINDLE_ON);
-                SpindlePID = B.BitIsSet(iSpindle_Status, PVConst.SB_SPINDLE_PID);
-                SpindleRPM = B.BitIsSet(iSpindle_Status, PVConst.SB_SPINDLE_RPM);
+//                SpindleHomed = !B.BitIsSet(iSpindle_Status, PVConst.SB_SPIN_HOME);  // this inverts the logic of the bit in the status word. so true = homed
+//                SpindleEnabled = B.BitIsSet(iSpindle_Status, PVConst.SB_SPINDLE_ON);
+//                SpindlePID = B.BitIsSet(iSpindle_Status, PVConst.SB_SPINDLE_PID);
+//                SpindleRPM = B.BitIsSet(iSpindle_Status, PVConst.SB_SPINDLE_RPM);
             }
         }
 
@@ -1036,7 +1042,7 @@ namespace KFLOP_Test3
 
             //            lock (_SPlocker)
             //            {
-#if !TESTBENCH
+
             int timeoutCnt = 0;
             // if the spindle has not been homed then home it.
             // if the spindle index > 10000 or < -10000 (+/- 5 turns) then re-home it
@@ -1055,7 +1061,7 @@ namespace KFLOP_Test3
                     if (timeoutCnt++ > 50)
                     {
                         BWRes.Result = false;
-                        BWRes.Comment = "Spindle Timeout";
+                        BWRes.Comment = "Spindle Timeout- DANG!";
                         e.Result = BWRes;
                         return;
                     }
@@ -1105,6 +1111,7 @@ namespace KFLOP_Test3
             SPx.Velocity = SAs.Rate;
             SPx.StartMoveTo(SAs.Pos);
             timeoutCnt = 0;
+
             do {    // Wait until done or timeout
                 Thread.Sleep(100);
                 if (timeoutCnt++ > 50)
@@ -1118,7 +1125,7 @@ namespace KFLOP_Test3
 
             // note - this leaves the spindle enabled!
             // All Done!
-#endif
+
             BWRes.Result = true;
             BWRes.Comment = "Spindle Index Done";
             e.Result = BWRes;
