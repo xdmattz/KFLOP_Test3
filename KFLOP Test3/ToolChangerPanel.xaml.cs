@@ -43,7 +43,7 @@ namespace KFLOP_Test3
         static bool SpindleRPM;
         static bool SpindleHomed;
         static double Spindle_Position;
-        static int iSpindle_Status;
+        static int iPVStatus;
         static bool bTC_Clamped;
         static bool bTC_UnClamped;
         static bool bTLAUX_ARM_IN;
@@ -118,14 +118,14 @@ namespace KFLOP_Test3
             tbTLAUXStatus.Text = string.Format("{0:X4}", iTLAUX_STATUS);
 
             // get the spindle status from KSTAT
-            int PVStatus = KStat.PC_comm[CSConst.P_STATUS];
+            iPVStatus = KStat.PC_comm[CSConst.P_STATUS];
 
-            SpindleEnabled = B.BitIsSet(PVStatus, PVConst.SB_SPINDLE_ON);
-            SpindlePID = B.BitIsSet(PVStatus, PVConst.SB_SPINDLE_PID);
+            SpindleEnabled = B.BitIsSet(iPVStatus, PVConst.SB_SPINDLE_ON);
+            SpindlePID = B.BitIsSet(iPVStatus, PVConst.SB_SPINDLE_PID);
             if(SpindleEnabled) { LED_SPEN.Set_State(LED_State.On_Green); }
             else { LED_SPEN.Set_State(LED_State.Off); }
-            SpindleRPM = B.BitIsSet(PVStatus, PVConst.SB_SPINDLE_RPM);
-            SpindleHomed = !(B.BitIsSet(PVStatus, PVConst.SB_SPIN_HOME));
+            SpindleRPM = B.BitIsSet(iPVStatus, PVConst.SB_SPINDLE_RPM);
+            SpindleHomed = !(B.BitIsSet(iPVStatus, PVConst.SB_SPIN_HOME));
         }
 
         private void btnGetTool_Click(object sender, RoutedEventArgs e)
@@ -428,6 +428,7 @@ namespace KFLOP_Test3
             // set the spindle to PID mode. And leave it enabled!
             if(SpindleEnabled == true)
             {
+                // MessageBox.Show("Turning Off Spindle");
                 btnSP_PID.Content = "Enable Spindle";
                 // Disable the spindle
                 KMx.SetUserData(PVConst.P_NOTIFY, T2Const.T2_SPINDLE_DIS);
@@ -439,6 +440,7 @@ namespace KFLOP_Test3
             }
             else
             {
+                // MessageBox.Show("Turning On Spindle");
                 btnSP_PID.Content = "Disable Spindle";
                 // enable PID spindle mode and home
                 KMx.SetUserData(PVConst.P_NOTIFY, T2Const.T2_SPINDLE_PID);
@@ -460,7 +462,7 @@ namespace KFLOP_Test3
                 SingleAxis Sx = new SingleAxis();
                 Sx.Pos = 0;
                 Sx.Rate = 1500;
-                MessageBox.Show("pid1 StartSpindle");
+                // MessageBox.Show("pid1 StartSpindle");
                 Start_Spindle_Process(Sx);
   
             }
@@ -750,6 +752,7 @@ namespace KFLOP_Test3
             {
                 // do I need to lock this? 
                 // get the TLAUX status and set the  apropriate flags
+                // this is called every 100ms by the UI update timer
                 int TStatus = KMx.GetUserData(PVConst.P_TLAUX_STATUS);
                 iTLAUX_STATUS = TStatus;
                 bTLAUX_ARM_IN = B.BitIsSet(TStatus, PVConst.TLAUX_ARM_IN);
@@ -766,7 +769,7 @@ namespace KFLOP_Test3
             lock(_Slocker)
             {
                 Spindle_Position = SPx.GetActualPositionCounts();
-                iSpindle_Status = KMx.GetUserData(PVConst.P_STATUS_REPORT);
+//                iSpindle_Status = KMx.GetUserData(PVConst.P_STATUS_REPORT);
 //                SpindleHomed = !B.BitIsSet(iSpindle_Status, PVConst.SB_SPIN_HOME);  // this inverts the logic of the bit in the status word. so true = homed
 //                SpindleEnabled = B.BitIsSet(iSpindle_Status, PVConst.SB_SPINDLE_ON);
 //                SpindlePID = B.BitIsSet(iSpindle_Status, PVConst.SB_SPINDLE_PID);
@@ -792,7 +795,7 @@ namespace KFLOP_Test3
                     || (Spindle_Position > 10000)                       // or position is far high
                     || (Spindle_Position < -10000))                     // or position is far low
                 {
-                    KMx.SetUserData(PVConst.P_NOTIFY, T2Const.T2_HOME_SPINDLE);
+                    KMx.SetUserData(PVConst.P_NOTIFY, T2Const.T2_SPINDLE_ZERO);
                     KMx.ExecuteProgram(2);
                     // wait until it is done.
                     do
@@ -1052,7 +1055,7 @@ namespace KFLOP_Test3
                 || (Spindle_Position > 10000)                       // or position is far high
                 || (Spindle_Position < -10000))                     // or position is far low
             {
-                KMx.SetUserData(PVConst.P_NOTIFY, T2Const.T2_HOME_SPINDLE);
+                KMx.SetUserData(PVConst.P_NOTIFY, T2Const.T2_SPINDLE_ZERO);
                 KMx.ExecuteProgram(2);
                 // wait until it is done.
                 do
@@ -1085,7 +1088,7 @@ namespace KFLOP_Test3
                         e.Result = BWRes;
                         return;
                     }
-                    getSpindle_Status();
+                    // getSpindle_Status();
                 } while (SpindlePID == false);
             }
 
@@ -1148,7 +1151,7 @@ namespace KFLOP_Test3
         }
         #endregion
 
-        #region Spindle Return to RPM mode.
+#region Spindle Return to RPM mode.
         // return the Spindle back to RPM mode.
         private void Start_SpindleRPM_Process(SingleAxis SA)
         {
@@ -1221,7 +1224,7 @@ namespace KFLOP_Test3
         }
         #endregion
 
-        #region Tool Changer Arm process
+#region Tool Changer Arm process
         // TC Arm In/Out background process
         private void Start_ARM_Process(SingleAxis SA)
         {
