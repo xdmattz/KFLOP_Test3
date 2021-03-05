@@ -43,7 +43,7 @@
         <TextBox x:Name="tbErr" HorizontalAlignment="Left" Height="23" Margin="891,415,0,0" TextWrapping="Wrap" Text="TextBox" VerticalAlignment="Top" Width="120"/>
         <CheckBox x:Name="cbSimulate" Content="Simulate" HorizontalAlignment="Left" Margin="705,294,0,0" VerticalAlignment="Top" RenderTransformOrigin="2.595,0.438"/>
         <TextBlock x:Name="tbExTime" HorizontalAlignment="Left" Margin="891,505,0,0" TextWrapping="Wrap" Text="TextBlock" VerticalAlignment="Top" RenderTransformOrigin="0.76,-0.844"/>
-        <Button x:Name="btnConsole" Content="Console" HorizontalAlignment="Left" Margin="331,40,0,0" VerticalAlignment="Top" Width="75" Click="btnConsole_Click"/>
+        <Button x:Name="btnConsole" Content="Console" HorizontalAlignment="Left" Margin="421,41,0,0" VerticalAlignment="Top" Width="75" Click="btnConsole_Click"/>
         <TabControl x:Name="tcMainTab" HorizontalAlignment="Left" Height="370" Margin="34,332,0,0" VerticalAlignment="Top" Width="600">
             <!-- fill the tabs in from the "Code Behind" -->
         </TabControl>
@@ -118,6 +118,7 @@
         <Button x:Name="btnSPGoto" Content="SP Goto" HorizontalAlignment="Left" Margin="937,728,0,0" VerticalAlignment="Top" Width="74" Click="btnSPGoto_Click"/>
         <Label x:Name="SPMotion" Content="Label" HorizontalAlignment="Left" Margin="937,748,0,0" VerticalAlignment="Top"/>
         <Label x:Name="ZMotion" Content="Label" HorizontalAlignment="Left" Margin="1011,750,0,0" VerticalAlignment="Top"/>
+        <Button x:Name="btnToolScan" Content="Scan Tools" HorizontalAlignment="Left" Margin="331,42,0,0" VerticalAlignment="Top" Width="75" Click="btnToolScan_Click"/>
 
     </Grid>
 </Window>

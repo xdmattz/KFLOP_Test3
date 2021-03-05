@@ -114,12 +114,12 @@
             <!-- Y Axis Limit -->
             <StackPanel Grid.Row="0" Grid.Column="1" Grid.RowSpan="3" >
                 <CheckBox x:Name="cbLimY" Content="Y Limit" HorizontalAlignment="Center" VerticalAlignment="Top"/>
-                <Button x:Name="btnLimYp" HorizontalAlignment="center" VerticalAlignment="Top" BorderThickness="0" Click="btnLimYp_Click">
+                <Button x:Name="btnLimYp" HorizontalAlignment="center" VerticalAlignment="Top" BorderThickness="0" Click="btnLimYn_Click">
                     <StackPanel Height="50" Width="50">
                         <Image Source="LimY+ sm.png" />
                     </StackPanel>
                 </Button>
-                <Button x:Name="btnLimYn" HorizontalAlignment="Center" VerticalAlignment="Top" BorderThickness="0" Click="btnLimYn_Click">
+                <Button x:Name="btnLimYn" HorizontalAlignment="Center" VerticalAlignment="Top" BorderThickness="0" Click="btnLimYp_Click">
                     <StackPanel Height="50" Width="50">
                         <Image Source="LimY- sm.png" />
                     </StackPanel>

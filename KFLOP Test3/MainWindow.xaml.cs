@@ -1954,7 +1954,63 @@ namespace KFLOP_Test3
          }
 
         #endregion
+        #region GCode Tools
+        private void btnToolScan_Click(object sender, RoutedEventArgs e)
+        {
+            if(GCodeFileName == null)
+            {
+                MessageBox.Show("Need to load a GCode Filename");
+                return;
+            }
+            else
+            {
+                GetToolsFromGcode(GCodeFileName);
+            }
+        }
 
+        private void GetToolsFromGcode(string filename)
+        {
+            // open the file
+            System.IO.StreamReader infile = new StreamReader(filename);
+            List<int> ToolList = new List<int>();
+            string line;
+            while ((line = infile.ReadLine()) != null)
+            {
+                if (line.Contains('T'))
+                {
+                    // Trying a Linq expression -> This works really well - I should try to learn more about this!
+                    string number = new string(line.SkipWhile(c => !char.IsDigit(c))
+                                                .TakeWhile(c => char.IsDigit(c))
+                                                .ToArray());
+                    
+                    int Tnum;
+                    if (int.TryParse(number, out Tnum))
+                    {
+                        // see if the tool number is already in the list
+                        bool exists = false;
+                        foreach(int tnum in ToolList)
+                        {
+                            if(tnum == Tnum)
+                            {
+                                exists = true;
+                            }
+                        }
+                        if (!exists) ToolList.Add(Tnum);
+                    }
+                }
+
+            }
+            infile.Close(); // don't forget to close the file so the Interpreter can use it!
+
+            // test it to see that it works
+            string Tlist = "";
+            foreach(int tl in ToolList)
+            {
+                Tlist += "Tool " + tl + "\n";
+            }
+            MessageBox.Show(Tlist);
+        }
+        #endregion
         private void btnConsole_Click(object sender, RoutedEventArgs e)
         {
             if(ConWin.IsLoaded)
@@ -2164,5 +2220,7 @@ namespace KFLOP_Test3
 
 
         }
+
+
     }
 }

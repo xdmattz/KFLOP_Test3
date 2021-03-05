@@ -40,8 +40,11 @@ namespace KFLOP_Test3
         // perisist UserData variables used for Thread 2 communications
         public const int P_NOTIFY           = 131;
         public const int P_NOTIFY_ARGUMENT  = 132;
+        public const int P_NOTIFY_ARGUMENT1 = 132;
         public const int P_NOTIFY_ARGUMENT2 = 133;
-        public const int P_REMOTE_CMD       = 134;
+        public const int P_NOTIFY_ARGUMENT3 = 134;
+        public const int P_NOTIFY_ARGUMENT4 = 135;
+        public const int P_REMOTE_CMD       = 136;
 
         // Bit definitions of  P_STATUS and P_STATUS_REPORT 
         public const int SB_ACTIVE          = 0;
@@ -88,6 +91,9 @@ namespace KFLOP_Test3
         public const int SB_SPINDLE_ON      = 27;
         public const int SB_SPINDLE_CW      = 28;
         public const int SB_SPINDLE_CCW     = 29;
+        public const int SB_PROBE_DETECT    = 30;
+        public const int SB_PROBE_TIMEOUT   = 31;
+        public const uint SB_PROBE_STATUS_MASK = 0xc0000000;    // this didn't like the fact that the MSB was set...
 
         // P_TLUX_STATUS bit definitions
         // Tool Changer Status Query 
@@ -146,8 +152,10 @@ namespace KFLOP_Test3
         public const int Z_HOME = 138;      // Normally Open - OPTO_10
         public const int OPTO_9 = 137;      // UNUSED - OPTO_9
         public const int HEAD_WHITE = 139;      // OPTO_11
+        public const int TOUCH_PROBE = 139;
         public const int HEAD_RED = 140;        // OPTO_12
         public const int HEAD_GREEN = 141;      // OPTO_13
+        public const int TOOL_SETTER = 141;     
         public const int HEAD_BLUE = 142;       // OPTO_14
         public const int HEAD_YELLOW = 143;     // OPTO_15
         public const int TOOL_RELEASE = 140;     // same as red wire.
@@ -164,6 +172,8 @@ namespace KFLOP_Test3
         public const int HEAD_GREEN_MASK = 0x00002000;
         public const int HEAD_BLUE_MASK = 0x00004000;
         public const int HEAD_YELLOW_MASK = 0x00008000;
+        public const int TOUCH_PROBE_MASK = 0x00000800;
+        public const int TOOL_SETTER_MASK = 0x00002000;
 
         // Outputs
         // 24V FET drive
@@ -330,6 +340,15 @@ namespace KFLOP_Test3
         public const int T2_SPINDLE_ZERO = 0x0507;
         public const int T2_SPINDLE_PID = 0x0510;
         public const int T2_SPINDLE_RPM = 0x0511;
+        // Probing commands - command byte 0x0700
+        public const int T2_PROBE = 0x0700;
+        public const int T2_PROBE_X = 0x0701;
+        public const int T2_PROBE_Y = 0x0702;
+        public const int T2_PROBE_Z = 0x0703;
+        public const int T2_PROBE_A = 0x0704;
+        public const int T2_PROBE_XYZ = 0x0707;
+        public const int T2_TOOL_SET = 0x0710;
+
     }
 
     class BitOps
