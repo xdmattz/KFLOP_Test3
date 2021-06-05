@@ -24,4 +24,22 @@ namespace KFLOP_Test3
         public double TS_FR2 { get; set; }    // tool height setter FeedRate 2 - touch
 
     }
+
+    public class ToolParams
+    {
+        // tool parameters
+        public ToolParams()    // constructor
+        { }
+
+        public int index { get; set; }
+        public int slot { get; set; }
+        public int id { get; set; }
+        public double length_offset { get; set; }
+        public double diameter_offset { get; set; }
+        public double x_offset { get; set; }
+        public double y_offset { get; set; }
+        public string description { get; set; }
+        public string image_fname { get; set; }
+
+    }
 }

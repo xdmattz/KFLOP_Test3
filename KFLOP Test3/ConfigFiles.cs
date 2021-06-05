@@ -15,7 +15,7 @@ namespace KFLOP_Test3
     // links to a json file 
     class ConfigFiles
     {
-        public ConfigFiles()
+        public ConfigFiles()    // constructor
         { }
 
         public string fPath { get; set; }   // the default directory path name for the program

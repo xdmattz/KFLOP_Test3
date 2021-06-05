@@ -1,14 +1,29 @@
 <?xml version="1.0"?>
 <!-- An attempt to make G Code highlighting for Avalon Edit -->
 <!-- converted from the C# example xshd file -->
+<!-- for more info on the syntax highlighting see -->
+<!-- http://avalonedit.net/documentation/html/4d4ceb51-154d-43f0-b876-ad9640c5d2d8.htm -->
+<!-- Colors can be referened from here: https://docs.microsoft.com/en-us/dotnet/api/system.windows.media.colors?view=net-5.0 -->
+<!-- Note! If the colors are not valid then the file will not load without an error! -->
 <SyntaxDefinition name="GCODE" extensions=".tap;.nc;.ngc;.gcode" xmlns="http://icsharpcode.net/sharpdevelop/syntaxdefinition/2008">
 	<!-- The named colors 'Comment' and 'String' are used in SharpDevelop to detect if a line is inside a multiline string/comment -->
-	<Color name="Comment" foreground="Green" exampleText="// comment" />
+	<Color name="Comment" foreground="LimeGreen" exampleText="// comment" />
 	<!-- Gcode -->
 	<!-- Axis numbers -->
-	<Color name="Axis" fontWeight= "bold" foreground = "Navy"/>
-	<Color name="SAxis" fontWeight= "bold" foreground = "Magenta"/>
+	<Color name="XAxis" fontWeight= "normal" foreground = "Red"/>
+	<Color name="YAxis" fontWeight= "normal" foreground = "Green"/>
+	<Color name="ZAxis" fontWeight= "normal" foreground = "Blue"/>	
+	<Color name="AAxis" fontWeight= "normal" foreground = "Red"/>
+	<Color name="BAxis" fontWeight= "normal" foreground = "LightBlue"/>
+	<Color name="CAxis" fontWeight= "normal" foreground = "LightGreen"/>
+	<Color name="IJKAxis" fontWeight= "normal" foreground = "Goldenrod"/>	
+	<Color name="SAxis" fontWeight= "normal" foreground = "Magenta"/>
 	
+	<!-- Feed rate and motion -->
+	
+	<Color name="MCode" fontWeight= "bold" foreground = "Navy"/>
+	
+	<Color name="Feed_rate" fontWeight= "bold" foreground = "DarkGreen"/>
 	<Color name="Motion" fontWeight="bold" foreground="DarkGreen" />
 	<Color name="Rapid" fontWeight="bold" foreground="DarkRed" />
 	
@@ -23,7 +38,9 @@
 	<Color name="Stopping" />
 	<Color name="Units" fontWeight="bold" foreground="Red" />
 
-	<Color name="Plane" />
+	<Color name="PlaneSelection" fontWeight="bold" foreground="Olive" />
+	<Color name="GCodeOther" fontWeight="bold" foreground="Olive" />
+	<Color name="CoordinateSystem" fontWeight="bold" foreground="OrangeRed" />
 	
 	<Color name="String" foreground="Blue" exampleText="string text = &quot;Hello, World!&quot;"/>
 	<Color name="StringInterpolation" foreground="Black" exampleText="string text = $&quot;Hello, {name}!&quot;"/>
@@ -60,14 +77,51 @@
 		<Span color="Comment" multiline="true" begin="\(" end="\)" />
 		
 		<!-- Axis values X00 Y00 Z00 A00 I00 J00 K00 this should look a bit like the digits -->
-		<Rule color = "Axis" >
-			\b[xX]|[yY]|[zZ]|[aA]|[iI]|[jJ]|[kK][+-]?[0-9a]+ | (\b\d+(\.[0-9]+)? | \.[0-9]+)
+		
+		<Rule color = "XAxis" >
+			\b[xX][+-]?([0-9]+ (\.[0-9]*)? | \.[0-9]+)
 		</Rule>
+
+		<Rule color = "YAxis" >
+			\b[yY][+-]?([0-9]+ (\.[0-9]*)? | \.[0-9]+)
+		</Rule>
+		
+		<Rule color = "ZAxis" >
+			\b[zZ][+-]?([0-9]+ (\.[0-9]*)? | \.[0-9]+)
+		</Rule>
+		
+		<Rule color = "AAxis" >
+			\b[aA][+-]?([0-9]+ (\.[0-9]*)? | \.[0-9]+)
+		</Rule>
+		
+		<Rule color = "BAxis" >
+			\b[bB][+-]?([0-9]+ (\.[0-9]*)? | \.[0-9]+)
+		</Rule>
+		
+		<Rule color = "CAxis" >
+			\b[cC][+-]?([0-9]+ (\.[0-9]*)? | \.[0-9]+)
+		</Rule>
+		
+		<Rule color = "IJKAxis" >
+			\b[ijkIJK][+-]?([0-9]+ (\.[0-9]*)? | \.[0-9]+)
+		</Rule>
+		
+		<Rule color = "SAxis" >
+			\b[sS][+-]?([0-9]+ (\.[0-9]*)? | \.[0-9]+)
+		</Rule>
+		
 		
 		<Rule color = "Tools">
-			\b[T][0-9a]+
+			\b[T][0-9]+
 		</Rule>
 		
+		<Rule color = "Feed_rate">
+			\b[fF][0-9]+
+		</Rule>		
+		
+		<Rule color = "MCode">
+			\b[mM][0-9]+
+		</Rule>
 		
 		<Keywords color = "Rapid" >
 			<Word>G0</Word>
@@ -81,6 +135,11 @@
 			<Word>G5</Word>
 			<Word>G5.1</Word>
 			<Word>G5.2</Word>
+			<Word>G28</Word>
+			<Word>G28.1</Word>
+			<Word>G30</Word>
+			<Word>G30.1</Word>
+			<Word>G38</Word>
 			<Word>G38.2</Word>
 			<Word>G38.3</Word>
 			<Word>G38.4</Word>
@@ -88,7 +147,18 @@
 			<Word>G33</Word>
 			<Word>G33.1</Word>
 			<Word>G80</Word>
+			<Word>G81</Word>
+			<Word>G98</Word>
 		</Keywords>
+		
+		<Keywords color="GCodeOther" >
+			<Word>G40</Word>
+			<Word>G41</Word>
+			<Word>G42</Word>
+			<Word>G43</Word>
+			<Word>G43.1</Word>
+			<Word>G49</Word>
+		</Keywords>		
 		
 		<Keywords color="Units" >
 			<Word>G20</Word>
@@ -103,6 +173,29 @@
 			<Word>G7</Word>
 			<Word>G8</Word>
 		</Keywords>	
+	
+		<Keywords color="PlaneSelection" >
+			<Word>G17</Word>
+			<Word>G18</Word>
+			<Word>G19</Word>
+			<Word>G17.1</Word>
+			<Word>G18.1</Word>
+			<Word>G19.1</Word>
+		</Keywords>		
+
+		<Keywords color="CoordinateSystem" >
+			<Word>G53</Word>
+			<Word>G54</Word>
+			<Word>G55</Word>
+			<Word>G56</Word>
+			<Word>G57</Word>
+			<Word>G58</Word>
+			<Word>G59</Word>
+			<Word>G59.1</Word>
+			<Word>G59.2</Word>
+			<Word>G59.3</Word>
+		</Keywords>	
+		
 		
 		<Keywords color="FeedRate" >
 			<Word>G93</Word>
@@ -111,6 +204,8 @@
 		</Keywords>			
 		
 		<!-- Digits -->
+		
+		<!--
 		<Rule color="NumberLiteral">
 			\b0[xX][0-9a-fA-F]+  # hex number
 		|	
@@ -119,9 +214,10 @@
 			)
 			([eE][+-]?[0-9]+)? # optional exponent
 		</Rule>		
-
+		-->
+		
 		<Rule color="LineNumbers" >
-			\b[nN][0-9a]+
+			\b[nN][0-9]+
 		</Rule>
 
 		<Span color="String">
@@ -168,165 +264,7 @@
 			@[\w\d_]+
 		</Rule>
 		
-		<Keywords color="ThisOrBaseReference">
-			<Word>this</Word>
-			<Word>base</Word>
-		</Keywords>
-		
-		<Keywords color="TypeKeywords">
-			<Word>as</Word>
-			<Word>is</Word>
-			<Word>new</Word>
-			<Word>sizeof</Word>
-			<Word>typeof</Word>
-			<Word>stackalloc</Word>
-		</Keywords>
-		
-		<Keywords color="TrueFalse">
-			<Word>true</Word>
-			<Word>false</Word>
-		</Keywords>
-		
-		<Keywords color="Keywords">
-			<Word>else</Word>
-			<Word>if</Word>
-			<Word>switch</Word>
-			<Word>case</Word>
-			<Word>default</Word>
-			<Word>do</Word>
-			<Word>for</Word>
-			<Word>foreach</Word>
-			<Word>in</Word>
-			<Word>while</Word>
-			<Word>lock</Word>
-		</Keywords>
-		
-		<Keywords color="GotoKeywords">
-			<Word>break</Word>
-			<Word>continue</Word>
-			<Word>goto</Word>
-			<Word>return</Word>
-		</Keywords>
-		
-		<Keywords color="ContextKeywords">
-			<Word>yield</Word>
-			<Word>partial</Word>
-			<Word>global</Word>
-			<Word>where</Word>
-			<Word>select</Word>
-			<Word>group</Word>
-			<Word>by</Word>
-			<Word>into</Word>
-			<Word>from</Word>
-			<Word>ascending</Word>
-			<Word>descending</Word>
-			<Word>orderby</Word>
-			<Word>let</Word>
-			<Word>join</Word>
-			<Word>on</Word>
-			<Word>equals</Word>
-			<Word>var</Word>
-			<Word>dynamic</Word>
-			<Word>await</Word>
-		</Keywords>
-		
-		<Keywords color="ExceptionKeywords">
-			<Word>try</Word>
-			<Word>throw</Word>
-			<Word>catch</Word>
-			<Word>finally</Word>
-		</Keywords>
-		
-		<Keywords color="CheckedKeyword">
-			<Word>checked</Word>
-			<Word>unchecked</Word>
-		</Keywords>
-		
-		<Keywords color="UnsafeKeywords">
-			<Word>fixed</Word>
-			<Word>unsafe</Word>
-		</Keywords>
-		
-		<Keywords color="ValueTypeKeywords">
-			<Word>bool</Word>
-			<Word>byte</Word>
-			<Word>char</Word>
-			<Word>decimal</Word>
-			<Word>double</Word>
-			<Word>enum</Word>
-			<Word>float</Word>
-			<Word>int</Word>
-			<Word>long</Word>
-			<Word>sbyte</Word>
-			<Word>short</Word>
-			<Word>struct</Word>
-			<Word>uint</Word>
-			<Word>ushort</Word>
-			<Word>ulong</Word>
-		</Keywords>
-		
-		<Keywords color="ReferenceTypeKeywords">
-			<Word>class</Word>
-			<Word>interface</Word>
-			<Word>delegate</Word>
-			<Word>object</Word>
-			<Word>string</Word>
-			<Word>void</Word>
-		</Keywords>
-		
-		<Keywords color="OperatorKeywords">
-			<Word>explicit</Word>
-			<Word>implicit</Word>
-			<Word>operator</Word>
-		</Keywords>
-		
-		<Keywords color="ParameterModifiers">
-			<Word>params</Word>
-			<Word>ref</Word>
-			<Word>out</Word>
-		</Keywords>
-		
-		<Keywords color="Modifiers">
-			<Word>abstract</Word>
-			<Word>const</Word>
-			<Word>event</Word>
-			<Word>extern</Word>
-			<Word>override</Word>
-			<Word>readonly</Word>
-			<Word>sealed</Word>
-			<Word>static</Word>
-			<Word>virtual</Word>
-			<Word>volatile</Word>
-			<Word>async</Word>
-		</Keywords>
-		
-		<Keywords color="Visibility">
-			<Word>public</Word>
-			<Word>protected</Word>
-			<Word>private</Word>
-			<Word>internal</Word>
-		</Keywords>
-		
-		<Keywords color="NamespaceKeywords">
-			<Word>namespace</Word>
-			<Word>using</Word>
-		</Keywords>
-		
-		<Keywords color="GetSetAddRemove">
-			<Word>get</Word>
-			<Word>set</Word>
-			<Word>add</Word>
-			<Word>remove</Word>
-		</Keywords>
-		
-		<Keywords color="NullOrValueKeywords">
-			<Word>null</Word>
-			<Word>value</Word>
-		</Keywords>
 
-		<Keywords color="SemanticKeywords">
-			<Word>nameof</Word>
-		</Keywords>
 
 		<!-- Mark previous rule-->
 		<Rule color="MethodCall">
@@ -336,9 +274,10 @@
 		</Rule>
 		
 
-		
+		<!--
 		<Rule color="Punctuation">
 			[?,.;()\[\]{}+\-/%*&lt;&gt;^+~!|&amp;]+
 		</Rule>
+		-->
 	</RuleSet>
 </SyntaxDefinition>

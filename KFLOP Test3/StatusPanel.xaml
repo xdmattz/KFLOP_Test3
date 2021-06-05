@@ -5,7 +5,7 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
              xmlns:local="clr-namespace:KFLOP_Test3"
              mc:Ignorable="d" 
-             d:DesignHeight="350" Width="550">
+             d:DesignHeight="400" Width="550">
     <!-- Main tab grid -->
     <Grid>
         <Grid.RowDefinitions>

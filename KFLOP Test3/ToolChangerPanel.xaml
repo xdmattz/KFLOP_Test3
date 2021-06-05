@@ -34,7 +34,7 @@
             <!-- Row of coordinates-->
             <StackPanel Grid.Row="1" Grid.Column="0" Orientation="Horizontal">
                 <Label Content="H1:"/>
-                <TextBox x:Name="tbTCH1" Text="0.000" HorizontalAlignment="Stretch"/>
+                <TextBox x:Name="tbTCH1" Text="0.000" HorizontalAlignment="Stretch"  />
             </StackPanel>
 
             <StackPanel Grid.Row="1" Grid.Column="2" Orientation="Horizontal">

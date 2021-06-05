@@ -55,6 +55,7 @@ namespace KFLOP_Test3
         // these static variable flags indicate tool change progress
         static bool ToolChangeStatus; // true indicates everything OK false indcates an fault occured
         static bool TCProgress; // true indicaes a process step is in progress, false indicates the process has finished. 
+        public static bool ToolChangerComplete;
 
         const bool bARM_IN = true;
         const bool bARM_OUT = false;
@@ -191,8 +192,37 @@ namespace KFLOP_Test3
         }
 
 
+
+        public void ToolChangeM6()  
+        {
+            ToolChangerComplete = false;
+            int current_tool = KMx.CoordMotion.Interpreter.SetupParams.CurrentToolSlot;
+            int selected_tool = KMx.CoordMotion.Interpreter.SetupParams.SelectedToolSlot;
+            string s = string.Format("Current Tool: {0} Selected tool {1}", current_tool, selected_tool);
+            MessageBox.Show(s);
+            // move to Z1
+            // emulated button click
+            RoutedEventArgs x = new RoutedEventArgs();
+
+            if(_bw.IsBusy)
+            {
+                MessageBox.Show("Background is busy");
+                ToolChangerComplete = true;
+                return;    
+            }
+            // btnAbort.IsEnabled = true;
+            Start_PutTool(current_tool);
+            s = string.Format("Tool {0} put away", current_tool);
+            MessageBox.Show(s);
+            Start_GetTool(selected_tool);
+            s = string.Format("Tool {0} aquired", selected_tool);
+            MessageBox.Show(s);
+            ToolChangerComplete = true;
+            return;
+        }
+
 #region Get a Tool from the Tool Changer
-        private void Start_GetTool(int ToolNumber)
+        public void Start_GetTool(int ToolNumber)
         {
             _bw2.WorkerReportsProgress = true;
             _bw2.DoWork += GetToolWorker;
@@ -423,6 +453,8 @@ namespace KFLOP_Test3
 #endregion
 
 #region Tool Changer Test buttons
+        // tests all possible basic actions of the tool changer.
+
         private void btnSP_PID_Click(object sender, RoutedEventArgs e)
         {
             // set the spindle to PID mode. And leave it enabled!
@@ -636,7 +668,7 @@ namespace KFLOP_Test3
 
 #region Configuration File methods
         // Configuration file - get the tool changer variables saved in the JSON file
-        public void LoadCfg(string LFileName)
+        public void LoadCfg(string LFileName)   // load the tool changer configuration
         {
             // load the tool changer files
             try
@@ -656,7 +688,7 @@ namespace KFLOP_Test3
             }
         }
 
-        private void UpdateCfgUI()
+        private void UpdateCfgUI() // update the UI
         {
             //// populate the table with the parameter values
             // had to check for null because it crashes if the file isn't present.
@@ -679,7 +711,7 @@ namespace KFLOP_Test3
             }
         }
 
-        private void UpdateCfg()
+        private void UpdateCfg() // get UI values
         {
             // get the variables into TCP
 
@@ -712,10 +744,8 @@ namespace KFLOP_Test3
 
         }
 
-        private void SaveCfg(string FName)
+        private void SaveCfg(string FName) // Save tool changer config
         {
-
-
             try
             {
                 var SaveFile = new SaveFileDialog();
@@ -739,18 +769,17 @@ namespace KFLOP_Test3
 
         private void btnSave_Click(object sender, RoutedEventArgs e)
         {
-
             UpdateCfg();
             SaveCfg(CfgFName);
         }
 #endregion
 
 #region Status methods 
+        // get the status Tool Carousel and of the Spindle position
         private void getTLAUX_Status()
         {
-            lock (_Tlocker)  // lock this so only one thread can access it at a time.
+            lock (_Tlocker)  // lock this so only one thread can access it at a time. - Tool locker
             {
-                // do I need to lock this? 
                 // get the TLAUX status and set the  apropriate flags
                 // this is called every 100ms by the UI update timer
                 int TStatus = KMx.GetUserData(PVConst.P_TLAUX_STATUS);
@@ -766,7 +795,7 @@ namespace KFLOP_Test3
 
         private void getSpindle_Status()
         {
-            lock(_Slocker)
+            lock(_Slocker) // lock so only one thread can access at a time - Spindle position lock
             {
                 Spindle_Position = SPx.GetActualPositionCounts();
 //                iSpindle_Status = KMx.GetUserData(PVConst.P_STATUS_REPORT);
@@ -1402,10 +1431,11 @@ namespace KFLOP_Test3
             _bw.RunWorkerCompleted -= TClamp_Completed;
             CompleteStatus((BWResults)e.Result);
         }
-#endregion
 
-#endregion
 
+        #endregion
+
+        #endregion
 
     }
 
@@ -1417,6 +1447,7 @@ namespace KFLOP_Test3
         public int ToolNumber { get; set; }
     }
 
+    // Background Worker results 
     class BWResults
     {
         public bool Result { get; set; }

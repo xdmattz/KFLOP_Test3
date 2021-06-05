@@ -12,6 +12,9 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
+// for regex string testing
+using System.Text.RegularExpressions;
+
 // for file dialog libraries
 using Microsoft.Win32;
 using System.IO;
@@ -427,24 +430,12 @@ namespace KFLOP_Test3
 
         #region Callback Handlers
 
+        #region Debug Console
         // console update
         int Console_Msg_Update(string msg)
         {
-
-            // Paragraph par = new Paragraph();
-            //par.Inlines.Add(new Run(msg));
-            // fdConsole.Blocks.Add(new Paragraph(new Run(msg + "blocks:" + fdConsole.Blocks.Count.ToString())));
-            // fdConsole.Blocks.Add(new Paragraph(new Run(msg)));
-
-            ////try using the mutex here!
-            //ConsoleMutex.WaitOne();
-            //ConWin.AddSomeText(msg);
-            //ConsoleMutex.ReleaseMutex();
-            //return 0;
-
             Dispatcher.BeginInvoke(new System.Threading.ThreadStart(() => Console_Update2(msg)));
             return 0;
-                
         }
 
         public void Console_Update2(string msg)
@@ -483,7 +474,7 @@ namespace KFLOP_Test3
                 MessageBox.Show("Unable to Send Command to KFLOP!");
             }
         }
-
+        #endregion
 
         public void KM_ErrorUpdated(string msg)
         {
@@ -507,6 +498,7 @@ namespace KFLOP_Test3
         /// // need to figure out what happens with each mcode - ie M3, M4, M5, M6 and S
         /// </summary>
         // 'code' is the action# see https://www.dynomotion.com/wiki/index.php/KMotion_Libraries_-_GCode_Interpreter_-_Trajectory_Planner_-_Coordinated_Motion_-_.NET#GCode_Actions
+
         private int MCode8Callback(int code)    
         {
             // if Thread 2 is already doing something then wait just a bit to see if it will clear.
@@ -537,7 +529,17 @@ namespace KFLOP_Test3
                     KM.ExecuteProgram(2);
                     break;
                 case 6: // M6 Callback - Tool Change
-                    // lots to do in this function.
+                    // call the tool change method. - found in Tool Change Panel.
+                    ToolChangerPanel.ToolChangerComplete = false;
+                    Dispatcher.BeginInvoke(new System.Threading.ThreadStart(() => ToolChangerPanel1.ToolChangeM6()));
+                    do
+                    {
+                        // wait for tool change to complete
+                        Thread.Sleep(100);
+                    } while (ToolChangerPanel.ToolChangerComplete != true);
+
+                    // if it returns successfully then continue
+
                     break;
                 case 7: // M7 Callback - Mist Coolant On?
                 case 8: // M8 Callback - Coolant On
@@ -569,20 +571,6 @@ namespace KFLOP_Test3
         public void Interpreter_InterpreterCompleted(int status, int lineno, int sequence_number, string err)
         {
             Dispatcher.BeginInvoke(new System.Threading.ThreadStart(() => InterpCompleted2(status, lineno, sequence_number, err)));
-
-            //ConsoleMutex.WaitOne();
-            //tbStatus.Text = status.ToString();
-            //tbLineNo.Text = lineno.ToString();
-            //GCodeView_GotoLine(lineno);
-            //tbSeq.Text = sequence_number.ToString();
-            //tbErr.Text = err;
-
-            //if ((status != 0) && status != 1005)
-            //{
-            //    MessageBox.Show(err); // status 1005 = successful halt
-            //}
-            //ExecutionInProgress = false; // not running anymore.
-            //ConsoleMutex.ReleaseMutex();
         }
 
         public void InterpCompleted2(int status, int lineno, int seq, string err)
@@ -1302,17 +1290,23 @@ namespace KFLOP_Test3
                 // check the file for G20/G21
                 CheckForG20G21(GCodeFileName);
 
+                // scan for tool list.
+                GetToolsFromGcode(GCodeFileName);
+
+
                 // load the file into the Gcode View
                 GCodeView.Load(GCodeFileName);
             }
         }
 
+        #region Metric or Inch
+
         private void CheckForG20G21(string filename)
         {
             // open the file
             System.IO.StreamReader infile = new StreamReader(filename);
-            // scan the first 10 or so lines for G20 or G21
-            const int MaxLineCount = 15;
+            // scan the first 25 or so lines for G20 or G21
+            const int MaxLineCount = 25;
             int lineCount = 0;
             string line;
             while((line = infile.ReadLine()) != null) 
@@ -1338,8 +1332,6 @@ namespace KFLOP_Test3
                 }
             }
             infile.Close(); // don't forget to close the file so the Interpreter can use it!
-
-
         }
 
         private void SwitchToInch()
@@ -1361,7 +1353,7 @@ namespace KFLOP_Test3
                 KM.CoordMotion.Interpreter.InitializeInterpreter();
                 InterpreterInitialized = true;
 
-                GetG28G30(EMCVarsFileName);
+                GetG28G30(EMCVarsFileName); // this file contains the G28 and G30 machine locations
                 OffsetPanel1.InitG28(fixG28);
                 OffsetPanel1.InitG30(fixG30);
                 SendGCodeLine("G20");
@@ -1397,6 +1389,7 @@ namespace KFLOP_Test3
                 KM.CoordMotion.Interpreter.ChangeFixtureNumber(fixture);
             }
         }
+        #endregion
 
         #endregion
 
@@ -1545,41 +1538,6 @@ namespace KFLOP_Test3
             }
         }
         #endregion
-        // replaced by reading stopped state location in interpreter callback
-        //private void WaitForStop()
-        //{
-        //    // wait until the machine is stopped and recored the stopped axis variables
-        //    // get the stop state
-        //    string StopRecord = "";
-        //    bool StopCondition = false;
-        //    System.Diagnostics.Stopwatch stopwatch = new System.Diagnostics.Stopwatch();
-        //    stopwatch.Start();
-        //    long time1, time2;
-        //    time2 = stopwatch.ElapsedMilliseconds;
-        //    Thread.Sleep(40);   // sleep for just a little bit.
-
-        //    do
-        //    {
-        //        time1 = stopwatch.ElapsedMilliseconds;
-        //        if (time1 - time2 > 10)
-        //        {
-        //            time2 = time1; // setup for next delay
-        //            string sres = KM.WriteLineReadLine("GetStopState");
-        //            if ((sres == "3") || (sres == "4") || (sres == "0")) StopCondition = true;
-        //            StopRecord += String.Format("Time: {0} ", time1) + sres + "\n";
-
-        //        }
-        //        if (time1 > 3000) StopCondition = true; // timeout in 3ms
-
-        //    }
-        //    while (StopCondition != true);
-        //    // MessageBox.Show(StopRecord);
-        //    // get the absolute postitions at stopped
-        //    KM.CoordMotion.Interpreter.ReadCurMachinePosition(ref Stopped_X, ref Stopped_Y, ref Stopped_Z, ref Stopped_A, ref Stopped_B, ref Stopped_C);
-        //}
-
-        // get tool changer files
-
 
         private void btnHalt_Click(object sender, RoutedEventArgs e)
         {
@@ -1926,11 +1884,11 @@ namespace KFLOP_Test3
 
         }
 
-        // round to a reasonablly small value
+        // round to a reasonablly small value - the value is 0.000001 inches or 0.00001 mm
         private double round(double val)
         {
             if (KM.CoordMotion.Interpreter.SetupParams.LengthUnits == CANON_UNITS.CANON_UNITS_INCHES)
-            {
+            {   
                 if (val < 0)
                 {
                     val = (Math.Ceiling(val * 1e6 - 0.5)) / 1e6;
@@ -1973,10 +1931,13 @@ namespace KFLOP_Test3
             // open the file
             System.IO.StreamReader infile = new StreamReader(filename);
             List<int> ToolList = new List<int>();
+            string toolmask = @"\b[tT][0-9]+\b";    // regular expressions mask for tXX or TXX 
             string line;
             while ((line = infile.ReadLine()) != null)
             {
-                if (line.Contains('T'))
+                Match m = Regex.Match(line, toolmask);
+                // if (line.Contains('T'))
+                if(m.Success)
                 {
                     // Trying a Linq expression -> This works really well - I should try to learn more about this!
                     string number = new string(line.SkipWhile(c => !char.IsDigit(c))
