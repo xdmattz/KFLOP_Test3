@@ -531,7 +531,8 @@ namespace KFLOP_Test3
                 case 6: // M6 Callback - Tool Change
                     // call the tool change method. - found in Tool Change Panel.
                     ToolChangerPanel.ToolChangerComplete = false;
-                    Dispatcher.BeginInvoke(new System.Threading.ThreadStart(() => ToolChangerPanel1.ToolChangeM6()));
+                    // Dispatcher.BeginInvoke(new System.Threading.ThreadStart(() => ToolChangerPanel1.ToolChangeM6()));
+                    ToolChangerPanel1.ToolChangeM6();
                     do
                     {
                         // wait for tool change to complete
@@ -539,7 +540,7 @@ namespace KFLOP_Test3
                     } while (ToolChangerPanel.ToolChangerComplete != true);
 
                     // if it returns successfully then continue
-
+                    // check ToolChangerPanel.Status
                     break;
                 case 7: // M7 Callback - Mist Coolant On?
                 case 8: // M8 Callback - Coolant On
@@ -1489,6 +1490,8 @@ namespace KFLOP_Test3
                 string EMCVarsFileName = System.IO.Path.Combine(CFiles.ConfigPath, CFiles.EMCVarsFile);
                 string EMCSetupFileName = System.IO.Path.Combine(CFiles.ConfigPath, CFiles.EMCSetupFile);
                 string EMC_ToolFileName = System.IO.Path.Combine(CFiles.ConfigPath, CFiles.ToolFile);
+
+                // MessageBox.Show("Tool File = " + EMC_ToolFileName);
 
                 KM.CoordMotion.Interpreter.SetupFile = EMCSetupFileName;
                 KM.CoordMotion.Interpreter.VarsFile = EMCVarsFileName;

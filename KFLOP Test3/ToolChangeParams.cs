@@ -22,6 +22,7 @@ namespace KFLOP_Test3
         public double TS_S { get; set; }    // tool height setter Spindle Index coordinate
         public double TS_FR1 { get; set; }    // tool height setter FeedRate 1 - hunt
         public double TS_FR2 { get; set; }    // tool height setter FeedRate 2 - touch
+        public int CarouselSize { get; set; } // the number of slots in the tool carousel
 
     }
 

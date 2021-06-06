@@ -1,4 +1,4 @@
-﻿// #define TESTBENCH  // defining this will allow operation on the testbench
+﻿#define TESTBENCH  // defining this will allow operation on the testbench
 
 using System;
 using System.Collections.Generic;
@@ -36,8 +36,9 @@ namespace KFLOP_Test3
     /// </summary>
     public partial class ToolChangerPanel : UserControl
     {
-
+        #region Global Variables
         // global variables for the user control
+        // since there is only one Machine and tool changer these are all static.
         static bool SpindleEnabled;
         static bool SpindlePID;
         static bool SpindleRPM;
@@ -54,8 +55,10 @@ namespace KFLOP_Test3
 
         // these static variable flags indicate tool change progress
         static bool ToolChangeStatus; // true indicates everything OK false indcates an fault occured
-        static bool TCProgress; // true indicaes a process step is in progress, false indicates the process has finished. 
-        public static bool ToolChangerComplete;
+        static bool TCProgress; // true indicates a process step is in progress, false indicates the process has finished. 
+        static bool TCActionProgress; // true indicates a process action (group of steps) is in progress, false indicates the action has finished 
+
+        public static bool ToolChangerComplete; // true indicates that a series of steps is complete - like get a tool... false means it is still running
 
         const bool bARM_IN = true;
         const bool bARM_OUT = false;
@@ -69,15 +72,21 @@ namespace KFLOP_Test3
 
         static BackgroundWorker _bw;    // motion background worker
         static BackgroundWorker _bw2;   // process background worker.
-        
-         // a copy of the KM controller 
+        static BWResults BWRes;
+        static BWResults BW2Res;
+
+        // An instance of KM controller 
         static KM_Controller KMx { get; set; }
+        // An instance of KM_Axis
         static KM_Axis SPx { get; set; }
+
         private BitOps B;
         private ToolChangeParams TCP;
         private string CfgFName;
-        static BWResults BWRes;
-        
+        public int ToolInSpindle;   // the number of the tool in the spindle, 0 = spindle empty, 1 - 8, Tool 
+
+        #endregion
+
 
         public ToolChangerPanel(ref KM_Controller X, ref KM_Axis SP, string cfgFileName)
         {
@@ -91,7 +100,8 @@ namespace KFLOP_Test3
             _bw2 = new BackgroundWorker();
 
             BWRes = new BWResults();
-                        
+            BW2Res = new BWResults();
+
             TCP = new ToolChangeParams();   // get the tool changer parameters
             LoadCfg(cfgFileName);
 
@@ -127,8 +137,13 @@ namespace KFLOP_Test3
             else { LED_SPEN.Set_State(LED_State.Off); }
             SpindleRPM = B.BitIsSet(iPVStatus, PVConst.SB_SPINDLE_RPM);
             SpindleHomed = !(B.BitIsSet(iPVStatus, PVConst.SB_SPIN_HOME));
+            // update the tool in spindle
+            lblCurrentTool.Content = string.Format("Current tool in the Spindle: {0}", ToolInSpindle);
+
         }
 
+
+#region Tool Changer Action Test Buttons
         private void btnGetTool_Click(object sender, RoutedEventArgs e)
         {
             // get a tool from the carousel
@@ -140,6 +155,7 @@ namespace KFLOP_Test3
             {
                 return;
             }
+            ToolInSpindle = 0;
 
             // is the TLAUX ARM in?
             getTLAUX_Status();
@@ -190,6 +206,7 @@ namespace KFLOP_Test3
         {
 
         }
+#endregion
 
 
 
@@ -200,33 +217,35 @@ namespace KFLOP_Test3
             int selected_tool = KMx.CoordMotion.Interpreter.SetupParams.SelectedToolSlot;
             string s = string.Format("Current Tool: {0} Selected tool {1}", current_tool, selected_tool);
             MessageBox.Show(s);
-            // move to Z1
-            // emulated button click
-            RoutedEventArgs x = new RoutedEventArgs();
 
-            if(_bw.IsBusy)
-            {
-                MessageBox.Show("Background is busy");
-                ToolChangerComplete = true;
-                return;    
-            }
-            // btnAbort.IsEnabled = true;
+            Dispatcher.Invoke(() =>    // Dispatcher to the rescue!
+                btnAbort.IsEnabled = false
+            );
             Start_PutTool(current_tool);
+            do { Thread.Sleep(100); } while (TCActionProgress); // tool change completed ? TCAction progress = false...
+           // how to wait for the action to complete?
+
+            // check the results of the action.
             s = string.Format("Tool {0} put away", current_tool);
             MessageBox.Show(s);
             Start_GetTool(selected_tool);
+            do { Thread.Sleep(100); } while (TCActionProgress); // wait for change complete. ? timeout needed?
             s = string.Format("Tool {0} aquired", selected_tool);
             MessageBox.Show(s);
             ToolChangerComplete = true;
             return;
         }
 
-#region Get a Tool from the Tool Changer
+#region Tool Changer Actions
+
+        #region Get a Tool from the Tool Changer
         public void Start_GetTool(int ToolNumber)
         {
+            TCActionProgress = true; // process action is happening...
+
             _bw2.WorkerReportsProgress = true;
             _bw2.DoWork += GetToolWorker;
-            _bw2.ProgressChanged += GetToolProgressedChanged;
+            _bw2.ProgressChanged += GetToolProgressChanged;
             _bw2.RunWorkerCompleted += GetToolCompleted;
             _bw2.RunWorkerAsync(ToolNumber);
 
@@ -238,13 +257,27 @@ namespace KFLOP_Test3
             // 1. Spindle is empty
             // 2. The tool arm is retracted.
             // tool number to get is passed in the argument
-            SingleAxis tSAx = new SingleAxis();
-            // start a new background worker
-            if (_bw.IsBusy) // if the BW worker is busy
-            { return; }
+
+            Dispatcher.Invoke(() =>
+            {
+                lblProg2.Content = "In Get Tool";
+            });
+
             TCProgress = true;
             ToolChangeStatus = false;
             int progress_cnt = 0;
+
+            SingleAxis tSAx = new SingleAxis();
+            // start a new background worker
+            if (_bw.IsBusy) // if the BW worker is busy
+            {
+                BW2Res.Result = false;
+                BW2Res.Comment = "BW is busy";
+                e.Result = BW2Res; 
+                return;
+            }
+
+
 
             _bw2.ReportProgress(progress_cnt++);
             // Move to H1 
@@ -252,7 +285,13 @@ namespace KFLOP_Test3
             tSAx.Rate = TCP.TC_H1_FR;
             Start_MoveZ_Process(tSAx);
             if(WaitForProgress() == false)
-            { return; }
+            {
+                // There was an error of some kind!
+                BW2Res.Comment = "Z1 Height Error";
+                BW2Res.Result = false;
+                e.Result = BW2Res;
+                return;
+            }
             _bw2.ReportProgress(progress_cnt++);
 
             // Index the spindle
@@ -260,28 +299,54 @@ namespace KFLOP_Test3
             tSAx.Rate = TCP.TC_S_FR;
             Start_Spindle_Process(tSAx);
             if (WaitForProgress() == false)
-            { return; }
+            {
+                // There was an error of some kind!
+                BW2Res.Comment = "TC Index Error";
+                BW2Res.Result = false;
+                e.Result = BW2Res;
+                return;
+            }
             _bw2.ReportProgress(progress_cnt++);
 
             // rotate carousel to tool number
             tSAx.ToolNumber = (int)e.Argument;  // carousel position number
             Start_Carousel_Process(tSAx);
             if (WaitForProgress() == false)
-            { return; }
+            {                 
+                // There was an error of some kind!
+                BW2Res.Comment = "Carousel Error";
+                BW2Res.Result = false;
+                e.Result = BW2Res;
+                return;
+            }
             _bw2.ReportProgress(progress_cnt++);
 
             // Arm Out
             tSAx.Move = bARM_OUT;
             Start_ARM_Process(tSAx);
             if (WaitForProgress() == false)
-            { return; }
+            {
+                // There was an error of some kind!
+                BW2Res.Comment = "Tool Arm Error";
+                BW2Res.Result = false;
+                e.Result = BW2Res;
+                return;
+            }
             _bw2.ReportProgress(progress_cnt++);
 
             // Clamp Release
             tSAx.Move = bRELEASE;
             Start_TClamp_Process(tSAx);
             if (WaitForProgress() == false)
-            { return; }
+            {
+                // There was an error of some kind!
+                BW2Res.Comment = "Tool Release Error";
+                BW2Res.Result = false;
+                e.Result = BW2Res;
+                return;
+            }
+            // at this point the new tool is clamped in the spindle
+            ToolInSpindle = tSAx.ToolNumber;
             _bw2.ReportProgress(progress_cnt++);
 
             // move to H2
@@ -289,63 +354,81 @@ namespace KFLOP_Test3
             tSAx.Rate = TCP.TC_H2_FR;
             Start_MoveZ_Process(tSAx);
             if (WaitForProgress() == false)
-            { return; }
+            {
+                // There was an error of some kind!
+                BW2Res.Comment = "Z2 Height Error";
+                BW2Res.Result = false;
+                e.Result = BW2Res;
+                return;
+            }
             _bw2.ReportProgress(progress_cnt++);
 
             // Clamp Engage
             tSAx.Move = bCLAMP;
             Start_TClamp_Process(tSAx);
             if (WaitForProgress() == false)
-            { return; }
+            {
+                // There was an error of some kind!
+                BW2Res.Comment = "Tool Clamp Error";
+                BW2Res.Result = false;
+                e.Result = BW2Res;
+                return;
+            }
             _bw2.ReportProgress(progress_cnt++);
 
             // Arm In
             tSAx.Move = bARM_IN;
             Start_ARM_Process(tSAx);
             if (WaitForProgress() == false)
-            { return; }
+            {
+                // There was an error of some kind!
+                BW2Res.Comment = "Tool Arm Error";
+                BW2Res.Result = false;
+                e.Result = BW2Res;
+                return;
+            }
             _bw2.ReportProgress(progress_cnt++);
 
             // Spindle back to RPM Mode
             Start_SpindleRPM_Process(tSAx);
             if (WaitForProgress() == false)
-            { return; }
+            {
+                // There was an error of some kind!
+                BW2Res.Comment = "Spindle Mode Error";
+                BW2Res.Result = false;
+                e.Result = BW2Res;
+                return;
+            }
             _bw2.ReportProgress(progress_cnt++);
-
+            BW2Res.Comment = "Get Tool Success";
+            BW2Res.Result = true;
+            e.Result = BW2Res;
+            // done!
         }
         
-        private void GetToolProgressedChanged(object sender, ProgressChangedEventArgs e)
+        private void GetToolProgressChanged(object sender, ProgressChangedEventArgs e)
         {
-            lblTCProgress.Content = "Progress :" + e.ProgressPercentage.ToString();
+            // update the progress label
+            Dispatcher.Invoke(() =>    // Dispatcher to the rescue!
+                lblTCProgress.Content = "Progress :" + e.ProgressPercentage.ToString()
+            );
         }
 
-        private void GetToolCompleted(object sender, AsyncCompletedEventArgs e)
+        //private void GetToolCompleted(object sender, AsyncCompletedEventArgs e)
+        private void GetToolCompleted(object sender, RunWorkerCompletedEventArgs e)
         {
             _bw2.DoWork -= GetToolWorker;
-            _bw2.ProgressChanged -= GetToolProgressedChanged;
+            _bw2.ProgressChanged -= GetToolProgressChanged;
             _bw2.RunWorkerCompleted -= GetToolCompleted;
-            // report that the tool change was a success!
-            // MessageBox.Show("In Get Completed");
+            CompleteActionStatus((BWResults)e.Result);
         }
-#endregion
+        #endregion
         
-        private bool WaitForProgress()
-        {
-            // sleep while waiting for the global variable TCProgress to be set true by the 
-            // background worker thread.
-            do
-            {
-                Thread.Sleep(100);
-            } while (TCProgress);
-            TCProgress = true;
-            // check the results for faults and errors
-            return ToolChangeStatus;
-            
-        }
-
-#region Put a tool in the Tool Changer
+        #region Put a tool in the Tool Changer
         private void Start_PutTool(int ToolNumber)
         {
+            TCActionProgress = true;
+
             _bw2.WorkerReportsProgress = true;
             _bw2.WorkerSupportsCancellation = true;
 
@@ -353,6 +436,7 @@ namespace KFLOP_Test3
             _bw2.ProgressChanged += PutToolProgressedChanged;
             _bw2.RunWorkerCompleted += PutToolCompleted;
             _bw2.RunWorkerAsync(ToolNumber);
+            
         }
 
         private void PutToolWorker(object sender, DoWorkEventArgs e)
@@ -361,21 +445,42 @@ namespace KFLOP_Test3
             // 1. Spindle has a tool in it
             // 2. The tool arm is retracted.
             // tool number to get is passed in the argument
+
+            Dispatcher.Invoke(() =>
+            {
+                lblProg2.Content = "In Put Tool";
+            });
+
             SingleAxis tSAx = new SingleAxis();
-            // start a new background worker
-            if (_bw.IsBusy) // if the BW worker is busy then don't do this. - should probably set some kind of flag here...
-            { return; }
+
             TCProgress = true;
             ToolChangeStatus = false;
             int progress_cnt = 0;
 
+  
+            if (_bw.IsBusy) // if the BW worker is busy then don't do this. - should probably set some kind of flag here...
+            {
+                // There was an error of some kind!
+                BW2Res.Comment = "BW is Busy Error";
+                BW2Res.Result = false;
+                e.Result = BW2Res;
+                return;
+            }
+
+            // start a new background worker
             _bw2.ReportProgress(progress_cnt++);
             // Move to H2 
             tSAx.Pos = TCP.TC_H2_Z; // Z Height position and feedrate
             tSAx.Rate = TCP.TC_H2_FR;
             Start_MoveZ_Process(tSAx);
             if (WaitForProgress() == false)
-            { return; }
+            {
+                // There was an error of some kind!
+                BW2Res.Comment = "Z Move Error";
+                BW2Res.Result = false;
+                e.Result = BW2Res;
+                return;
+            }
             _bw2.ReportProgress(progress_cnt++);
 
             // Index the spindle
@@ -383,28 +488,54 @@ namespace KFLOP_Test3
             tSAx.Rate = TCP.TC_S_FR;
             Start_Spindle_Process(tSAx);
             if (WaitForProgress() == false)
-            { return; }
+            {
+                // There was an error of some kind!
+                BW2Res.Comment = "Spindle Index Error";
+                BW2Res.Result = false;
+                e.Result = BW2Res;
+                return;
+            }
             _bw2.ReportProgress(progress_cnt++);
 
             // rotate carousel to tool number
             tSAx.ToolNumber = (int)e.Argument;  // carousel position number
             Start_Carousel_Process(tSAx);
             if (WaitForProgress() == false)
-            { return; }
+            {                 
+                // There was an error of some kind!
+                BW2Res.Comment = "Carousel Error";
+                BW2Res.Result = false;
+                e.Result = BW2Res;
+                return;
+            }
             _bw2.ReportProgress(progress_cnt++);
 
             // Arm Out
             tSAx.Move = bARM_OUT;
             Start_ARM_Process(tSAx);
             if (WaitForProgress() == false)
-            { return; }
+            {
+                // There was an error of some kind!
+                BW2Res.Comment = "Tool Arm Error";
+                BW2Res.Result = false;
+                e.Result = BW2Res;
+                return;
+            }
             _bw2.ReportProgress(progress_cnt++);
 
             // Clamp Release
             tSAx.Move = bRELEASE;
             Start_TClamp_Process(tSAx);
             if (WaitForProgress() == false)
-            { return; }
+            {
+                // There was an error of some kind!
+                BW2Res.Comment = "Tool Clamp Error";
+                BW2Res.Result = false;
+                e.Result = BW2Res;
+                return;
+            }
+            // at this point the tool clamp has been released and has let go of the tool
+            ToolInSpindle = 0;
             _bw2.ReportProgress(progress_cnt++);
 
             // move to H1
@@ -412,44 +543,105 @@ namespace KFLOP_Test3
             tSAx.Rate = TCP.TC_H1_FR;
             Start_MoveZ_Process(tSAx);
             if (WaitForProgress() == false)
-            { return; }
+            {
+                // There was an error of some kind!
+                BW2Res.Comment = "Z Move Error";
+                BW2Res.Result = false;
+                e.Result = BW2Res;
+                return;
+            }
             _bw2.ReportProgress(progress_cnt++);
 
             // Clamp Engage
             tSAx.Move = bCLAMP;
             Start_TClamp_Process(tSAx);
             if (WaitForProgress() == false)
-            { return; }
+            {
+                // There was an error of some kind!
+                BW2Res.Comment = "Tool Clamp Error";
+                BW2Res.Result = false;
+                e.Result = BW2Res;
+                return;
+            }
             _bw2.ReportProgress(progress_cnt++);
 
             // Arm In
             tSAx.Move = bARM_IN;
             Start_ARM_Process(tSAx);
             if (WaitForProgress() == false)
-            { return; }
+            {
+                // There was an error of some kind!
+                BW2Res.Comment = "Tool Arm Error";
+                BW2Res.Result = false;
+                e.Result = BW2Res;
+                return;
+            }
             _bw2.ReportProgress(progress_cnt++);
 
             // Spindle back to RPM Mode
             Start_SpindleRPM_Process(tSAx);
             if (WaitForProgress() == false)
-            { return; }
+            {
+                // There was an error of some kind!
+                BW2Res.Comment = "Spindle Mode Error";
+                BW2Res.Result = false;
+                e.Result = BW2Res;
+                return;
+            }
             _bw2.ReportProgress(progress_cnt++);
 
+            BW2Res.Comment = "Put Tool Success";
+            BW2Res.Result = true;
+            e.Result = BW2Res;
         }
 
         private void PutToolProgressedChanged(object sender, ProgressChangedEventArgs e)
         {
-            lblTCProgress.Content = "Progress :" + e.ProgressPercentage.ToString();
+            Dispatcher.Invoke(() =>    // Dispatcher to the rescue!
+                lblTCProgress.Content = "Progress :" + e.ProgressPercentage.ToString()
+            );
         }
 
-        private void PutToolCompleted(object sender, AsyncCompletedEventArgs e)
+        private void PutToolCompleted(object sender, RunWorkerCompletedEventArgs e)
         {
             _bw2.DoWork -= PutToolWorker;
             _bw2.ProgressChanged -= PutToolProgressedChanged;
             _bw2.RunWorkerCompleted -= PutToolCompleted;
+            CompleteActionStatus((BWResults)e.Result);
+            // update tool in holder status
+
             // MessageBox.Show("In Put Completed");
             // report that the tool change was a success!
         }
+        #endregion
+
+        private bool WaitForProgress()
+        {
+            // sleep while waiting for the global variable TCProgress to be set true by the 
+            // background worker thread.
+            do
+            {
+                Thread.Sleep(50);
+            } while (TCProgress);
+            TCProgress = true;
+            // check the results for faults and errors
+            return ToolChangeStatus;
+
+        }
+
+        private void CompleteActionStatus(BWResults res)
+        {
+            if (res.Result == true)
+            {
+                // Action completed successfully!
+            }
+            else
+            {
+                // Action had an error somewhere.
+            }
+            TCActionProgress = false; // the action is done
+        }
+
 #endregion
 
 #region Tool Changer Test buttons
@@ -657,7 +849,7 @@ namespace KFLOP_Test3
                 return;
             }
             // send the command to KFLOP
-            if ((ToolNumber > 0) && (ToolNumber <= 8))
+            if ((ToolNumber > 0) && (ToolNumber <= TCP.CarouselSize))
             {
                 SingleAxis xSA = new SingleAxis();
                 xSA.ToolNumber = ToolNumber;
@@ -708,6 +900,8 @@ namespace KFLOP_Test3
 
                 tbTSRate1.Text = TCP.TS_FR1.ToString();
                 tbTSRate2.Text = TCP.TS_FR2.ToString();
+
+                tbCarouselSize.Text = TCP.CarouselSize.ToString();
             }
         }
 
@@ -741,6 +935,9 @@ namespace KFLOP_Test3
             { TCP.TS_FR1 = temp; }
             if (double.TryParse(tbTSRate2.Text, out temp))
             { TCP.TS_FR2 = temp; }
+            int itemp;
+            if (int.TryParse(tbCarouselSize.Text, out itemp))
+            { TCP.CarouselSize = itemp; }
 
         }
 
@@ -896,7 +1093,7 @@ namespace KFLOP_Test3
         }
 
 
-#region MoveZ background process
+        #region MoveZ background process
         // the move Z background process
         private void Start_MoveZ_Process(SingleAxis SA)
         {
@@ -969,30 +1166,9 @@ namespace KFLOP_Test3
              );
             CompleteStatus((BWResults)e.Result);
         }
+        #endregion
 
-       // the abort button.
-        private void btnAbort_Click(object sender, RoutedEventArgs e)
-        {
-            // if the background worker is running then abort movement and stop it
-            if (_bw.IsBusy)
-            {
-                // KMx.CoordMotion.Abort(); // stop the motion! - maybe try a halt here instead?
-                KMx.CoordMotion.Halt(); //  Halt seems to stop quicker than Abort does.
-                //  _bw.CancelAsync();  // stop the background worker.
-                // note here on canceling. This doesn't do anything because the async worker is not checking for the 
-                // .CancellationPending flag. - 
-                // The reason the Abort button works is because of the WaitForSegmentsFinished call ends the thread
-                // if there was a way to timeout, I wouldn't need the Abort button...
-                MessageBox.Show("Halted");
-                KMx.CoordMotion.ClearHalt();
-                KMx.CoordMotion.ClearAbort(); // but Halt requies ClearAbort inorder to resume.
-                // MessageBox.Show("Abort Pressed");
-                lblTCP2.Content = "Z Motion Aborted";
-            }
-        }
-#endregion
-
-#region Carousel background process
+        #region Carousel background process
         // Rotate Carousel background process
         private void Start_Carousel_Process(SingleAxis SA)
         {
@@ -1051,9 +1227,9 @@ namespace KFLOP_Test3
             _bw.RunWorkerCompleted -= Carousel_Completed;
             CompleteStatus((BWResults)e.Result);
         }
-#endregion
+        #endregion
 
-#region Spindle Indexing process
+        #region Spindle Indexing process
         // Index Spindle background process
         private void Start_Spindle_Process(SingleAxis SA)
         {
@@ -1144,8 +1320,18 @@ namespace KFLOP_Test3
             SPx.StartMoveTo(SAs.Pos);
             timeoutCnt = 0;
 
-            do {    // Wait until done or timeout
+#if TESTBENCH
+            Thread.Sleep(100);  // give it a little pause just for simulation sake.
+            SPx.Stop();
+            SPx.SetCurrentPosition(SAs.Pos);
+            // stop the commanded motion.
+#else
+
+            do
+            {    // Wait until done or timeout
                 Thread.Sleep(100);
+                // can I force the spindle position here for the test bench?
+
                 if (timeoutCnt++ > 50)
                 {
                     BWRes.Result = false;
@@ -1154,7 +1340,7 @@ namespace KFLOP_Test3
                 return;
                 }
             } while (SPx.MotionComplete() != true);
-
+#endif
             // note - this leaves the spindle enabled!
             // All Done!
 
@@ -1180,7 +1366,7 @@ namespace KFLOP_Test3
         }
         #endregion
 
-#region Spindle Return to RPM mode.
+        #region Spindle Return to RPM mode.
         // return the Spindle back to RPM mode.
         private void Start_SpindleRPM_Process(SingleAxis SA)
         {
@@ -1226,7 +1412,7 @@ namespace KFLOP_Test3
                 do
                 {
                     Thread.Sleep(50);
-                    if (timeoutCnt++ > 20)
+                    if (timeoutCnt++ > 30)
                     {
                         BWRes.Result = false;
                         BWRes.Comment = "Spindle RPM Timeout";
@@ -1253,7 +1439,7 @@ namespace KFLOP_Test3
         }
         #endregion
 
-#region Tool Changer Arm process
+        #region Tool Changer Arm process
         // TC Arm In/Out background process
         private void Start_ARM_Process(SingleAxis SA)
         {
@@ -1345,9 +1531,9 @@ namespace KFLOP_Test3
             _bw.RunWorkerCompleted -= TLAUX_ARM_Completed;
             CompleteStatus((BWResults)e.Result);
         }
-#endregion
+        #endregion
 
-#region Tool Clamp Process
+        #region Tool Clamp Process
         // Tool Clamp background process
         private void Start_TClamp_Process(SingleAxis SA)
         {
@@ -1431,11 +1617,32 @@ namespace KFLOP_Test3
             _bw.RunWorkerCompleted -= TClamp_Completed;
             CompleteStatus((BWResults)e.Result);
         }
-
-
         #endregion
 
+        #region Abort button
+        // the abort button.
+        private void btnAbort_Click(object sender, RoutedEventArgs e)
+        {
+            // if the background worker is running then abort movement and stop it
+            if (_bw.IsBusy)
+            {
+                // KMx.CoordMotion.Abort(); // stop the motion! - maybe try a halt here instead?
+                KMx.CoordMotion.Halt(); //  Halt seems to stop quicker than Abort does.
+                //  _bw.CancelAsync();  // stop the background worker.
+                // note here on canceling. This doesn't do anything because the async worker is not checking for the 
+                // .CancellationPending flag. - 
+                // The reason the Abort button works is because of the WaitForSegmentsFinished call ends the thread
+                // if there was a way to timeout, I wouldn't need the Abort button...
+                MessageBox.Show("Halted");
+                KMx.CoordMotion.ClearHalt();
+                KMx.CoordMotion.ClearAbort(); // but Halt requies ClearAbort inorder to resume.
+                // MessageBox.Show("Abort Pressed");
+                lblTCP2.Content = "Z Motion Aborted";
+            }
+        }
         #endregion
+
+#endregion
 
     }
 

@@ -14,7 +14,7 @@
         <TextBox x:Name="tbSlotNumber" HorizontalAlignment="Left" Height="23" Margin="98,41,0,0" TextWrapping="Wrap" Text="TextBox" VerticalAlignment="Top" Width="61"/>
         <Label Content="Carousel No:" HorizontalAlignment="Left" Margin="20,38,0,0" VerticalAlignment="Top" RenderTransformOrigin="-0.338,0.662" Width="78"/>
         <TextBox HorizontalAlignment="Left" Height="23" Margin="212,69,0,0" TextWrapping="Wrap" Text="TextBox" VerticalAlignment="Top" Width="75"/>
-        <Label Content="Current Tool in the Spindle" HorizontalAlignment="Left" Margin="205,38,0,0" VerticalAlignment="Top"/>
+        <Label x:Name="lblCurrentTool" Content="Current Tool in the Spindle" HorizontalAlignment="Left" Margin="205,38,0,0" VerticalAlignment="Top"/>
 
         <Grid Margin="32,162,228,41">
             <Grid.RowDefinitions>
@@ -119,6 +119,9 @@
         <Label x:Name="lblTCProgress" Content="Progress:" HorizontalAlignment="Left" Margin="212,106,0,0" VerticalAlignment="Top"/>
         <Label x:Name="lblTCP2" Content="" HorizontalAlignment="Left" Margin="212,123,0,0" VerticalAlignment="Top"/>
         <local:LED_Indicator x:Name="LED_SPEN" Margin="335,78,125,237" />
+        <TextBox x:Name="tbCarouselSize" HorizontalAlignment="Left" Height="23" Margin="62,69,0,0" TextWrapping="Wrap" Text="8" VerticalAlignment="Top" Width="21" RenderTransformOrigin="1.559,0.522"/>
+        <Label Content="Size" HorizontalAlignment="Left" Margin="32,69,0,0" VerticalAlignment="Top" RenderTransformOrigin="0.539,-1.008" Height="22" Width="30"/>
+        <Label x:Name="lblProg2" Content="" HorizontalAlignment="Left" Margin="222,137,0,0" VerticalAlignment="Top"/>
 
     </Grid>
 </UserControl>
