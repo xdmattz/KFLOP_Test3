@@ -319,6 +319,9 @@ namespace KFLOP_Test3
             slFeedOverride.slvalue = 1.0;
 
 
+            // TESTING DRM
+            Exe_LED.Set_Label("Execution");
+            Exe_LED.Set_State(LED_State.Off);
 
             #endregion
         }
@@ -1029,6 +1032,15 @@ namespace KFLOP_Test3
             double cr = KM.CoordMotion.FeedRateOverride;
             tbFeedRate.Text = String.Format("{0:F1}", fr);
             tbCurrentRate.Text = String.Format("{0:F1}", fr * cr);
+
+            // *** DRM TESTING
+            if (ExecutionInProgress)
+            {
+                Exe_LED.Set_State(LED_State.On_Blue);
+            } else
+            {
+                Exe_LED.Set_State(LED_State.Off);
+            }
         }
         #endregion
 
@@ -1398,7 +1410,7 @@ namespace KFLOP_Test3
 
         private void btnCycleStart_Click(object sender, RoutedEventArgs e)
         {
-            if (CheckStatus())
+            if (CheckStatus())  // check the machine status ie. estop, limit switches, not initialized etc
             {
 
                 btnGCode.IsEnabled = false; // disable the load GCode button
@@ -1685,6 +1697,7 @@ namespace KFLOP_Test3
                 GCodeButtonsInit();
                 btnGCode.IsEnabled = true; // enable the load GCode button
                 btnMDI.IsEnabled = true;
+                Halted1 = false;    // clear the halted state - this was an insidious little bug...
             }
 
         }
@@ -1942,19 +1955,24 @@ namespace KFLOP_Test3
                 // if (line.Contains('T'))
                 if(m.Success)
                 {
+                    if (line.Contains("(T"))
+                    {
+                        continue; // next 
+                    }
+
                     // Trying a Linq expression -> This works really well - I should try to learn more about this!
                     string number = new string(line.SkipWhile(c => !char.IsDigit(c))
                                                 .TakeWhile(c => char.IsDigit(c))
                                                 .ToArray());
-                    
+
                     int Tnum;
                     if (int.TryParse(number, out Tnum))
                     {
                         // see if the tool number is already in the list
                         bool exists = false;
-                        foreach(int tnum in ToolList)
+                        foreach (int tnum in ToolList)
                         {
-                            if(tnum == Tnum)
+                            if (tnum == Tnum)
                             {
                                 exists = true;
                             }

@@ -167,7 +167,9 @@ namespace KFLOP_Test3
             BinaryString(MStat.KanalogBitsStateOutputs, ref tempS);
             tbKanOut.Text = "Kan Out: " + tempS;
             BinaryString(MStat.VirtualBitsEx0, ref tempS);
-            tbKonnIO.Text = "Konn IO: " + tempS;
+            tbKonnIO.Text = "Konn IO1: " + tempS;
+            BinaryString((MStat.VirtualBitsEx0) >> 16, ref tempS);
+            tbKonnIO_2.Text = "Konn IO2: " + tempS;
 
             int status = MStat.PC_comm[CSConst.P_STATUS];
             if (status != Prev_Status)
@@ -308,6 +310,8 @@ namespace KFLOP_Test3
 
         private void Homing(int AxisCmd)
         {
+            // check for air pressure?
+            AirCheck();
             int count = 0;
             // put the correct argument into the persist variable and run thread 2
             while (KMx.ThreadExecuting(2))
@@ -395,6 +399,16 @@ namespace KFLOP_Test3
             // toggle the Oiler 
             KM_IO CtrlBit = KMx.GetIO(IOConst.OIL_LUBE, IO_TYPE.DIGITAL_OUT, "Oiler");
             CtrlBit.Toggle();
+        }
+
+        public void AirCheck()
+        {
+            if ((Prev_KonnectIO & IOConst.AIR_MON_MASK) == IOConst.AIR_MON_MASK)
+            { // air is OK
+            }
+            else { // air is not on 
+                MessageBox.Show("Air Pressure is low!");
+            }
         }
     }
 }

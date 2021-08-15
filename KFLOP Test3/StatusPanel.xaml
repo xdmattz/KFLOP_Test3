@@ -160,11 +160,12 @@
         </Grid>
 
         <!-- Status Word from KFLOP -->
-        <TextBox x:Name="tbStatus1" Grid.Row="2"  HorizontalAlignment="Left" Height="23" TextWrapping="Wrap" Text="TextBox" VerticalAlignment="Top" Width="76" Margin="84,58,0,-1" Grid.Column="1"/>
-        <TextBlock x:Name="tbKanIn" Grid.Column="1" HorizontalAlignment="Left" Margin="84,5,0,0" Grid.Row="2" TextWrapping="Wrap" Text="TextBlock" VerticalAlignment="Top" RenderTransformOrigin="-0.281,1.213" Width="181"/>
-        <TextBlock x:Name="tbKanOut" Grid.Column="1" HorizontalAlignment="Left" Margin="84,21,0,0" Grid.Row="2" TextWrapping="Wrap" Text="TextBlock" VerticalAlignment="Top" RenderTransformOrigin="-2.432,0.706" Width="181"/>
-        <TextBlock x:Name="tbKonnIO" Grid.Column="1" HorizontalAlignment="Left" Margin="84,37,0,0" Grid.Row="2" TextWrapping="Wrap" Text="TextBlock" VerticalAlignment="Top" RenderTransformOrigin="-2.334,0.569" Width="181"/>
-        <Label Content="P_Status" Grid.Column="1" HorizontalAlignment="Left" Margin="35,56,0,0" Grid.Row="2" VerticalAlignment="Top"/>
+        <TextBox x:Name="tbStatus1" Grid.Row="2"  HorizontalAlignment="Left" Height="23" TextWrapping="Wrap" Text="TextBox" VerticalAlignment="Top" Width="76" Margin="84,66,0,0" Grid.Column="1"/>
+        <TextBlock x:Name="tbKanIn" Grid.Column="1" HorizontalAlignment="Left" Margin="84,0,0,0" Grid.Row="2" TextWrapping="Wrap" Text="TextBlock" VerticalAlignment="Top" RenderTransformOrigin="-0.281,1.213" Width="181"/>
+        <TextBlock x:Name="tbKanOut" Grid.Column="1" HorizontalAlignment="Left" Margin="84,16,0,0" Grid.Row="2" TextWrapping="Wrap" Text="TextBlock" VerticalAlignment="Top" RenderTransformOrigin="-2.432,0.706" Width="181"/>
+        <TextBlock x:Name="tbKonnIO" Grid.Column="1" HorizontalAlignment="Left" Margin="84,32,0,0" Grid.Row="2" TextWrapping="Wrap" Text="TextBlock" VerticalAlignment="Top" RenderTransformOrigin="-2.334,0.569" Width="181"/>
+        <Label Content="P_Status" Grid.Column="1" HorizontalAlignment="Left" Margin="35,63,0,0" Grid.Row="2" VerticalAlignment="Top"/>
+        <TextBlock x:Name="tbKonnIO_2" Grid.Column="1" HorizontalAlignment="Left" Margin="84,50,0,0" Grid.Row="2" TextWrapping="Wrap" Text="TextBlock" VerticalAlignment="Top" RenderTransformOrigin="-2.334,0.569" Width="181"/>
 
     </Grid>
 </UserControl>

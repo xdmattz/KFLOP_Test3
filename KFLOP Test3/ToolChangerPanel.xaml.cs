@@ -220,7 +220,7 @@ namespace KFLOP_Test3
             int current_tool = KMx.CoordMotion.Interpreter.SetupParams.CurrentToolSlot;
             int selected_tool = KMx.CoordMotion.Interpreter.SetupParams.SelectedToolSlot;
             string s = string.Format("Current Tool: {0} Selected tool {1}", current_tool, selected_tool);
-            MessageBox.Show(s);
+//            MessageBox.Show(s);
 
             Dispatcher.Invoke(() =>    // Dispatcher to the rescue!
                 btnAbort.IsEnabled = false
@@ -229,7 +229,7 @@ namespace KFLOP_Test3
             Start_ExchangeTool(current_tool, selected_tool);
             do { Thread.Sleep(100); } while (TCActionProgress);
             s = string.Format("Tool {0} changed to {1}", current_tool, selected_tool);
-            MessageBox.Show(s);
+//            MessageBox.Show(s);
             ToolChangerComplete = true;
 
             //Start_PutTool(current_tool);
