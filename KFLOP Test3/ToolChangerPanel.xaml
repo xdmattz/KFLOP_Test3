@@ -5,18 +5,18 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
              xmlns:local="clr-namespace:KFLOP_Test3"
              mc:Ignorable="d" 
-             d:DesignHeight="340" d:DesignWidth="550">
+             d:DesignHeight="360" d:DesignWidth="600">   <!-- allow 30 height for tab-->
     <Grid>
-        <Button x:Name="btnGetTool" Content="Get Tool" HorizontalAlignment="Left" Margin="98,69,0,0" VerticalAlignment="Top" Width="90" Click="btnGetTool_Click"/>
-        <Button x:Name="btnPutTool" Content="Put Tool" HorizontalAlignment="Left" Margin="98,96,0,0" VerticalAlignment="Top" Width="90" Click="btnPutTool_Click"/>
-        <Button x:Name="btnExchangeTool" Content="Exchange Tool" HorizontalAlignment="Left" Margin="98,123,0,0" VerticalAlignment="Top" Width="90" Click="btnExchangeTool_Click"/>
+        <Button x:Name="btnGetTool" Content="Get Tool" HorizontalAlignment="Left" Margin="91,42,0,0" VerticalAlignment="Top" Width="90" Click="btnGetTool_Click"/>
+        <Button x:Name="btnPutTool" Content="Put Tool" HorizontalAlignment="Left" Margin="91,69,0,0" VerticalAlignment="Top" Width="90" Click="btnPutTool_Click"/>
+        <Button x:Name="btnExchangeTool" Content="Exchange Tool" HorizontalAlignment="Left" Margin="91,96,0,0" VerticalAlignment="Top" Width="90" Click="btnExchangeTool_Click"/>
 
-        <TextBox x:Name="tbSlotNumber" HorizontalAlignment="Left" Height="23" Margin="98,41,0,0" TextWrapping="Wrap" Text="TextBox" VerticalAlignment="Top" Width="61"/>
-        <Label Content="Carousel No:" HorizontalAlignment="Left" Margin="20,38,0,0" VerticalAlignment="Top" RenderTransformOrigin="-0.338,0.662" Width="78"/>
-        <TextBox HorizontalAlignment="Left" Height="23" Margin="212,69,0,0" TextWrapping="Wrap" Text="TextBox" VerticalAlignment="Top" Width="75"/>
-        <Label x:Name="lblCurrentTool" Content="Current Tool in the Spindle" HorizontalAlignment="Left" Margin="205,38,0,0" VerticalAlignment="Top"/>
+        <TextBox x:Name="tbSlotNumber" HorizontalAlignment="Left" Height="23" Margin="91,14,0,0" TextWrapping="Wrap" Text="TextBox" VerticalAlignment="Top" Width="61"/>
+        <Label Content="Carousel No:" HorizontalAlignment="Left" Margin="13,11,0,0" VerticalAlignment="Top" RenderTransformOrigin="-0.338,0.662" Width="78"/>
+        <TextBox HorizontalAlignment="Left" Height="23" Margin="205,42,0,0" TextWrapping="Wrap" Text="TextBox" VerticalAlignment="Top" Width="75"/>
+        <Label x:Name="lblCurrentTool" Content="Current Tool in the Spindle" HorizontalAlignment="Left" Margin="198,11,0,0" VerticalAlignment="Top"/>
 
-        <Grid Margin="32,162,228,41">
+        <Grid Margin="25,135,235,68">
             <Grid.RowDefinitions>
                 <RowDefinition Height="*"/>
                 <RowDefinition Height="*"/>
@@ -84,7 +84,7 @@
             </StackPanel>
             <StackPanel Grid.Row="5" Grid.Column="2" Orientation="Horizontal">
                 <Label Content="Rate2:" Height="23" VerticalAlignment="Bottom"/>
-                <TextBox x:Name="tbTSRate2" Text="0.00" HorizontalAlignment="Stretch"/>
+                <TextBox x:Name="tbTSRate2" Text="0.00" HorizontalAlignment="Stretch" Width="35"/>
             </StackPanel>
             <StackPanel Grid.Row="4" Grid.Column="3" Orientation="Horizontal">
                 <Label Content="SP:"/>
@@ -103,25 +103,25 @@
             <TextBox x:Name="tbSPRate" Text="0.00" Grid.Row="3" Grid.Column="1" />
 
         </Grid>
-        <Button x:Name="btnTC_H1" Content="Move to 1 Z" HorizontalAlignment="Left" Margin="350,149,0,0" VerticalAlignment="Top" Width="75" Click="btnTC_H1_Click"/>
-        <Button x:Name="btnTC_H2" Content="Move to 2 Z" HorizontalAlignment="Left" Margin="350,176,0,0" VerticalAlignment="Top" Width="75" RenderTransformOrigin="0.483,3.585" Click="btnTC_H2_Click"/>
-        <Button x:Name="btnToolRel" Content="Tool Release" HorizontalAlignment="Left" Margin="430,149,0,0" VerticalAlignment="Top" Width="75" RenderTransformOrigin="0.213,-0.264" Click="btnToolRel_Click"/>
-        <Button x:Name="btnSpindle" Content="Spindle" HorizontalAlignment="Left" Margin="430,176,0,0" VerticalAlignment="Top" Width="75" Click="btnSpindle_Click"/>
-        <Button x:Name="btnSP_PID" Content="SP_PID" HorizontalAlignment="Left" Margin="430,80,0,0" VerticalAlignment="Top" Width="75" Click="btnSP_PID_Click"/>
-        <Button x:Name="btnArm_In" Content="TC ARM OUT" HorizontalAlignment="Left" Margin="430,239,0,0" VerticalAlignment="Top" Width="75" Click="btnArm_In_Click"/>
-        <Button x:Name="btnToolSel" Content="Carousel" HorizontalAlignment="Left" Margin="350,239,0,0" VerticalAlignment="Top" Width="75" RenderTransformOrigin="-0.862,0.426" Click="btnToolSel_Click"/>
+        <Button x:Name="btnTC_H1" Content="Move to 1 Z" HorizontalAlignment="Left" Margin="367,124,0,0" VerticalAlignment="Top" Width="75" Click="btnTC_H1_Click"/>
+        <Button x:Name="btnTC_H2" Content="Move to 2 Z" HorizontalAlignment="Left" Margin="367,151,0,0" VerticalAlignment="Top" Width="75" RenderTransformOrigin="0.483,3.585" Click="btnTC_H2_Click"/>
+        <Button x:Name="btnToolRel" Content="Tool Release" HorizontalAlignment="Left" Margin="447,124,0,0" VerticalAlignment="Top" Width="75" RenderTransformOrigin="0.213,-0.264" Click="btnToolRel_Click"/>
+        <Button x:Name="btnSpindle" Content="Spindle" HorizontalAlignment="Left" Margin="447,151,0,0" VerticalAlignment="Top" Width="75" Click="btnSpindle_Click"/>
+        <Button x:Name="btnSP_PID" Content="SP_PID" HorizontalAlignment="Left" Margin="447,60,0,0" VerticalAlignment="Top" Width="75" Click="btnSP_PID_Click"/>
+        <Button x:Name="btnArm_In" Content="TC ARM OUT" HorizontalAlignment="Left" Margin="447,214,0,0" VerticalAlignment="Top" Width="75" Click="btnArm_In_Click"/>
+        <Button x:Name="btnToolSel" Content="Carousel" HorizontalAlignment="Left" Margin="367,214,0,0" VerticalAlignment="Top" Width="75" RenderTransformOrigin="-0.862,0.426" Click="btnToolSel_Click"/>
 
-        <TextBox x:Name="tbTLAUXStatus" HorizontalAlignment="Left" Height="23" Margin="276,307,0,0" TextWrapping="Wrap" Text="TextBox" VerticalAlignment="Top" Width="120"/>
-        <Label Content="TLAUX Status:" HorizontalAlignment="Left" Margin="188,304,0,0" VerticalAlignment="Top"/>
-        <local:LED_Indicator x:Name="ledClamp" Margin="430,114,24,201" />
-        <Button x:Name="btnSave" Content="Save" HorizontalAlignment="Left" Margin="43,308,0,0" VerticalAlignment="Top" Width="75" Click="btnSave_Click"/>
-        <Button x:Name="btnAbort" Content="Abort" HorizontalAlignment="Left" Margin="365,277,0,0" VerticalAlignment="Top" Width="46" Click="btnAbort_Click"/>
-        <Label x:Name="lblTCProgress" Content="Progress:" HorizontalAlignment="Left" Margin="212,106,0,0" VerticalAlignment="Top"/>
-        <Label x:Name="lblTCP2" Content="" HorizontalAlignment="Left" Margin="212,123,0,0" VerticalAlignment="Top"/>
-        <local:LED_Indicator x:Name="LED_SPEN" Margin="335,78,125,237" />
-        <TextBox x:Name="tbCarouselSize" HorizontalAlignment="Left" Height="23" Margin="62,69,0,0" TextWrapping="Wrap" Text="8" VerticalAlignment="Top" Width="21" RenderTransformOrigin="1.559,0.522"/>
-        <Label Content="Size" HorizontalAlignment="Left" Margin="32,69,0,0" VerticalAlignment="Top" RenderTransformOrigin="0.539,-1.008" Height="22" Width="30"/>
-        <Label x:Name="lblProg2" Content="" HorizontalAlignment="Left" Margin="222,137,0,0" VerticalAlignment="Top"/>
+        <TextBox x:Name="tbTLAUXStatus" HorizontalAlignment="Left" Height="23" Margin="264,330,0,0" TextWrapping="Wrap" Text="TextBox" VerticalAlignment="Top" Width="120"/>
+        <Label Content="TLAUX Status:" HorizontalAlignment="Left" Margin="176,327,0,0" VerticalAlignment="Top"/>
+        <local:LED_Indicator x:Name="ledClamp" Margin="447,90,65,275" />
+        <Button x:Name="btnSave" Content="Save" HorizontalAlignment="Left" Margin="35,331,0,0" VerticalAlignment="Top" Width="75" Click="btnSave_Click"/>
+        <Button x:Name="btnAbort" Content="Abort" HorizontalAlignment="Left" Margin="382,252,0,0" VerticalAlignment="Top" Width="46" Click="btnAbort_Click"/>
+        <Label x:Name="lblTCProgress" Content="Progress:" HorizontalAlignment="Left" Margin="205,79,0,0" VerticalAlignment="Top"/>
+        <Label x:Name="lblTCP2" Content="" HorizontalAlignment="Left" Margin="205,96,0,0" VerticalAlignment="Top"/>
+        <local:LED_Indicator x:Name="LED_SPEN" Margin="367,90,141,275" RenderTransformOrigin="0.449,0.557" />
+        <TextBox x:Name="tbCarouselSize" HorizontalAlignment="Left" Height="23" Margin="55,42,0,0" TextWrapping="Wrap" Text="8" VerticalAlignment="Top" Width="21" RenderTransformOrigin="1.559,0.522"/>
+        <Label Content="Size" HorizontalAlignment="Left" Margin="25,42,0,0" VerticalAlignment="Top" RenderTransformOrigin="0.539,-1.008" Height="22" Width="30"/>
+        <Label x:Name="lblProg2" Content="" HorizontalAlignment="Left" Margin="215,110,0,0" VerticalAlignment="Top"/>
 
     </Grid>
 </UserControl>

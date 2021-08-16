@@ -142,6 +142,11 @@ namespace KFLOP_Test3
             SpindleRPM = B.BitIsSet(iPVStatus, PVConst.SB_SPINDLE_RPM);
             SpindleHomed = !(B.BitIsSet(iPVStatus, PVConst.SB_SPIN_HOME));
             // update the tool in spindle
+            if(ToolInSpindle == 0)
+            { lblCurrentTool.Foreground = Brushes.Green; }
+            else if (ToolInSpindle > TCP.CarouselSize)
+            { lblCurrentTool.Foreground = Brushes.Red; }
+            else { lblCurrentTool.Foreground = Brushes.Black; }
             lblCurrentTool.Content = string.Format("Current tool in the Spindle: {0}", ToolInSpindle);
 
         }
@@ -153,13 +158,47 @@ namespace KFLOP_Test3
             // get a tool from the carousel
             // 
             // ensure that the TLAUX ARM is IN
+
+            // get the tool number
+            int ToolNumber;
+            if (int.TryParse(tbSlotNumber.Text, out ToolNumber) == false)
+            {
+                tbSlotNumber.Text = "0";
+                MessageBox.Show("Invalid tool number - Reset");
+                KMx.CoordMotion.Interpreter.SetupParams.CurrentToolSlot = 0; // update the interpreter slot position
+                return;
+            }
+
             // is the spindle currently empty?
             MessageBoxResult result = MessageBox.Show("Is the Spindle Empty?", "Spindle Check", MessageBoxButton.YesNo);
             if (result == MessageBoxResult.No)
             {
+                string toolmsg = string.Format("Exchange tools {0} and {1}", ToolInSpindle, ToolNumber);
+                MessageBoxResult rslt = MessageBox.Show(toolmsg, "Verify", MessageBoxButton.YesNo);
+                if (rslt == MessageBoxResult.Yes)
+                {
+                    ToolChangerDelux(ToolInSpindle, ToolNumber);
+                }
+                KMx.CoordMotion.Interpreter.SetupParams.CurrentToolSlot = ToolNumber; // update the interpreter slot number
                 return;
             }
+
             ToolInSpindle = 0;
+
+            // check the tool number.
+            if(ToolNumber == 0)
+            {
+                MessageBox.Show("Spindle is empty!");
+                return;
+            }
+            else if (ToolNumber > TCP.CarouselSize)
+            {
+                string toolmsg = string.Format("Manualy insert Tool number {0} now", ToolNumber);
+                MessageBox.Show(toolmsg);
+                ToolInSpindle = ToolNumber;
+                KMx.CoordMotion.Interpreter.SetupParams.CurrentToolSlot = ToolNumber; // update the interpreter slot number
+                return;
+            }
 
             // is the TLAUX ARM in?
             getTLAUX_Status();
@@ -168,20 +207,15 @@ namespace KFLOP_Test3
                 MessageBox.Show("Tool Changer Error!\nArm not retracted!\n(Try Re-Homing TLAUX)");
                 return;
             }
-            // get the tool number
-            int ToolNumber;
-            if (int.TryParse(tbSlotNumber.Text, out ToolNumber) == false)
-            {
-                tbSlotNumber.Text = "1";
-                MessageBox.Show("Invalid tool number - Reset");
-                return;
-            }
 
             // update the Tool change parameters
-            UpdateCfg();    // this should load all the variables into the TCP class
+
             // start the process background worker for Get Tool
             // move Z to TC_Z1
-            Start_GetTool(ToolNumber);
+
+            // UpdateCfg();    // this should load all the variables into the TCP class
+            // Start_GetTool(ToolNumber);
+            ToolChangerDelux(0, ToolNumber); // this should get "ToolNumber" from the carousel from an empty spindle
         }
 
         private void btnPutTool_Click(object sender, RoutedEventArgs e)
@@ -192,7 +226,7 @@ namespace KFLOP_Test3
             int ToolNumber;
             if (int.TryParse(tbSlotNumber.Text, out ToolNumber) == false)
             {
-                tbSlotNumber.Text = "1";
+                tbSlotNumber.Text = "0";
                 MessageBox.Show("Invalid tool number - Reset");
                 return;
             }
@@ -202,8 +236,15 @@ namespace KFLOP_Test3
             {
                 return;
             }
-            UpdateCfg();
-            Start_PutTool(ToolNumber);
+
+            ToolChangerDelux(ToolNumber, 0);    // this should put the tool into the carousel, 
+                                                // or prompt for a manual tool removal if the 
+                                                // tool number is too big for the carousel
+
+            KMx.CoordMotion.Interpreter.SetupParams.CurrentToolSlot = 0; // update the interpreter slot number so it knows it is empty
+
+            // UpdateCfg();
+            // Start_PutTool(ToolNumber);
         }
 
         private void btnExchangeTool_Click(object sender, RoutedEventArgs e)
@@ -225,8 +266,10 @@ namespace KFLOP_Test3
             Dispatcher.Invoke(() =>    // Dispatcher to the rescue!
                 btnAbort.IsEnabled = false
             );
-
-            Start_ExchangeTool(current_tool, selected_tool);
+            // need to decide which tool action to take - see comments on tool change actions
+            // 
+            // Start_ExchangeTool(current_tool, selected_tool);
+            ToolChangerDelux(current_tool, selected_tool);
             do { Thread.Sleep(100); } while (TCActionProgress);
             s = string.Format("Tool {0} changed to {1}", current_tool, selected_tool);
 //            MessageBox.Show(s);
@@ -249,6 +292,82 @@ namespace KFLOP_Test3
 
         #region Tool Changer Actions
 
+        // A bit of an explaination is warrented here. 
+        // there are three basic tool change actions
+        // 1. Get a tool - gets a tool from the tool carousel
+        // 2. Put a tool - puts a tool into the the tool carousel
+        // 3. Exchange a tool - puts a tool back and gets another tool - without the carousel retract.
+        // 
+        // It is important to understand when to use each of these. since I have crashed the tool changer a few times this evening...
+        // Get a tool assumes that the spindle is empty ie. Tool Number = 0
+        // Put a tool assumes that the carousel slot is empty
+        // Exchange a tool assumes there is a tool in the spindle and an empty slot to put it into.
+        // all this needs to be managed from a higher level in the program because these are very low level functions
+
+        // In all of this who or what is managing what is currently in the carousel!!! have to figure this out soon!
+
+        public void ToolChangerDelux(int CurrentTool, int SelectedTool)
+        {
+            // need a thread safe invoke here...
+            Dispatcher.Invoke(() =>
+            { UpdateCfg();
+            });// not sure I need this here - but not a bad idea...
+            // solves all the tool changing problems.
+            if (CurrentTool == 0) // there is no tool in the spindle - just get the selected tool
+            {
+                if (SelectedTool == 0)
+                {
+                    return; // the do nothing case - no tool change
+
+                }
+                        
+                if (SelectedTool > TCP.CarouselSize) 
+                {
+                    Manual_GetTool(SelectedTool);   // selected tool is not in the carousel - do a manual get tool
+                }
+                else
+                {
+                    Start_GetTool(SelectedTool);    // automatically get a tool from the carousel
+                }
+            }
+            else if(CurrentTool > TCP.CarouselSize) // current tool requires a manual removal
+            {
+                Manual_PutTool(CurrentTool);   // removes the current tool from the spindle
+                if(SelectedTool == 0)
+                {
+                    ToolInSpindle = 0; // don't need to do anything here - spindle was just unloaded manually
+                    return;
+                }
+                if (SelectedTool > TCP.CarouselSize)
+                {
+                    Manual_GetTool(SelectedTool);   // selected tool is not in the carousel - do a manual get tool
+                }
+                else
+                {
+                    Start_GetTool(SelectedTool);    // automatically get a tool from the carousel
+                }
+            }
+            else
+            {
+                // current tool can be put into the carousel
+                if(SelectedTool == 0)
+                {
+                    Start_PutTool(CurrentTool); // just put away the current tool
+                    ToolInSpindle = 0;
+                    return;
+                }
+                if(SelectedTool > TCP.CarouselSize)
+                {
+                    Start_PutTool(CurrentTool); // put away the current tool
+                    Manual_GetTool(SelectedTool); // get the selected tool manually - not in the carousel
+                }
+                else
+                {
+                    Start_ExchangeTool(CurrentTool, SelectedTool);  // if none of the other conditions apply then do a tool exchange!
+                }
+            }
+        }
+
         #region Get a Tool from the Tool Changer
         public void Start_GetTool(int ToolNumber)
         {
@@ -259,7 +378,6 @@ namespace KFLOP_Test3
             _bw2.ProgressChanged += GetToolProgressChanged;
             _bw2.RunWorkerCompleted += GetToolCompleted;
             _bw2.RunWorkerAsync(ToolNumber);
-
         }
 
         private void GetToolWorker(object sender, DoWorkEventArgs e)
@@ -430,6 +548,17 @@ namespace KFLOP_Test3
             _bw2.ProgressChanged -= GetToolProgressChanged;
             _bw2.RunWorkerCompleted -= GetToolCompleted;
             CompleteActionStatus((BWResults)e.Result);
+        }
+        #endregion
+
+        #region Manual Tool insert
+        // this looks kind of redundant... have to see how this works out.
+        public void Manual_GetTool(int ToolNumber)
+        {
+            string toolmsg = string.Format("Insert Tool Number {0} into the spindle", ToolNumber);
+            MessageBox.Show(toolmsg, "WARNING - DO NOT IGNORE!");
+            // can I somehow make a red blinking warning on this? maybe a custom message box?
+            ToolInSpindle = ToolNumber;
         }
         #endregion
 
@@ -625,7 +754,17 @@ namespace KFLOP_Test3
         }
         #endregion
 
+        #region Manual Tool Removal
+        public void Manual_PutTool(int ToolNumber)
+        {
+            string toolmsg = string.Format("Remove Tool number {0} from the spindle", ToolNumber);
+            MessageBox.Show(toolmsg, "WARNING - DO NOT IGNORE!");
+            ToolInSpindle = 0;
+        }
+        #endregion
+
         #region Tool Exchange - Put A Get B without retract
+
         public void Start_ExchangeTool(int PutTool, int GetTool)
         {
             TCActionProgress = true; // process action is happening...

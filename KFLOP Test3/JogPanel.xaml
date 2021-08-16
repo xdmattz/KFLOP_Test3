@@ -4,7 +4,7 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
              xmlns:local="clr-namespace:KFLOP_Test3"
-             mc:Ignorable="d" Height="300" Width="550">
+             mc:Ignorable="d" Height="360" Width="600">  <!-- (360) allow 30 height for tab-->
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="55"/>
