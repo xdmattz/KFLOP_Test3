@@ -311,7 +311,8 @@ namespace KFLOP_Test3
             // need a thread safe invoke here...
             Dispatcher.Invoke(() =>
             { UpdateCfg();
-            });// not sure I need this here - but not a bad idea...
+            });// not sure I really need to double check the configuration here - but not a bad idea...
+
             // solves all the tool changing problems.
             if (CurrentTool == 0) // there is no tool in the spindle - just get the selected tool
             {

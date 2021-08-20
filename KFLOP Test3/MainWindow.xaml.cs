@@ -141,6 +141,7 @@ namespace KFLOP_Test3
         OffsetPanel OffsetPanel1;
         ToolChangerPanel ToolChangerPanel1;
         ToolTablePanel ToolTablePanel1;
+        ProbePanel ProbePanel1;
 
 
         // more tab items here...
@@ -295,13 +296,20 @@ namespace KFLOP_Test3
             // Tool Table Panel
             ToolTablePanel1 = new ToolTablePanel(ref KM);
             var Tab5 = new TabItem();
-            Tab5.Name = "tabItemContent4";
+            Tab5.Name = "tabItemContent5";
             Tab5.Header = "Tool Table";
             Tab5.Content = ToolTablePanel1;
             tcMainTab.Items.Add(Tab5);
 
 
             // Probing tab panel
+            ProbePanel1 = new ProbePanel(ref KM);
+            var Tab6 = new TabItem();
+            Tab6.Name = "tabItemContent6";
+            Tab6.Header = "Probing";
+            Tab6.Content = ProbePanel1;
+            tcMainTab.Items.Add(Tab6);
+
             // Tools tab panel etc.
             GCodeButtonsInit();
             // hide the fwd and rev buttons
