@@ -133,21 +133,21 @@ namespace KFLOP_Test3
 
         private void Probe_Worker(object sender, DoWorkEventArgs e)
         {
-            double MotionRate = 2.0;    // inch per min
+            double MotionRate = -5.0;    // inch per min
             double mrZ;
-            double ProbeDistance = 1.5; // probe distance  in inches
+            double ProbeDistance = 1.5; // probe distance  in inches - this should take about 
             mrZ = (MotionRate * KMx.CoordMotion.MotionParams.CountsPerInchZ) / 60.0; // motion rate(in/min) * (counts/inch) / (60sec/ min)
 
-            double PTimeoutMs;
+            double PTimeout;
             // timeout is (distance/rate) * (ms/min)
-            PTimeoutMs = (ProbeDistance / MotionRate) * 60000.0;    // convert to ms for timeout  -
+            PTimeout = (ProbeDistance / Math.Abs(MotionRate)) * 60.0;    // convert to seconds for timeout  -
             // this is a simplification because it doesn't account for acceleration and deceleration times, but it is a start.
 
             // set the Persist Variables
             KMx.SetUserDataFloat(PVConst.P_NOTIFY_ARGUMENT1, (float)mrZ);
             KMx.SetUserDataFloat(PVConst.P_NOTIFY_ARGUMENT2, (float)0.0);
             KMx.SetUserDataFloat(PVConst.P_NOTIFY_ARGUMENT3, (float)0.0);
-            KMx.SetUserDataFloat(PVConst.P_NOTIFY_ARGUMENT4, (float)PTimeoutMs);
+            KMx.SetUserDataFloat(PVConst.P_NOTIFY_ARGUMENT4, (float)PTimeout);
 
             // execute program 2  to probe
             KMx.SetUserData(PVConst.P_NOTIFY, (T2Const.T2_PROBE_Z));    // probe Z
@@ -155,7 +155,7 @@ namespace KFLOP_Test3
             int timeoutCnt = 0;
 
             Int32 pTimeout2;
-            pTimeout2 = (Int32)((1.2 * PTimeoutMs) / 100); 
+            pTimeout2 = (Int32)((1.2 * PTimeout) * 10); // convert to 100ms ticks
 
             do
             {
@@ -168,10 +168,12 @@ namespace KFLOP_Test3
                   //  BWRes.Result = false;
                   //  BWRes.Comment = "Carousel Timeout";
                   //  e.Result = BWRes;
+                  // stop any jogging 
                     return;
                 }
             } while (CheckForProbeComplete() != true);
             // look at the probe results to determine if what to do next
+            MessageBox.Show("Probe Done");
 
         }
 
@@ -191,9 +193,14 @@ namespace KFLOP_Test3
 
         private bool CheckForProbeComplete()
         {
+            // is thread 2 still running?
             // get the persist variables the indicate the probing has finished.
             int ProbeStatus = KMx.GetUserData(PVConst.P_STATUS);
             if ((ProbeStatus & PVConst.SB_PROBE_STATUS_MASK) != 0)  // only check the probe status bits
+            {
+                return true;
+            }
+            else if(KMx.ThreadExecuting(2) == false)
             {
                 return true;
             }

@@ -64,6 +64,8 @@ namespace KFLOP_Test3
             AirPres_LED.Set_Label("Air Pressure");
             DoorFan_LED.Set_Label("Door Fan");
             FloodMotor_LED.Set_Label("Flood Motor");
+            Probe_LED.Set_Label("Probe");
+            ToolSetter_LED.Set_Label("Tool Setter");
 
 
             ESRelay_LED.Set_State(LED_State.Off);
@@ -84,6 +86,8 @@ namespace KFLOP_Test3
             DoorFan_LED.Set_State(LED_State.Off);
             FloodMotor_LED.Set_State(LED_State.Off);
 
+            Probe_LED.Set_State(LED_State.Off);
+            ToolSetter_LED.Set_State(LED_State.Off);
 
         }
 
@@ -202,6 +206,7 @@ namespace KFLOP_Test3
                 Prev_KanalogOutputs = MStat.KanalogBitsStateOutputs;
 
                 // process all the LEDs on the Kanalog inputs/outputs
+                // Kanalog Inputs
                 // EStop Relay
                 if ((Prev_KanalogOutputs & IOConst.ESTOP_RELAY_MASK) == IOConst.ESTOP_RELAY_MASK)
                 { ESRelay_LED.Set_State(LED_State.On_Green); }
@@ -226,6 +231,16 @@ namespace KFLOP_Test3
                 if ((Prev_KanalogInputs & IOConst.AXIS_FAULT_MASK) == 0)    // Power Module fault: 1 = OK, 0 = Fault.
                 { AxisFault_LED.Set_State(LED_State.On_Red); }
                 else { AxisFault_LED.Set_State(LED_State.Off); }
+                // Probe
+                if ((Prev_KanalogInputs & IOConst.TOUCH_PROBE_MASK) == IOConst.TOUCH_PROBE_MASK)
+                { Probe_LED.Set_State(LED_State.On_Blue); }
+                else { Probe_LED.Set_State(LED_State.Off); }
+                // Tool Setter
+                if ((Prev_KanalogInputs & IOConst.TOOL_SETTER_MASK) == IOConst.TOOL_SETTER_MASK)
+                { ToolSetter_LED.Set_State(LED_State.On_Blue); }
+                else { ToolSetter_LED.Set_State(LED_State.Off); }
+
+                // Kanalog Outputs
                 // Z Brake
                 if ((Prev_KanalogOutputs & IOConst.Z_BRAKE_MASK) == IOConst.Z_BRAKE_MASK)  // Brake is on when not energized 
                 { ZBrake_LED.Set_State(LED_State.On_Green); }

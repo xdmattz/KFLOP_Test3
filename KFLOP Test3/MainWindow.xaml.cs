@@ -991,19 +991,33 @@ namespace KFLOP_Test3
 
             // update the check boxes
             if(cbT1.IsEnabled)
-            { if (KM.ThreadExecuting(1)) cbT1.IsChecked = true; }
+            { if (KM.ThreadExecuting(1)) { cbT1.IsChecked = true; }
+              else { cbT1.IsChecked = false; }
+            }
             if (cbT2.IsEnabled)
-            { if (KM.ThreadExecuting(2)) cbT2.IsChecked = true; }
+            { if (KM.ThreadExecuting(2)) { cbT2.IsChecked = true; }
+                else { cbT2.IsChecked = false; }
+            }
             if (cbT3.IsEnabled)
-            { if (KM.ThreadExecuting(3)) cbT3.IsChecked = true; }
+            { if (KM.ThreadExecuting(3)) { cbT3.IsChecked = true; }
+                else { cbT3.IsChecked = false; }
+            }
             if (cbT4.IsEnabled)
-            { if (KM.ThreadExecuting(4)) cbT4.IsChecked = true; }
+            { if (KM.ThreadExecuting(4)) { cbT4.IsChecked = true; }
+                else { cbT4.IsChecked = false; }
+            }
             if (cbT5.IsEnabled)
-            { if (KM.ThreadExecuting(5)) cbT5.IsChecked = true; }
+            { if (KM.ThreadExecuting(5)) { cbT5.IsChecked = true; }
+                else { cbT5.IsChecked = false; }
+            }
             if (cbT6.IsEnabled)
-            { if (KM.ThreadExecuting(6)) cbT6.IsChecked = true; }
+            { if (KM.ThreadExecuting(6)) { cbT6.IsChecked = true; }
+                else { cbT6.IsChecked = false; }
+            }
             if (cbT7.IsEnabled)
-            { if (KM.ThreadExecuting(7)) cbT7.IsChecked = true; }
+            { if (KM.ThreadExecuting(7)) { cbT7.IsChecked = true; }
+                else { cbT7.IsChecked = false; }
+            }
 
             // update limit switches 
             if (KStat.PC_comm[CSConst.P_STATUS] != Prev_P_STATUS1) // only do this if the status has changed.
