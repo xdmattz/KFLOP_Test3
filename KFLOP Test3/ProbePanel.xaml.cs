@@ -19,6 +19,29 @@ using System.ComponentModel;
 using KMotion_dotNet;
 namespace KFLOP_Test3
 {
+    // possible probing results
+    public enum ProbeResult
+    {
+        Idle,
+        Probing,
+        SoftTimeOut,
+        MachineTimeOut,
+        Detected,
+        T2_ProbeError
+    }
+
+    public struct MachineCoordinates
+    {
+        
+        public double X { get; set; }
+        public double Y { get; set; }
+        public double Z { get; set; }
+        public double A { get; set; }
+        public double B { get; set; }
+        public double C { get; set; }
+    }
+
+
     /// <summary>
     /// Interaction logic for ProbePanel.xaml
     /// </summary>
@@ -30,6 +53,7 @@ namespace KFLOP_Test3
         private KM_Controller KMx { get; set; }
 
         static BackgroundWorker _pbw;    // Probing background worker
+        ProbeResult ProbeState;
 
         #endregion
 
@@ -41,6 +65,26 @@ namespace KFLOP_Test3
 
             _pbw = new BackgroundWorker();
 
+            ProbeState = new ProbeResult();
+            ProbeState = ProbeResult.Idle;
+
+        }
+
+        public MachineCoordinates GetCoordinates()
+        {
+            MachineCoordinates MC = new MachineCoordinates();
+            double x, y, z, a, b, c;
+            x = y = z = a = b = c = 0.0;
+            KMx.CoordMotion.UpdateCurrentPositionsABS(ref x, ref y, ref z, ref a, ref b, ref c, true);
+
+            MC.X = x;
+            MC.Y = y;
+            MC.Z = z;
+            MC.A = a;
+            MC.B = b;
+            MC.C = c;
+
+            return MC;
         }
 
         private void Probe_Xm_Yp_Click(object sender, RoutedEventArgs e)
@@ -122,18 +166,7 @@ namespace KFLOP_Test3
 
         private void StartProbeProcess()
         {
-            _pbw.WorkerReportsProgress = true;
-            _pbw.WorkerSupportsCancellation = true;
-
-            _pbw.DoWork += Probe_Worker; // Add the main thread method to call
-            _pbw.ProgressChanged += Probe_ProgressChanged; // add the progress changed method
-            _pbw.RunWorkerCompleted += Probe_Completed; // the the method to call when the function is done
-            _pbw.RunWorkerAsync();
-        }
-
-        private void Probe_Worker(object sender, DoWorkEventArgs e)
-        {
-            double MotionRate = -5.0;    // inch per min
+            double MotionRate = -15.0;    // inch per min
             double mrZ;
             double ProbeDistance = 1.5; // probe distance  in inches - this should take about 
             mrZ = (MotionRate * KMx.CoordMotion.MotionParams.CountsPerInchZ) / 60.0; // motion rate(in/min) * (counts/inch) / (60sec/ min)
@@ -152,34 +185,66 @@ namespace KFLOP_Test3
             // execute program 2  to probe
             KMx.SetUserData(PVConst.P_NOTIFY, (T2Const.T2_PROBE_Z));    // probe Z
             KMx.ExecuteProgram(2);
-            int timeoutCnt = 0;
 
-            Int32 pTimeout2;
-            pTimeout2 = (Int32)((1.2 * PTimeout) * 10); // convert to 100ms ticks
+            _pbw.WorkerReportsProgress = true;
+            _pbw.WorkerSupportsCancellation = true;
 
+            _pbw.DoWork += Probe_Worker; // Add the main thread method to call
+            _pbw.ProgressChanged += Probe_ProgressChanged; // add the progress changed method
+            _pbw.RunWorkerCompleted += Probe_Completed; // the the method to call when the function is done
+            _pbw.RunWorkerAsync(PTimeout);
+        }
+
+        private void Probe_Worker(object sender, DoWorkEventArgs e)
+        {
+            double TimeOut = (double)e.Argument; // the delay time for the probing operation
+            int Tdone = (int)(TimeOut * 10.0 * 1.1);  // convert the time to sleep counts with 10% extra time over machine delay
+            int SleepCnt = 0;
+
+            ProbeState = ProbeResult.Probing;
             do
             {
                 Thread.Sleep(100);
                 // get the completion status
-
-                if (timeoutCnt++ > pTimeout2)
+                if (SleepCnt++ > Tdone)
                 {
-                    // Get to here if it takes too long to get a probe result
-                  //  BWRes.Result = false;
-                  //  BWRes.Comment = "Carousel Timeout";
-                  //  e.Result = BWRes;
-                  // stop any jogging 
+                    ProbeState = ProbeResult.SoftTimeOut;
+                    MessageBox.Show("Probe Timeout");
                     return;
                 }
             } while (CheckForProbeComplete() != true);
-            // look at the probe results to determine if what to do next
-            MessageBox.Show("Probe Done");
-
+            // look at the probe results to determine what to do next
+            string Pmsg = "Done";
+            MachineCoordinates MCx = GetCoordinates();
+            switch(ProbeState)
+            {
+                case ProbeResult.Detected:
+                    {
+                        // get the machine coordinates.
+                        Pmsg = String.Format("Probe Detect at\n X:{0}\nY:{1}\nZ{2}", MCx.X, MCx.Y, MCx.Z);
+                        break;
+                    }
+                case ProbeResult.MachineTimeOut:
+                    {
+                        Pmsg = String.Format("Machine timeout. Currently at\n X:{0}\nY:{1}\nZ{2}", MCx.X, MCx.Y, MCx.Z);
+                        break;
+                    }
+                case ProbeResult.T2_ProbeError:
+                    {
+                        Pmsg = String.Format("Probe Error\nMachine at\n X:{0}\nY:{1}\nZ{2}", MCx.X, MCx.Y, MCx.Z);
+                        break;
+                    }
+                default:
+                    {
+                        break;
+                    }
+            }
+            MessageBox.Show(Pmsg);
         }
 
         private void Probe_ProgressChanged(object sender, ProgressChangedEventArgs e)
         {
-
+            // nothing in here right now...
         }
 
         private void Probe_Completed(object sender, RunWorkerCompletedEventArgs e)
@@ -194,14 +259,18 @@ namespace KFLOP_Test3
         private bool CheckForProbeComplete()
         {
             // is thread 2 still running?
-            // get the persist variables the indicate the probing has finished.
-            int ProbeStatus = KMx.GetUserData(PVConst.P_STATUS);
-            if ((ProbeStatus & PVConst.SB_PROBE_STATUS_MASK) != 0)  // only check the probe status bits
+            if(KMx.ThreadExecuting(2) == false) // thread 2 has finished running
             {
-                return true;
-            }
-            else if(KMx.ThreadExecuting(2) == false)
-            {
+                // get the persist variables the indicate the probing has finished.
+                int ProbeStatus = KMx.GetUserData(PVConst.P_STATUS);
+                if ((ProbeStatus & PVConst.SB_PROBE_STATUS_MASK) != 0)  // only check the probe status bits
+                {
+                    if ((ProbeStatus & PVConst.SB_PROBE_DETECT) == PVConst.SB_PROBE_DETECT)
+                    { ProbeState = ProbeResult.Detected; }
+                    else if ((ProbeStatus & PVConst.SB_PROBE_TIMEOUT) == PVConst.SB_PROBE_TIMEOUT)
+                    { ProbeState = ProbeResult.MachineTimeOut; }
+                }
+                ProbeState = ProbeResult.T2_ProbeError;
                 return true;
             }
             return false;
