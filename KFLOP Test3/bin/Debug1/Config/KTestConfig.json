@@ -1,5 +1,5 @@
 {
-  "fPath": "C:\\KMotion435d\\PC VCS\\KFLOP Test\\KFLOP_Test3\\KFLOP Test3\\bin\\Debug1\\",
+  "fPath": "C:\\KMotion435f\\PC VCS\\KFLOP Test\\KFLOP_Test3\\KFLOP Test3\\bin\\Debug1\\",
   "EMCVarsFile": "DRM_emc.var",
   "EMCVarsFile_mm": "DRM_emc_mm.var",
   "EMCVarsFile_inch": "DRM_emc_inch.var",
@@ -23,6 +23,6 @@
   "Highlight": "GCode-Mode.xshd",
   "GCodePath": "C:\\KMotion435d\\PC VCS",
   "MDIFile": "MDI.gcode",
-  "ConfigPath": "C:\\KMotion435d\\PC VCS\\KFLOP Test\\KFLOP_Test3\\KFLOP Test3\\bin\\Debug1\\Config",
+  "ConfigPath": "C:\\KMotion435f\\PC VCS\\KFLOP Test\\KFLOP_Test3\\KFLOP Test3\\bin\\Debug1\\Config",
   "ThisFile": "KTestConfig.json"
 }

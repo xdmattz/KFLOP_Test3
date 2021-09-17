@@ -54,6 +54,7 @@ namespace KFLOP_Test3
 
         static BackgroundWorker _pbw;    // Probing background worker
         ProbeResult ProbeState;
+        BitOps BTest;
 
         #endregion
 
@@ -67,6 +68,7 @@ namespace KFLOP_Test3
 
             ProbeState = new ProbeResult();
             ProbeState = ProbeResult.Idle;
+            BTest = new BitOps();
 
         }
 
@@ -89,22 +91,36 @@ namespace KFLOP_Test3
 
         private void Probe_Xm_Yp_Click(object sender, RoutedEventArgs e)
         {
+            if (LocationCheck())
+            {
 
+            }
         }
 
         private void Probe_Yp_Click(object sender, RoutedEventArgs e)
         {
+            if (LocationCheck())
+            {
+
+            }
 
         }
 
         private void Probe_Xp_Yp_Click(object sender, RoutedEventArgs e)
         {
+            if(LocationCheck())
+            {
+                
+            }
 
         }
 
         private void Probe_Xm_Click(object sender, RoutedEventArgs e)
         {
+            if (LocationCheck())
+            {
 
+            }
         }
 
         private void Probe_Z_Click(object sender, RoutedEventArgs e)
@@ -126,32 +142,50 @@ namespace KFLOP_Test3
 
         private void Probe_Xp_Click(object sender, RoutedEventArgs e)
         {
+            if (LocationCheck())
+            {
 
+            }
         }
 
         private void Probe_Xm_Ym_Click(object sender, RoutedEventArgs e)
         {
+            if (LocationCheck())
+            {
 
+            }
         }
 
         private void Probe_Ym_Click(object sender, RoutedEventArgs e)
         {
+            if (LocationCheck())
+            {
 
+            }
         }
 
         private void Probe_Xp_Ym_Click(object sender, RoutedEventArgs e)
         {
+            if (LocationCheck())
+            {
 
+            }
         }
 
         private void Probe_Inside_Click(object sender, RoutedEventArgs e)
         {
+            if (LocationCheck())
+            {
 
+            }
         }
 
         private void Probe_Outside_Click(object sender, RoutedEventArgs e)
         {
+            if (LocationCheck())
+            {
 
+            }
         }
 
         private bool LocationCheck()
@@ -239,7 +273,9 @@ namespace KFLOP_Test3
                         break;
                     }
             }
+            Pmsg += String.Format("\nProbe State = {0}", ProbeState);
             MessageBox.Show(Pmsg);
+
         }
 
         private void Probe_ProgressChanged(object sender, ProgressChangedEventArgs e)
@@ -261,16 +297,17 @@ namespace KFLOP_Test3
             // is thread 2 still running?
             if(KMx.ThreadExecuting(2) == false) // thread 2 has finished running
             {
+                ProbeState = ProbeResult.T2_ProbeError;
                 // get the persist variables the indicate the probing has finished.
                 int ProbeStatus = KMx.GetUserData(PVConst.P_STATUS);
-                if ((ProbeStatus & PVConst.SB_PROBE_STATUS_MASK) != 0)  // only check the probe status bits
+                if (BTest.AnyInMask(ProbeStatus, unchecked((int)PVConst.SB_PROBE_STATUS_MASK)))  // only check the probe status bits
                 {
-                    if ((ProbeStatus & PVConst.SB_PROBE_DETECT) == PVConst.SB_PROBE_DETECT)
+                    if(BTest.BitIsSet(ProbeStatus, PVConst.SB_PROBE_DETECT))
                     { ProbeState = ProbeResult.Detected; }
-                    else if ((ProbeStatus & PVConst.SB_PROBE_TIMEOUT) == PVConst.SB_PROBE_TIMEOUT)
+                    else if (BTest.BitIsSet(ProbeStatus, PVConst.SB_PROBE_TIMEOUT))
                     { ProbeState = ProbeResult.MachineTimeOut; }
                 }
-                ProbeState = ProbeResult.T2_ProbeError;
+                
                 return true;
             }
             return false;

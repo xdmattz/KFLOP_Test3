@@ -121,6 +121,18 @@ namespace KFLOP_Test3
             LED_SPEN.Set_Label("Spindle EN");
             LED_SPEN.Set_State(LED_State.Off);
 
+            ToolChange_LED.Set_Label("Tool Changing");
+            ToolChange_LED.Set_State(LED_State.Off);
+
+        }
+
+        public void SetTC_Led()
+        {
+            ToolChange_LED.Set_State(LED_State.On_Blue);
+        }
+        public void ClearTC_Led()
+        {
+            ToolChange_LED.Set_State(LED_State.Off);
         }
 
         public void TLAUX_Status(ref KM_MainStatus KStat)

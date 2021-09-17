@@ -63,12 +63,13 @@ namespace KFLOP_Test3
         static bool MachineError = false;
         static bool MachineAxisLimit = false;
 
-        // Other Status Flags
+        // Other Status Flags used with the gcode interpreter
         static bool SingleStepping = false;
         static bool RestoreStoppedState = false;
         static bool InterpreterInitialized = false;
-        static bool m_MDI = false;
+        static bool m_MDI = false;  
         static bool m_M30 = false;
+        static bool m_M6 = false;
         static bool Halted1 = false;
 
         // Status flags used in check status
@@ -522,10 +523,14 @@ namespace KFLOP_Test3
                     return 0;
                 }
             }
+
+            string s = String.Format("Callback Code {0}", code);
+            MessageBox.Show(s);
+
             switch (code)
             {
                 case 2: // M2 End Program
-                    m_M30 = true;   // set the end of program flag
+                    m_M30 = true;    // set the end of program flag
                     break;
                 case 3: // M3 callback - Spindle CW
                     KM.SetUserData(PVConst.P_NOTIFY, T2Const.T2_SPINDLE_CW);
@@ -540,7 +545,8 @@ namespace KFLOP_Test3
                     KM.ExecuteProgram(2);
                     break;
                 case 6: // M6 Callback - Tool Change
-                    // call the tool change method. - found in Tool Change Panel.
+                    m_M6 = true;    // in a tool change
+                     // call the tool change method. - found in Tool Change Panel.
                     ToolChangerPanel.ToolChangerComplete = false;
                     // Dispatcher.BeginInvoke(new System.Threading.ThreadStart(() => ToolChangerPanel1.ToolChangeM6()));
                     ToolChangerPanel1.ToolChangeM6();
@@ -549,7 +555,7 @@ namespace KFLOP_Test3
                         // wait for tool change to complete
                         Thread.Sleep(100);
                     } while (ToolChangerPanel.ToolChangerComplete != true);
-
+                    m_M6 = false;    // tool change done
                     // if it returns successfully then continue
                     // check ToolChangerPanel.Status
                     break;
@@ -558,7 +564,19 @@ namespace KFLOP_Test3
                 case 9: // M9 Callback -Coolant Off
                     break;
                 case 24:    // M30 End Program
-                    m_M30 = true; // set the end of program flag
+                    m_M30 = true;    // set the end of program flag
+                    break;
+                case 118: // M118 or G38 probe
+                    Dispatcher.Invoke(() =>
+                    {
+                        ProbeTest();
+                    });
+                    break;
+                case -1:    // M119 or G83 Rigid tapping - why is this a -1?
+                    Dispatcher.Invoke(() =>
+                    {
+                        RigidTappingTest();
+                    });
                     break;
                 case 42: // Cycle start
                 case 43: // Halt
@@ -587,15 +605,16 @@ namespace KFLOP_Test3
 
         public void InterpCompleted2(int status, int lineno, int seq, string err)
         {
-            // check if this was an MDI command
-            if (m_MDI == false)
+            tbStatus.Text = status.ToString();
+            tbLineNo.Text = lineno.ToString();
+            tbSeq.Text = seq.ToString();
+            tbErr.Text = err;
+
+            // update the GCode highlighted line in avalon edit only if MDI is false
+            if (m_MDI == false) 
             {
-                tbStatus.Text = status.ToString();
-                tbLineNo.Text = lineno.ToString();
                 CurrentLineNo = lineno;
                 GCodeView_GotoLine(lineno);
-                tbSeq.Text = seq.ToString();
-                tbErr.Text = err;
             }
             if ((status != 0) && (status != 1005))
             {
@@ -620,7 +639,7 @@ namespace KFLOP_Test3
                 // MessageBox.Show("Single Stepping!");
                 btnCycleStart.Content = "Continue";
             }
-            if(status == 1005)
+            if(status == 1005)  // motion halted
             {
                 // get the stopped state coordinates
                 KM.CoordMotion.Interpreter.ReadCurMachinePosition(ref Stopped_X, ref Stopped_Y, ref Stopped_Z, ref Stopped_A, ref Stopped_B, ref Stopped_C);
@@ -679,6 +698,16 @@ namespace KFLOP_Test3
         #endregion
 
         #region Motion Callback Handlers
+
+        private void TraverseCompleted(object callback)
+        { }
+
+        public void ArcFeedHandler(bool ZeroLenAsFullCircles, double DesiredFeedRate_in_per_sec, int plane, double first_end, double second_end, double first_axis, double second_axis, int rotation, double axis_end_point, double first_start, double second_start, double axis_start_point, int sequence_number, int ID)
+        { }
+
+        public void ArcFeed6AxisHandler(bool ZeroLenAsFullCircles, double DesiredFeedRate_in_per_sec, int plane, double first_end, double second_end, double first_axis, double second_axis, int rotation, double axis_end_point, double a, double b, double c, double first_start, double second_start, double axis_start_point, int sequence_number, int ID)
+        { }
+
         private void StraightMotionHandler(double FR, double x, double y, double z, int seq, int ID)
         {
             Dispatcher.BeginInvoke(new System.Threading.ThreadStart(() => StraightMotionHandler2(FR, x, y, z, seq, ID)));
@@ -690,11 +719,22 @@ namespace KFLOP_Test3
             tbSFCB.Text = string.Format("{0:F2} {1:F2} {2:F2} {3:F2} {4} {5}", FR, x, y, z, seq, ID);
 
         }
+
+        private void StraightFeedSixAxis(double DesiredFeedRate_in_per_sec, double x, double y, double z, double a, double b, double c, int sequence_number, int ID)
+        { }
+
+        private void StraightTraverse(double x, double y, double z, int sequence_number)
+        { }
+
+        private void StraightTraversSixAxis(double x, double y, double z, double a, double b, double c, int sequence_number)
+        { }
         #endregion
 
         private void AddHandlers()
         {
             // set the callback for various functions
+
+            // console message received
             KM.MessageReceived += new KMotion_dotNet.KMConsoleHandler(Console_Msg_Update);
 
             // Callback for Errors
@@ -714,7 +754,13 @@ namespace KFLOP_Test3
 
             // Call backs for motion
             // add the motion callbacks here for 3D plotting of paths
+            KM.CoordMotion.AsyncTraverseCompleted += new TraverseCompletedHandler(TraverseCompleted);
+            KM.CoordMotion.CoordMotionArcFeed += new KM_CoordMotionArcFeedHandler(ArcFeedHandler);
+            KM.CoordMotion.CoordMotionArcFeedSixAxis += new KM_CoordMotionArcFeedSixAxisHandler(ArcFeed6AxisHandler);
             KM.CoordMotion.CoordMotionStraightFeed += new KM_CoordMotionStraightFeedHandler(StraightMotionHandler);
+            KM.CoordMotion.CoordMotionStraightFeedSixAxis += new KM_CoordMotionStraightFeedSixAxisHandler(StraightFeedSixAxis);
+            KM.CoordMotion.CoordMotionStraightTraverse += new KM_CoordMotionStraightTraverseHandler(StraightTraverse);
+            KM.CoordMotion.CoordMotionStraightTraverseSixAxis += new KM_CoordMotionStraightTraverseSixAxisHandler(StraightTraversSixAxis);
 
 
 
@@ -746,6 +792,10 @@ namespace KFLOP_Test3
             KMI.SetMcodeAction(9, MCODE_TYPE.M_Action_Callback, 0, 0, 0, 0, 0, ""); // M9 Coolant Off
             KMI.SetMcodeAction(2, MCODE_TYPE.M_Action_Callback, 0, 0, 0, 0, 0, ""); // M2 Stop 
             KMI.SetMcodeAction(41, MCODE_TYPE.M_Action_Callback, 0, 0, 0, 0, 0, ""); // M30 Stop and Rewind
+
+            // Set the Mcodes for M118 and M119 
+            KMI.SetMcodeAction(39, MCODE_TYPE.M_Action_Callback, 0, 0, 0, 0, 0, ""); // M118 - Hijacked by the probe G38 command
+            KMI.SetMcodeAction(40, MCODE_TYPE.M_Action_Callback, 0, 0, 0, 0, 0, ""); // M119 - Hijacked by G83 rigid tapping cycle
 
             // Set S to run thread 3 code which is preloaded with variable in userdata 99
             KMI.SetMcodeAction(10, MCODE_TYPE.M_Action_Program, 3, PVConst.P_SPINDLE_RPM_CMD, 0, 0, 0, "");
@@ -781,7 +831,7 @@ namespace KFLOP_Test3
 
             // MCode Action 5 - Run a user C program on the KFLOP board and wait for it to finish
             // set M119 to run thread 3 code which has be preloaded, pass the code name in persist.UserData[100]
-            KMI.SetMcodeAction(40, MCODE_TYPE.M_Action_Program_wait, 3, 100, 0, 0, 0, "");
+           // KMI.SetMcodeAction(40, MCODE_TYPE.M_Action_Program_wait, 3, 100, 0, 0, 0, "");
 
 
             // MCode Action 6 - Run a user C program on the KFLOP board, wait for it to finish and resync the position
@@ -982,10 +1032,14 @@ namespace KFLOP_Test3
             #endregion
 
             // manage the current line number for the gcode listing
-            if (ExecutionInProgress && (m_MDI == false))
+            if (ExecutionInProgress && (m_MDI == false))    // executing GCode and not from the MDI (manual data input)
             {
-                CurrentLineNo = KM.CoordMotion.Interpreter.SetupParams.CurrentLine;
-                GCodeView_GotoLine(CurrentLineNo +1);
+                // tried putting this in the InterpreterStatus callback but this seems to work better.
+                if (m_MDI == false)   // only update if not changing tools or in a manual input
+                {
+                    CurrentLineNo = KM.CoordMotion.Interpreter.SetupParams.CurrentLine;
+                    GCodeView_GotoLine(CurrentLineNo + 1);
+                }
             }
             //else { CurrentLineNo = 1; }
 
@@ -1063,6 +1117,8 @@ namespace KFLOP_Test3
             {
                 Exe_LED.Set_State(LED_State.Off);
             }
+            if(m_M6)
+            { ToolChangerPanel1.SetTC_Led(); } else { ToolChangerPanel1.ClearTC_Led(); }
         }
         #endregion
 
@@ -2221,10 +2277,32 @@ namespace KFLOP_Test3
             // string spmsg;
             // spmsg = string.Format("MoveAtVel7={0} {1}", pos, 1400.0);
             // KM.WriteLine(spmsg);
-
-
         }
 
+        private void ProbeTest()
+        {
+            KM_Interpreter KI;
+            KI = KM.CoordMotion.Interpreter;
+            
+            string s;
+            // get the probing status
+            if (KI.SetupParams.ProbeComplete)
+            {
+                s = "In Probing - Probing Complete";
+            }
+            else
+            {
+                s = "In Probing - Probing Not Complete";
+            }
+            MessageBox.Show(s);
+            KI.SetupParams.ProbeComplete = true;    // Probing is complete
+            
+        }
+
+        private void RigidTappingTest()
+        {
+            MessageBox.Show("In Rigid Tapping");
+        }
 
     }
 }

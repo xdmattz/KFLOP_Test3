@@ -122,6 +122,7 @@
         <TextBox x:Name="tbCarouselSize" HorizontalAlignment="Left" Height="23" Margin="55,42,0,0" TextWrapping="Wrap" Text="8" VerticalAlignment="Top" Width="21" RenderTransformOrigin="1.559,0.522"/>
         <Label Content="Size" HorizontalAlignment="Left" Margin="25,42,0,0" VerticalAlignment="Top" RenderTransformOrigin="0.539,-1.008" Height="22" Width="30"/>
         <Label x:Name="lblProg2" Content="" HorizontalAlignment="Left" Margin="215,110,0,0" VerticalAlignment="Top"/>
+        <local:LED_Indicator x:Name="ToolChange_LED" Margin="415,325,39,10" />
 
     </Grid>
 </UserControl>

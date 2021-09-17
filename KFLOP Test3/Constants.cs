@@ -94,6 +94,8 @@ namespace KFLOP_Test3
         public const int SB_PROBE_DETECT    = 30;
         public const int SB_PROBE_TIMEOUT   = 31;
         public const uint SB_PROBE_STATUS_MASK = 0xc0000000;    // this didn't like the fact that the MSB was set...
+        public const int SB_PROBE_DETECT_MASK = 0x40000000;
+        public const uint SB_PROBE_TIMEOUT_MASK = 0x80000000;
 
         // P_TLUX_STATUS bit definitions
         // Tool Changer Status Query 
