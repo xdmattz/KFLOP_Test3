@@ -366,7 +366,7 @@ namespace KFLOP_Test3
                     // update the elapsed time 
                     tbExTime.Text = KM.CoordMotion.TimeExecuted.ToString();
                 }
-
+                
                 // these actions happen every cycle
 
                 tickTimer.Restart();    // the tickTimer is used to determine how long this process takes
@@ -391,6 +391,12 @@ namespace KFLOP_Test3
                         //   This should include managing the GCode viewer - KMotionCNC manages
                         //   the viewer separatly in a Mutex block 
                         UpdateUI(ref MainStatus);
+
+                        if ((skip % 3) == 0) // do this three times per second
+                        {
+                            // update slow displays
+                            UpdateUI_Slow(ref MainStatus);
+                        }
 
                         //
                         ToolChangerPanel1.TLAUX_Status(ref MainStatus);
@@ -1043,35 +1049,7 @@ namespace KFLOP_Test3
             }
             //else { CurrentLineNo = 1; }
 
-            // update the check boxes
-            if(cbT1.IsEnabled)
-            { if (KM.ThreadExecuting(1)) { cbT1.IsChecked = true; }
-              else { cbT1.IsChecked = false; }
-            }
-            if (cbT2.IsEnabled)
-            { if (KM.ThreadExecuting(2)) { cbT2.IsChecked = true; }
-                else { cbT2.IsChecked = false; }
-            }
-            if (cbT3.IsEnabled)
-            { if (KM.ThreadExecuting(3)) { cbT3.IsChecked = true; }
-                else { cbT3.IsChecked = false; }
-            }
-            if (cbT4.IsEnabled)
-            { if (KM.ThreadExecuting(4)) { cbT4.IsChecked = true; }
-                else { cbT4.IsChecked = false; }
-            }
-            if (cbT5.IsEnabled)
-            { if (KM.ThreadExecuting(5)) { cbT5.IsChecked = true; }
-                else { cbT5.IsChecked = false; }
-            }
-            if (cbT6.IsEnabled)
-            { if (KM.ThreadExecuting(6)) { cbT6.IsChecked = true; }
-                else { cbT6.IsChecked = false; }
-            }
-            if (cbT7.IsEnabled)
-            { if (KM.ThreadExecuting(7)) { cbT7.IsChecked = true; }
-                else { cbT7.IsChecked = false; }
-            }
+            
 
             // update limit switches 
             if (KStat.PC_comm[CSConst.P_STATUS] != Prev_P_STATUS1) // only do this if the status has changed.
@@ -1119,6 +1097,62 @@ namespace KFLOP_Test3
             }
             if(m_M6)
             { ToolChangerPanel1.SetTC_Led(); } else { ToolChangerPanel1.ClearTC_Led(); }
+
+            // get a list of the active G Codes and display them
+            // only do this every third time through
+
+            
+
+        }
+
+        private void UpdateUI_Slow(ref KM_MainStatus Kstat)
+        {
+            #region check boxes
+            // update the check boxes
+            if (cbT1.IsEnabled)
+            {
+                if (KM.ThreadExecuting(1)) { cbT1.IsChecked = true; }
+                else { cbT1.IsChecked = false; }
+            }
+            if (cbT2.IsEnabled)
+            {
+                if (KM.ThreadExecuting(2)) { cbT2.IsChecked = true; }
+                else { cbT2.IsChecked = false; }
+            }
+            if (cbT3.IsEnabled)
+            {
+                if (KM.ThreadExecuting(3)) { cbT3.IsChecked = true; }
+                else { cbT3.IsChecked = false; }
+            }
+            if (cbT4.IsEnabled)
+            {
+                if (KM.ThreadExecuting(4)) { cbT4.IsChecked = true; }
+                else { cbT4.IsChecked = false; }
+            }
+            if (cbT5.IsEnabled)
+            {
+                if (KM.ThreadExecuting(5)) { cbT5.IsChecked = true; }
+                else { cbT5.IsChecked = false; }
+            }
+            if (cbT6.IsEnabled)
+            {
+                if (KM.ThreadExecuting(6)) { cbT6.IsChecked = true; }
+                else { cbT6.IsChecked = false; }
+            }
+            if (cbT7.IsEnabled)
+            {
+                if (KM.ThreadExecuting(7)) { cbT7.IsChecked = true; }
+                else { cbT7.IsChecked = false; }
+            }
+            #endregion
+
+            // get a list of the active G Codes
+            tbActiveGCodes.Text = "";
+            List<string> gcodelist = KM.CoordMotion.Interpreter.SetupParams.Active_GCodes;
+            foreach (string str in gcodelist)
+            {
+                tbActiveGCodes.Text += str + " ";
+            }
         }
         #endregion
 

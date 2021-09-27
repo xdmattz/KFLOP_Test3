@@ -87,6 +87,8 @@ namespace KFLOP_Test3
         private string CfgFName;
         public int ToolInSpindle;   // the number of the tool in the spindle, 0 = spindle empty, 1 - 8, Tool 
 
+        ProbeResult TSProbeState;
+
         #endregion
 
 
@@ -189,7 +191,7 @@ namespace KFLOP_Test3
                 MessageBoxResult rslt = MessageBox.Show(toolmsg, "Verify", MessageBoxButton.YesNo);
                 if (rslt == MessageBoxResult.Yes)
                 {
-                    ToolChangerDelux(ToolInSpindle, ToolNumber);
+                    ToolChangerDeluxe(ToolInSpindle, ToolNumber);
                 }
                 KMx.CoordMotion.Interpreter.SetupParams.CurrentToolSlot = ToolNumber; // update the interpreter slot number
                 return;
@@ -227,7 +229,7 @@ namespace KFLOP_Test3
 
             // UpdateCfg();    // this should load all the variables into the TCP class
             // Start_GetTool(ToolNumber);
-            ToolChangerDelux(0, ToolNumber); // this should get "ToolNumber" from the carousel from an empty spindle
+            ToolChangerDeluxe(0, ToolNumber); // this should get "ToolNumber" from the carousel from an empty spindle
         }
 
         private void btnPutTool_Click(object sender, RoutedEventArgs e)
@@ -249,7 +251,7 @@ namespace KFLOP_Test3
                 return;
             }
 
-            ToolChangerDelux(ToolNumber, 0);    // this should put the tool into the carousel, 
+            ToolChangerDeluxe(ToolNumber, 0);    // this should put the tool into the carousel, 
                                                 // or prompt for a manual tool removal if the 
                                                 // tool number is too big for the carousel
 
@@ -281,7 +283,7 @@ namespace KFLOP_Test3
             // need to decide which tool action to take - see comments on tool change actions
             // 
             // Start_ExchangeTool(current_tool, selected_tool);
-            ToolChangerDelux(current_tool, selected_tool);
+            ToolChangerDeluxe(current_tool, selected_tool);
             do { Thread.Sleep(100); } while (TCActionProgress);
             s = string.Format("Tool {0} changed to {1}", current_tool, selected_tool);
 //            MessageBox.Show(s);
@@ -318,7 +320,7 @@ namespace KFLOP_Test3
 
         // In all of this who or what is managing what is currently in the carousel!!! have to figure this out soon!
 
-        public void ToolChangerDelux(int CurrentTool, int SelectedTool)
+        public void ToolChangerDeluxe(int CurrentTool, int SelectedTool)
         {
             // need a thread safe invoke here...
             Dispatcher.Invoke(() =>
@@ -1010,7 +1012,6 @@ namespace KFLOP_Test3
             TCProgress = true;
             // check the results for faults and errors
             return ToolChangeStatus;
-
         }
 
         private void CompleteActionStatus(BWResults res)
@@ -1022,6 +1023,7 @@ namespace KFLOP_Test3
             else
             {
                 // Action had an error somewhere.
+                MessageBox.Show(res.Comment);
             }
             TCActionProgress = false; // the action is done
         }
@@ -1280,10 +1282,12 @@ namespace KFLOP_Test3
                 tbTSX.Text = TCP.TS_X.ToString();
                 tbTSY.Text = TCP.TS_Y.ToString();
                 tbTSZ.Text = TCP.TS_Z.ToString();
+                tbTSZSafe.Text = TCP.TS_SAFE_Z.ToString();
                 tbTSIndex.Text = TCP.TS_S.ToString();
 
                 tbTSRate1.Text = TCP.TS_FR1.ToString();
                 tbTSRate2.Text = TCP.TS_FR2.ToString();
+
 
                 tbCarouselSize.Text = TCP.CarouselSize.ToString();
             }
@@ -1313,6 +1317,8 @@ namespace KFLOP_Test3
             { TCP.TS_Y = temp; }
             if (double.TryParse(tbTSZ.Text, out temp))
             { TCP.TS_Z = temp; }
+            if(double.TryParse(tbTSZSafe.Text, out temp))
+            { TCP.TS_SAFE_Z = temp; }
             if (double.TryParse(tbTSIndex.Text, out temp))
             { TCP.TS_S = temp; }
             if (double.TryParse(tbTSRate1.Text, out temp))
@@ -1352,6 +1358,11 @@ namespace KFLOP_Test3
         {
             UpdateCfg();
             SaveCfg(CfgFName);
+        }
+
+        private void btnReload_Click(object sender, RoutedEventArgs e)
+        {
+            LoadCfg(CfgFName);
         }
         #endregion
 
@@ -1493,7 +1504,7 @@ namespace KFLOP_Test3
 
         static void MoveZ_Worker(object sender, DoWorkEventArgs e)
         {
-            SingleAxis SAx = (SingleAxis)e.Argument;    // this gets the 
+            SingleAxis SAx = (SingleAxis)e.Argument;    // this gets the argument and interprets it as a single axis class
 
             //  // lets try this with StartMoveTo...
             //  var Zxs = KMx.GetAxis(AXConst.Z_AXIS, "Z-Axis");
@@ -1521,9 +1532,16 @@ namespace KFLOP_Test3
             cX = cY = cZ = cA = cB = cC = 0;
 
             KMx.CoordMotion.ReadAndSyncCurPositions(ref cX, ref cY, ref cZ, ref cA, ref cB, ref cC);
-            // may want to change the last two variables to pass information to the 3D path generation
-
-            KMx.CoordMotion.StraightFeed(SAx.Rate, cX, cY, SAx.Pos, cA, cB, cC, 0, 0);
+            
+            if (SAx.Rate == 0)      // if the rate is 0 then assume traverse motion (fastest rate)
+            {
+                KMx.CoordMotion.StraightTraverse(cX, cY, SAx.Pos, cA, cB, cC, false);
+            }
+            else
+            {
+                // may want to change the last two variables to pass information to the 3D path generation
+                KMx.CoordMotion.StraightFeed(SAx.Rate, cX, cY, SAx.Pos, cA, cB, cC, 0, 0);
+            }
             KMx.CoordMotion.FlushSegments();    // push the segments out the buffer and into the KFLOP
             KMx.CoordMotion.WaitForSegmentsFinished(false); // - this works, but blocks the calling thread - so how to check if it is done?
             BWRes.Result = true;
@@ -1544,6 +1562,77 @@ namespace KFLOP_Test3
             _bw.DoWork -= MoveZ_Worker;
             _bw.ProgressChanged -= MoveZ_ProgressChanged;
             _bw.RunWorkerCompleted -= MoveZ_Completed;
+            //           btnAbort.IsEnabled = false; // disable the abort button -- this doesn't work... need a completely thread safe way to do this...
+            Dispatcher.Invoke(() =>    // Dispatcher to the rescue!
+                btnAbort.IsEnabled = false
+             );
+            CompleteStatus((BWResults)e.Result);
+        }
+        #endregion
+
+        #region Move XY background process
+        // move in the XY plane to a specific spot - like the tool setter position
+        private void Start_MoveXY_Process(PlaneAxis PA)
+        {
+            // start a new background worker with move to X,Y
+            _bw.WorkerReportsProgress = true;
+            _bw.WorkerSupportsCancellation = true;
+
+            _bw.DoWork += MoveXY_Worker; // Add the main thread method to call
+            _bw.ProgressChanged += MoveXY_ProgressChanged; // add the progress changed method
+            _bw.RunWorkerCompleted += MoveXY_Completed; // the the method to call when the function is done
+            _bw.RunWorkerAsync(PA);
+        }
+
+        static void MoveXY_Worker(object sender, DoWorkEventArgs e)
+        {
+            PlaneAxis PAx = (PlaneAxis)e.Argument;
+
+            // check that the axis is enabled
+            int ax, ay, az, aa, ab, ac;
+            ax = ay = az = aa = ab = ac = 0;
+            KMx.CoordMotion.GetAxisDefinitions(ref ax, ref ay, ref az, ref aa, ref ab, ref ac);
+            if ((az == -1) || (ax == -1) || (ay == -1)) // check all three axis
+            {
+                BWRes.Result = false;
+                BWRes.Comment = "Axis not enabled";
+                // e.Result = "Axis not enabled";
+                e.Result = BWRes;
+                return;
+            }
+
+            double cX, cY, cZ, cA, cB, cC;  // holder for the current positions
+            cX = cY = cZ = cA = cB = cC = 0;
+
+            KMx.CoordMotion.ReadAndSyncCurPositions(ref cX, ref cY, ref cZ, ref cA, ref cB, ref cC);
+
+            if (PAx.Rate == 0)  // if rate is 0 assume traverse motion
+            {
+                KMx.CoordMotion.StraightTraverse(PAx.PosX, PAx.PosY, cZ, cA, cB, cC, false);
+            }
+            else
+            {
+                // may want to change the last two variables to pass information to the 3D path generation
+                KMx.CoordMotion.StraightFeed(PAx.Rate, PAx.PosX, PAx.PosY, cZ, cA, cB, cC, 0, 0);
+            }
+            KMx.CoordMotion.FlushSegments();    // push the segments out the buffer and into the KFLOP
+            KMx.CoordMotion.WaitForSegmentsFinished(false); // - this works, but blocks the calling thread - so how to check if it is done?
+                        // this is why it is in a background worker...
+            BWRes.Result = true;
+            BWRes.Comment = "XY Motion done";
+            // e.Result += "Motion done";
+            e.Result = BWRes;
+        }
+        private void MoveXY_ProgressChanged(object sender, ProgressChangedEventArgs e)
+        { }
+
+        private void MoveXY_Completed(object sender, RunWorkerCompletedEventArgs e)
+        {
+            // MessageBox.Show(xBWR.Comment + xBWR.Result.ToString());
+            // remove the workers from the background process
+            _bw.DoWork -= MoveXY_Worker;
+            _bw.ProgressChanged -= MoveXY_ProgressChanged;
+            _bw.RunWorkerCompleted -= MoveXY_Completed;
             //           btnAbort.IsEnabled = false; // disable the abort button -- this doesn't work... need a completely thread safe way to do this...
             Dispatcher.Invoke(() =>    // Dispatcher to the rescue!
                 btnAbort.IsEnabled = false
@@ -2024,9 +2113,293 @@ namespace KFLOP_Test3
                 lblTCP2.Content = "Z Motion Aborted";
             }
         }
+
         #endregion
 
         #endregion
+
+        #region Tool Setter
+        private void btnToolSetter_Click(object sender, RoutedEventArgs e)
+        {
+            // make sure that the tool setter is present
+            // get the tool number to measure
+            // get the tool from the carousel or manual insert
+
+            // Actual tool measurment
+            // get the arguments
+            ToolSetterArguments TSx = new ToolSetterArguments();
+            // load the arguments from the Tool change parameters
+            TSx.X = TCP.TS_X;
+            TSx.Y = TCP.TS_Y;
+            TSx.SafeZ = TCP.TS_SAFE_Z;
+            TSx.ToolZ = TCP.TS_Z;
+            TSx.Rate = TCP.TS_FR1;
+
+            Start_ToolSetter(TSx);
+
+            // record the detect position or if timed out report a no detect
+            // 
+        }
+
+        private void Start_ToolSetter(ToolSetterArguments TSArgs)
+        {
+            // check that the background process isn't already running.
+            if(_bw2.IsBusy)
+            { return; } // don't run if the background worker is busy
+
+            TCActionProgress = true; // process action is happening...
+            // need a class to hold the tool setter arguments?
+
+            _bw2.DoWork += ToolSetter_Worker;
+            _bw2.ProgressChanged += ToolSetterProgressChanged;
+            _bw2.RunWorkerCompleted += ToolSetterCompleted;
+            _bw2.RunWorkerAsync(TSArgs);
+
+        }
+
+        private void ToolSetter_Worker(object sender, DoWorkEventArgs e)
+        {
+            ToolSetterArguments tTSArg;
+            tTSArg = (ToolSetterArguments)e.Argument;    // get the arguments
+
+            MessageBox.Show("Move to Safe Z");
+
+            TCProgress = true;
+
+            // Move to safe Z
+            SingleAxis tSAx = new SingleAxis();
+            tSAx.Pos = tTSArg.SafeZ;
+            tSAx.Rate = 0;  // move at Traverse rate
+            Start_MoveZ_Process(tSAx);
+
+            if (WaitForProgress() == false)
+            {
+                // There was an error of some kind!
+                BW2Res.Comment = "Safe Z Move Error";
+                BW2Res.Result = false;
+                e.Result = BW2Res;
+                return;
+            }
+
+            MessageBox.Show("Move to X Y");
+
+            // move to Tool Setter X, Y
+            PlaneAxis tPAx = new PlaneAxis();
+            tPAx.PosX = tTSArg.X;
+            tPAx.PosY = tTSArg.Y;
+            tPAx.Rate = 0;  // move at traverse rate
+            Start_MoveXY_Process(tPAx);
+            if (WaitForProgress() == false)
+            {
+                // There was an error of some kind!
+                BW2Res.Comment = "X Y Move Error";
+                BW2Res.Result = false;
+                e.Result = BW2Res;
+                return;
+            }
+
+            MessageBox.Show("Move to Tool Z");
+
+            // move to Tool Setter Z (somewhere above the tool setter TBD inches)
+            tSAx.Pos = tTSArg.ToolZ;
+            tSAx.Rate = 0;
+            Start_MoveZ_Process(tSAx);
+            if (WaitForProgress() == false)
+            {
+                // There was an error of some kind!
+                BW2Res.Comment = "Tool Z Move Error";
+                BW2Res.Result = false;
+                e.Result = BW2Res;
+                return;
+            }
+
+            // - estimated tool or default tool length
+
+            MessageBox.Show("Probing");
+            // move while waiting for the tool setter to detect
+            // the probing command
+
+            // save the length / offset
+
+
+           
+            BW2Res.Comment = "Tool Setter Success";
+            BW2Res.Result = true;
+            e.Result = BW2Res;
+        }
+
+        private void ToolSetterProgressChanged(object sender, ProgressChangedEventArgs e)
+        { }
+
+        private void ToolSetterCompleted(object sender, RunWorkerCompletedEventArgs e)
+        {
+            // remove the process from background worker 2
+            _bw2.DoWork -= ToolSetter_Worker;
+            _bw2.ProgressChanged -= ToolSetterProgressChanged;
+            _bw2.RunWorkerCompleted -= ToolSetterCompleted;
+            CompleteActionStatus((BWResults)e.Result);
+
+            // move back to Safe Z
+            MessageBox.Show("Back to Safe Z");
+
+            TCProgress = true;
+
+            SingleAxis tSAx = new SingleAxis();
+            tSAx.Pos = TCP.TS_SAFE_Z;
+            tSAx.Rate = 0;  // move at Traverse rate
+            Start_MoveZ_Process(tSAx);
+
+            if (WaitForProgress() == false)
+            {
+                // There was an error of some kind!
+                BW2Res.Comment = "Safe Z Move Error";
+                BW2Res.Result = false;
+                e.Result = BW2Res;
+                return;
+            }
+
+
+        }
+
+        #endregion
+
+        #region Tool Setter Probing
+
+        private void Start_ToolSetterZProbe()
+        {
+            double MotionRate = -15.0;    // inch per min
+            double mrZ;
+            double ProbeDistance = 1.5; // probe distance  in inches - this should take about 
+            mrZ = (MotionRate * KMx.CoordMotion.MotionParams.CountsPerInchZ) / 60.0; // motion rate(in/min) * (counts/inch) / (60sec/ min)
+
+            double PTimeout;
+            // timeout is (distance/rate) * (ms/min)
+            PTimeout = (ProbeDistance / Math.Abs(MotionRate)) * 60.0;    // convert to seconds for timeout  -
+            // this is a simplification because it doesn't account for acceleration and deceleration times, but it is a start.
+
+
+
+            // set the Persist Variables
+            KMx.SetUserDataFloat(PVConst.P_NOTIFY_ARGUMENT1, (float)mrZ);
+            KMx.SetUserDataFloat(PVConst.P_NOTIFY_ARGUMENT2, (float)0.0);
+            KMx.SetUserDataFloat(PVConst.P_NOTIFY_ARGUMENT3, (float)0.0);
+            KMx.SetUserDataFloat(PVConst.P_NOTIFY_ARGUMENT4, (float)PTimeout);
+
+            // execute program 2  to probe
+            KMx.SetUserData(PVConst.P_NOTIFY, (T2Const.T2_TOOL_SET));    // probe Z
+            KMx.ExecuteProgram(2);
+
+            _bw.WorkerReportsProgress = true;
+            _bw.WorkerSupportsCancellation = true;
+
+            _bw.DoWork += TSProbe_Worker; // Add the main thread method to call
+            _bw.ProgressChanged += TSProbe_ProgressChanged; // add the progress changed method
+            _bw.RunWorkerCompleted += TSProbe_Completed; // the the method to call when the function is done
+            _bw.RunWorkerAsync(PTimeout);
+
+        }
+
+        private void TSProbe_Worker(object sender, DoWorkEventArgs e)
+        {
+            // very similar to the probe worker in the probe panel
+
+            double TimeOut = (double)e.Argument; // the delay time for the probing operation
+            int Tdone = (int)(TimeOut * 10.0 * 1.1);  // convert the time to sleep counts with 10% extra time over machine delay
+            int SleepCnt = 0;
+
+            TSProbeState = ProbeResult.Probing;
+            do
+            {
+                Thread.Sleep(100);
+                // get the completion status
+                if (SleepCnt++ > Tdone)
+                {
+                    TSProbeState = ProbeResult.SoftTimeOut;
+                    MessageBox.Show("Probe Timeout");
+                    return;
+                }
+            } while (CheckForTSProbeComplete() != true);
+            // look at the probe results to determine what to do next
+            string Pmsg = "Done";
+            MachineCoordinates MCx = GetCoordinates();
+            switch (TSProbeState)
+            {
+                case ProbeResult.Detected:
+                    {
+                        // get the machine coordinates.
+                        Pmsg = String.Format("Probe Detect at\n X:{0}\nY:{1}\nZ{2}", MCx.X, MCx.Y, MCx.Z);
+                        break;
+                    }
+                case ProbeResult.MachineTimeOut:
+                    {
+                        Pmsg = String.Format("Machine timeout. Currently at\n X:{0}\nY:{1}\nZ{2}", MCx.X, MCx.Y, MCx.Z);
+                        break;
+                    }
+                case ProbeResult.T2_ProbeError:
+                    {
+                        Pmsg = String.Format("Probe Error\nMachine at\n X:{0}\nY:{1}\nZ{2}", MCx.X, MCx.Y, MCx.Z);
+                        break;
+                    }
+                default:
+                    {
+                        break;
+                    }
+            }
+            Pmsg += String.Format("\nProbe State = {0}", TSProbeState);
+            MessageBox.Show(Pmsg);
+        }
+
+        private void TSProbe_ProgressChanged(object sender, ProgressChangedEventArgs e)
+        { }
+
+        private void TSProbe_Completed(object sender, RunWorkerCompletedEventArgs e)
+        {
+            // remove the methods from background worker
+            _bw.DoWork -= TSProbe_Worker;
+            _bw.ProgressChanged -= TSProbe_ProgressChanged;
+            _bw.RunWorkerCompleted -= TSProbe_Completed;
+        }
+
+        private bool CheckForTSProbeComplete()
+        {
+            // is thread 2 still running?
+            if (KMx.ThreadExecuting(2) == false) // thread 2 has finished running
+            {
+                TSProbeState = ProbeResult.T2_ProbeError;
+                // get the persist variables the indicate the probing has finished.
+                int ProbeStatus = KMx.GetUserData(PVConst.P_STATUS);
+                if (B.AnyInMask(ProbeStatus, unchecked((int)PVConst.SB_PROBE_STATUS_MASK)))  // only check the probe status bits
+                {
+                    if (B.BitIsSet(ProbeStatus, PVConst.SB_PROBE_DETECT))
+                    { TSProbeState = ProbeResult.Detected; }
+                    else if (B.BitIsSet(ProbeStatus, PVConst.SB_PROBE_TIMEOUT))
+                    { TSProbeState = ProbeResult.MachineTimeOut; }
+                }
+
+                return true;
+            }
+            return false;
+        }
+
+        #endregion
+
+        public MachineCoordinates GetCoordinates()
+        {
+            MachineCoordinates MC = new MachineCoordinates();
+            double x, y, z, a, b, c;
+            x = y = z = a = b = c = 0.0;
+            KMx.CoordMotion.UpdateCurrentPositionsABS(ref x, ref y, ref z, ref a, ref b, ref c, true);
+
+            MC.X = x;
+            MC.Y = y;
+            MC.Z = z;
+            MC.A = a;
+            MC.B = b;
+            MC.C = c;
+
+            return MC;
+        }
+
 
     }
 
@@ -2035,6 +2408,15 @@ namespace KFLOP_Test3
         public double Pos { get; set; }
         public double Rate { get; set; }
         public bool Move { get; set; }  // in / out or clamp / release 
+        public int ToolNumber { get; set; }
+    }
+
+    class PlaneAxis
+    {
+        public double PosX { get; set; }
+        public double PosY { get; set; }
+        public double Rate { get; set; }
+        public bool Move { get; set; }
         public int ToolNumber { get; set; }
     }
 
@@ -2049,6 +2431,16 @@ namespace KFLOP_Test3
     {
         public int PutTool { get; set; } 
         public int GetTool { get; set; }
+    }
+
+    class ToolSetterArguments
+    {
+        public double X { get; set; }
+        public double Y { get; set; }
+        public double SafeZ { get; set; }
+        public double ToolZ { get; set; }
+        public double ToolLength { get; set; }
+        public double Rate { get; set; }
     }
 
 }

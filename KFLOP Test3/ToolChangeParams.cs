@@ -18,10 +18,13 @@ namespace KFLOP_Test3
 
         public double TS_X { get; set; }    // tool height setter X coordinate
         public double TS_Y { get; set; }    // tool height setter Y coordinate
-        public double TS_Z { get; set; }    // tool height setter Z coordinate
+        public double TS_Z { get; set; }    // tool height setter Z coordinate - can rapid to this height without breaking a tool?
+            // this should probably be about 8 - 10 inches above the tool setter. long enough for the 
+        public double TS_SAFE_Z { get; set; } // tool height setter safe Z - move to this height before any X,Y motion
         public double TS_S { get; set; }    // tool height setter Spindle Index coordinate
         public double TS_FR1 { get; set; }    // tool height setter FeedRate 1 - hunt
         public double TS_FR2 { get; set; }    // tool height setter FeedRate 2 - touch
+
         public int CarouselSize { get; set; } // the number of slots in the tool carousel
 
     }
