@@ -17,8 +17,6 @@ namespace KFLOP_Test3
         public const int P_RPM = 5;
     }
 
-
-
     // constants relating to the persist variables
     // see also BP308_Persist.h in KFLOP Code (Thread1 and Thread2 code etc.)
     class PVConst

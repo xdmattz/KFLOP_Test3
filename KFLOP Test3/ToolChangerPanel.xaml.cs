@@ -26,11 +26,8 @@ using System.ComponentModel;
 // for KMotion
 using KMotion_dotNet;
 
-
-
 namespace KFLOP_Test3
 {
-
     /// <summary>
     /// Interaction logic for ToolChangerPanel.xaml
     /// </summary>
@@ -1005,6 +1002,7 @@ namespace KFLOP_Test3
         {
             // sleep while waiting for the global variable TCProgress to be set true by the 
             // background worker thread.
+            // should there be a count here so it doesn't get stuck forever?
             do
             {
                 Thread.Sleep(50);
@@ -2161,6 +2159,7 @@ namespace KFLOP_Test3
         {
             ToolSetterArguments tTSArg;
             tTSArg = (ToolSetterArguments)e.Argument;    // get the arguments
+            bool ProcessError = false;
 
             MessageBox.Show("Move to Safe Z");
 
@@ -2178,54 +2177,88 @@ namespace KFLOP_Test3
                 BW2Res.Comment = "Safe Z Move Error";
                 BW2Res.Result = false;
                 e.Result = BW2Res;
-                return;
+                ProcessError = true;
             }
 
-            MessageBox.Show("Move to X Y");
-
-            // move to Tool Setter X, Y
-            PlaneAxis tPAx = new PlaneAxis();
-            tPAx.PosX = tTSArg.X;
-            tPAx.PosY = tTSArg.Y;
-            tPAx.Rate = 0;  // move at traverse rate
-            Start_MoveXY_Process(tPAx);
-            if (WaitForProgress() == false)
+            if (ProcessError == false)
             {
-                // There was an error of some kind!
-                BW2Res.Comment = "X Y Move Error";
-                BW2Res.Result = false;
-                e.Result = BW2Res;
-                return;
+                MessageBox.Show("Move to X Y");
+
+                // move to Tool Setter X, Y
+                PlaneAxis tPAx = new PlaneAxis();
+                tPAx.PosX = tTSArg.X;
+                tPAx.PosY = tTSArg.Y;
+                tPAx.Rate = 0;  // move at traverse rate
+                Start_MoveXY_Process(tPAx);
+                if (WaitForProgress() == false)
+                {
+                    // There was an error of some kind!
+                    BW2Res.Comment = "X Y Move Error";
+                    BW2Res.Result = false;
+                    e.Result = BW2Res;
+                    ProcessError = true; 
+                }
             }
 
-            MessageBox.Show("Move to Tool Z");
-
-            // move to Tool Setter Z (somewhere above the tool setter TBD inches)
-            tSAx.Pos = tTSArg.ToolZ;
-            tSAx.Rate = 0;
-            Start_MoveZ_Process(tSAx);
-            if (WaitForProgress() == false)
+            if (ProcessError == false)
             {
-                // There was an error of some kind!
-                BW2Res.Comment = "Tool Z Move Error";
-                BW2Res.Result = false;
-                e.Result = BW2Res;
-                return;
+                MessageBox.Show("Move to Tool Z");
+
+                // move to Tool Setter Z (somewhere above the tool setter TBD inches)
+                tSAx.Pos = tTSArg.ToolZ;
+                tSAx.Rate = 0;
+                Start_MoveZ_Process(tSAx);
+                if (WaitForProgress() == false)
+                {
+                    // There was an error of some kind!
+                    BW2Res.Comment = "Tool Z Move Error";
+                    BW2Res.Result = false;
+                    e.Result = BW2Res;
+                    ProcessError = true; 
+                }
             }
 
             // - estimated tool or default tool length
 
-            MessageBox.Show("Probing");
-            // move while waiting for the tool setter to detect
-            // the probing command
-
+            if (ProcessError == false)
+            {
+                MessageBox.Show("Probing");
+                // move while waiting for the tool setter to detect
+                // the probing command
+                Start_ToolSetterZProbe(2.0);
+                if (WaitForProgress() == false)
+                {
+                    // There was an error
+                    ProcessError = true;
+                }
+            }
             // save the length / offset
 
+            // move back to Safe Z
+            MessageBox.Show("Back to Safe Z");
 
-           
-            BW2Res.Comment = "Tool Setter Success";
-            BW2Res.Result = true;
-            e.Result = BW2Res;
+            TCProgress = true;
+
+            
+            tSAx.Pos = TCP.TS_SAFE_Z;
+            tSAx.Rate = 0;  // move at Traverse rate
+            Start_MoveZ_Process(tSAx);
+
+            if (WaitForProgress() == false)
+            {
+                // There was an error of some kind!
+                BW2Res.Comment = "Safe Z Move Error";
+                BW2Res.Result = false;
+                ProcessError = true;
+            }
+
+            if (ProcessError == false)
+            {
+
+                BW2Res.Comment = "Tool Setter Success";
+                BW2Res.Result = true;
+                e.Result = BW2Res;
+            }
         }
 
         private void ToolSetterProgressChanged(object sender, ProgressChangedEventArgs e)
@@ -2239,24 +2272,7 @@ namespace KFLOP_Test3
             _bw2.RunWorkerCompleted -= ToolSetterCompleted;
             CompleteActionStatus((BWResults)e.Result);
 
-            // move back to Safe Z
-            MessageBox.Show("Back to Safe Z");
 
-            TCProgress = true;
-
-            SingleAxis tSAx = new SingleAxis();
-            tSAx.Pos = TCP.TS_SAFE_Z;
-            tSAx.Rate = 0;  // move at Traverse rate
-            Start_MoveZ_Process(tSAx);
-
-            if (WaitForProgress() == false)
-            {
-                // There was an error of some kind!
-                BW2Res.Comment = "Safe Z Move Error";
-                BW2Res.Result = false;
-                e.Result = BW2Res;
-                return;
-            }
 
 
         }
@@ -2265,20 +2281,18 @@ namespace KFLOP_Test3
 
         #region Tool Setter Probing
 
-        private void Start_ToolSetterZProbe()
+        private void Start_ToolSetterZProbe(double dist)
         {
             double MotionRate = -15.0;    // inch per min
             double mrZ;
-            double ProbeDistance = 1.5; // probe distance  in inches - this should take about 
+            double ProbeDistance = dist; // probe distance  in inches - this should take about 
             mrZ = (MotionRate * KMx.CoordMotion.MotionParams.CountsPerInchZ) / 60.0; // motion rate(in/min) * (counts/inch) / (60sec/ min)
 
             double PTimeout;
             // timeout is (distance/rate) * (ms/min)
             PTimeout = (ProbeDistance / Math.Abs(MotionRate)) * 60.0;    // convert to seconds for timeout  -
-            // this is a simplification because it doesn't account for acceleration and deceleration times, but it is a start.
-
-
-
+                                                                         // this is a simplification because it doesn't account for acceleration and deceleration times, but it is a start.
+//            MessageBox.Show("In Tool Setter Probe");
             // set the Persist Variables
             KMx.SetUserDataFloat(PVConst.P_NOTIFY_ARGUMENT1, (float)mrZ);
             KMx.SetUserDataFloat(PVConst.P_NOTIFY_ARGUMENT2, (float)0.0);
@@ -2328,25 +2342,32 @@ namespace KFLOP_Test3
                     {
                         // get the machine coordinates.
                         Pmsg = String.Format("Probe Detect at\n X:{0}\nY:{1}\nZ{2}", MCx.X, MCx.Y, MCx.Z);
+                        BWRes.Result = true;
                         break;
                     }
                 case ProbeResult.MachineTimeOut:
                     {
                         Pmsg = String.Format("Machine timeout. Currently at\n X:{0}\nY:{1}\nZ{2}", MCx.X, MCx.Y, MCx.Z);
+                        BWRes.Result = true;
                         break;
                     }
                 case ProbeResult.T2_ProbeError:
                     {
                         Pmsg = String.Format("Probe Error\nMachine at\n X:{0}\nY:{1}\nZ{2}", MCx.X, MCx.Y, MCx.Z);
+                        BWRes.Result = false;
+                        BWRes.Comment = "Probe Error";
                         break;
                     }
                 default:
                     {
+                        BWRes.Result = false;
+                        BWRes.Comment = "Default Error";
                         break;
                     }
             }
             Pmsg += String.Format("\nProbe State = {0}", TSProbeState);
             MessageBox.Show(Pmsg);
+            e.Result = BWRes;
         }
 
         private void TSProbe_ProgressChanged(object sender, ProgressChangedEventArgs e)
@@ -2358,6 +2379,7 @@ namespace KFLOP_Test3
             _bw.DoWork -= TSProbe_Worker;
             _bw.ProgressChanged -= TSProbe_ProgressChanged;
             _bw.RunWorkerCompleted -= TSProbe_Completed;
+            CompleteStatus((BWResults)e.Result);
         }
 
         private bool CheckForTSProbeComplete()
@@ -2399,7 +2421,6 @@ namespace KFLOP_Test3
 
             return MC;
         }
-
 
     }
 
