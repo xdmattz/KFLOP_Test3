@@ -16,6 +16,7 @@ using System.Windows.Navigation;
 using System.Windows.Shapes;
 // for the JSON stuff
 using Newtonsoft.Json;
+
 // for file dialog libraries
 using Microsoft.Win32;
 using System.IO;
@@ -74,25 +75,36 @@ namespace KFLOP_Test3
 
         static TExchangePosition TExPos;
 
-        // An instance of KM controller 
+        // used to point to the instance of KM controller 
         static KM_Controller KMx { get; set; }
-        // An instance of KM_Axis
+        // used to point to the instance of KM_Axis that is the spindle axis
         static KM_Axis SPx { get; set; }
+        // used to point to the configuration file list. 
+        static ConfigFiles CFx { get; set; }
 
         private BitOps B;
         private ToolChangeParams TCP;
         private string CfgFName;
+        private string CfgCName;
         public int ToolInSpindle;   // the number of the tool in the spindle, 0 = spindle empty, 1 - 8, Tool 
 
         ProbeResult TSProbeState;
 
+        // Tool Carousel configuration
+        ToolCarousel CarouselList;
+        
+
         #endregion
 
 
-        public ToolChangerPanel(ref KM_Controller X, ref KM_Axis SP, string cfgFileName)
+        public ToolChangerPanel(ref KM_Controller X, ref KM_Axis SP, ref ConfigFiles CfgFiles)
         {
             InitializeComponent();
-            CfgFName = cfgFileName;
+
+            CFx = CfgFiles;
+
+            CfgFName = System.IO.Path.Combine(CFx.ConfigPath, CFx.ToolChangeParams);
+            CfgCName = System.IO.Path.Combine(CFx.ConfigPath, CFx.ToolCarouselCfg);
 
             KMx = X;    // point to the KM controller - this exposes all the KFLOP .net library functions
             SPx = SP;   // point to the Spindle Axis for fine control
@@ -106,9 +118,10 @@ namespace KFLOP_Test3
             TExPos = new TExchangePosition();
 
             TCP = new ToolChangeParams();   // get the tool changer parameters
-            LoadCfg(cfgFileName);
+            LoadCfg(CfgFName);
 
             B = new BitOps();
+
             ledClamp.Set_State(LED_State.Off);
             ledClamp.Set_Label("Tool Clamp");
 
@@ -123,8 +136,13 @@ namespace KFLOP_Test3
             ToolChange_LED.Set_Label("Tool Changing");
             ToolChange_LED.Set_State(LED_State.Off);
 
+            // initialize and load the tool carousel data
+            CarouselList = new ToolCarousel();
+            // LoadCarouselCfg(CfgCName); // for some reason this doesn't like to be called in the constructor
+
         }
 
+        #region Tool Changer UI
         public void SetTC_Led()
         {
             ToolChange_LED.Set_State(LED_State.On_Blue);
@@ -133,7 +151,6 @@ namespace KFLOP_Test3
         {
             ToolChange_LED.Set_State(LED_State.Off);
         }
-
         public void TLAUX_Status(ref KM_MainStatus KStat)
         {
             getTLAUX_Status();
@@ -161,7 +178,15 @@ namespace KFLOP_Test3
             lblCurrentTool.Content = string.Format("Current tool in the Spindle: {0}", ToolInSpindle);
 
         }
+        public void SetToolSlot(int ToolSlot)
+        { }
+        public int GetToolSlot()
+        {
+            return 0;
+        }
 
+
+        #endregion
 
         #region Tool Changer Action Test Buttons
         private void btnGetTool_Click(object sender, RoutedEventArgs e)
@@ -1362,6 +1387,111 @@ namespace KFLOP_Test3
         {
             LoadCfg(CfgFName);
         }
+
+        #region Tool Carousel Configuration File
+
+        private void btnLoadCarousel_Click(object sender, RoutedEventArgs e)
+        {
+            LoadCarouselCfg(CfgCName);
+        }
+
+        // load the carousel file
+        public void LoadCarouselCfg(string CFileName)
+        {
+            // load the tool changer files
+                if (System.IO.File.Exists(CFileName) == true)
+                {
+                    try
+                    {
+                        JsonSerializer Jser = new JsonSerializer();
+                        StreamReader sr = new StreamReader(CFileName);
+                        JsonReader Jreader = new JsonTextReader(sr);
+                        CarouselList = Jser.Deserialize<ToolCarousel>(Jreader);
+                        sr.Close();
+                    } catch(JsonSerializationException ex)
+                    {
+                        MessageBox.Show(String.Format("{0} Exception! Carousel Not Loaded!", ex.Message));
+                        return;
+                    }
+                } 
+                else
+                {
+                   MessageBox.Show("File not found - Reinializing Carousel");
+                   ResetCarousel();
+                   saveCarouselCfg(CFileName);
+                }
+        }
+
+        // save the carousel file
+        public void saveCarouselCfg(string CFileName)
+        {
+
+            var SaveFile = new SaveFileDialog();
+            SaveFile.FileName = CFileName;
+            if (SaveFile.ShowDialog() == true)
+            {
+                try
+                {
+                    JsonSerializer Jser = new JsonSerializer();
+                    StreamWriter sw = new StreamWriter(SaveFile.FileName);
+                    JsonTextWriter Jwrite = new JsonTextWriter(sw);
+                    Jser.NullValueHandling = NullValueHandling.Ignore;
+                    Jser.Formatting = Newtonsoft.Json.Formatting.Indented;
+                    Jser.Serialize(Jwrite, CarouselList);
+                    sw.Close();
+                }
+                catch (JsonSerializationException ex)
+                {
+                    MessageBox.Show(String.Format("{0} Exception", ex.Message));
+                }
+            }
+  
+         }
+        // clear the carousel list and reset every thing
+        private void ResetCarousel()
+        {
+            // check for null carousel list
+            if(CarouselList.Items == null) { CarouselList.Items = new List<CarouselItems>(); }
+
+            CarouselList.Items.Clear(); // clear the list
+
+            // fill the list with nothing
+            for (int i = 0; i < TCP.CarouselSize; i++)  
+            {
+                CarouselItems CI = new CarouselItems();
+                CI.Pocket = i + 1;
+                CI.ToolIndex = 0;
+                CI.ToolInUse = false;
+                CI.Description = "Empty";
+                CarouselList.Items.Add(CI);
+                CarouselList.Count = i + 1;
+            } 
+        }
+
+        // get the carousel pocket number given the tool index
+        private int getPocket(int Index)
+        {
+            foreach (CarouselItems CI in CarouselList.Items)
+            {
+                if (CI.ToolIndex == Index)
+                { return CI.Pocket; }
+            }
+            return -1;
+        }
+        
+        // get the tool index given the carousel pocket number
+        private int getIndex(int Pocket)
+        {
+            foreach (CarouselItems TC in CarouselList.Items)
+            {
+                if(TC.Pocket == Pocket)
+                { return TC.ToolIndex; }
+            }
+            return -1;
+        }
+
+        #endregion
+
         #endregion
 
         #region Status methods 
@@ -2165,6 +2295,8 @@ namespace KFLOP_Test3
 
             TCProgress = true;
 
+            BW2Res.Result = true; // start out with this set.
+
             // Move to safe Z
             SingleAxis tSAx = new SingleAxis();
             tSAx.Pos = tTSArg.SafeZ;
@@ -2257,8 +2389,11 @@ namespace KFLOP_Test3
 
                 BW2Res.Comment = "Tool Setter Success";
                 BW2Res.Result = true;
-                e.Result = BW2Res;
+                
             }
+
+            e.Result = BW2Res;
+
         }
 
         private void ToolSetterProgressChanged(object sender, ProgressChangedEventArgs e)
@@ -2271,10 +2406,6 @@ namespace KFLOP_Test3
             _bw2.ProgressChanged -= ToolSetterProgressChanged;
             _bw2.RunWorkerCompleted -= ToolSetterCompleted;
             CompleteActionStatus((BWResults)e.Result);
-
-
-
-
         }
 
         #endregion
@@ -2422,6 +2553,7 @@ namespace KFLOP_Test3
             return MC;
         }
 
+
     }
 
     class SingleAxis
@@ -2462,6 +2594,24 @@ namespace KFLOP_Test3
         public double ToolZ { get; set; }
         public double ToolLength { get; set; }
         public double Rate { get; set; }
+    }
+
+    public class CarouselItems
+    {
+        public int Pocket { get; set; }     // the pocket numbers of the tool carousel
+        public int ToolIndex { get; set; }  // the tool index number assigned to the pocket
+                                            // this is the Tn number listed in the gcode
+                                            // a 0 means that the pocket is empty
+        public bool ToolInUse { get; set; } // true means that the pocket is assigned a tool number but
+                                            // the tool is in the spindle
+                                            // false means that the tool is in the carousel holder (pocket)
+        public string Description { get; set; } // description or note about the tool
+    }
+
+    public class ToolCarousel
+    {
+        public List<CarouselItems> Items { get; set; }
+        public int Count;
     }
 
 }

@@ -7,3 +7,4 @@ SLOT    ID        LENGTH         DIAMETER        XOFFSET        YOFFSET   COMMEN
   20     50         1.500000        0.500000        0.000000        0.000000 "" ""
   1     1003      1.100000        0.500000        0.000000        0.000000 "" "EndMill-z.wrl"
   7     2000      1.700000        0.000000        1.000000        2.000000 "Front NPTF Lathe tool" "NPTF Front.wrl"
+  700   2001      1.000000        0.1250000        0.000000        0.000000 "" ""

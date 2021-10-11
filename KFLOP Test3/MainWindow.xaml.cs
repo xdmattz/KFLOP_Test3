@@ -112,7 +112,7 @@ namespace KFLOP_Test3
 
         static MotionParams_Copy Xparam;
         // static ConfigFiles CFiles;
-        ConfigFiles CFiles;
+        static ConfigFiles CFiles;
 
         static Machine BP308;
 
@@ -286,8 +286,7 @@ namespace KFLOP_Test3
             OffsetPanel1.InitG30(fixG30);
 
             // Tool Change Panel
-            string LPath = GetPathFile(CFiles.ConfigPath, CFiles.ToolChangeParams);
-            ToolChangerPanel1 = new ToolChangerPanel(ref KM, ref SpindleAxis, LPath);
+            ToolChangerPanel1 = new ToolChangerPanel(ref KM, ref SpindleAxis, ref CFiles);
             var Tab4 = new TabItem();
             Tab4.Name = "tabItemContent4";
             Tab4.Header = "Tool Changer";
@@ -530,8 +529,8 @@ namespace KFLOP_Test3
                 }
             }
 
-            string s = String.Format("Callback Code {0}", code);
-            MessageBox.Show(s);
+//            string s = String.Format("Callback Code {0}", code);
+//            MessageBox.Show(s);
 
             switch (code)
             {
@@ -704,7 +703,7 @@ namespace KFLOP_Test3
         #endregion
 
         #region Motion Callback Handlers
-
+        // these will be used for the tool path visualization
         private void TraverseCompleted(object callback)
         { }
 
@@ -2103,6 +2102,12 @@ namespace KFLOP_Test3
                 Tlist += "Tool " + tl + "\n";
             }
             MessageBox.Show(Tlist);
+            // now what? 
+            // compare with the master tool table?
+            // load the carousel with these tools?
+            // 
+
+
         }
         #endregion
         private void btnConsole_Click(object sender, RoutedEventArgs e)

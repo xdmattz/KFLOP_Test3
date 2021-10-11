@@ -7,6 +7,7 @@
              mc:Ignorable="d" 
              d:DesignHeight="360" d:DesignWidth="550">    <!-- (360) allow 30 height for tab-->
     <Grid>
-            
+        <Button x:Name="btnToolList" Content="List Tools"  Margin="70,27,412,309" RenderTransformOrigin="-0.542,-1.159" Click="btnToolList_Click" />
+        <ListBox x:Name="lbToolList" HorizontalAlignment="Left" Height="161" Margin="70,70,0,0" VerticalAlignment="Top" Width="402"/>
     </Grid>
 </UserControl>

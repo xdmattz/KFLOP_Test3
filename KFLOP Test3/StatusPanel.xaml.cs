@@ -311,6 +311,7 @@ namespace KFLOP_Test3
         private void btnHomeTC_Click(object sender, RoutedEventArgs e)
         {
             Homing(T2Const.T2_TOOL_HOME);
+            // set the tbSlotNumber to 1
         }
 
         private void btnHomeAll_Click(object sender, RoutedEventArgs e)
@@ -318,6 +319,7 @@ namespace KFLOP_Test3
             Homing(T2Const.T2_TOOL_HOME);
             System.Threading.Thread.Sleep(50);
             Homing(T2Const.T2_HOME_ALL);
+            MessageBox.Show("Manually Cycle the Tool Setter!");
             
         }
 

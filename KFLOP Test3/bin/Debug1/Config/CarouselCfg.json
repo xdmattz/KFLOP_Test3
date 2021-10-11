@@ -1,0 +1,53 @@
+{
+  "Count": 8,
+  "Items": [
+    {
+      "Pocket": 1,
+      "ToolIndex": 0,
+      "ToolInUse": false,
+      "Description": "Empty"
+    },
+    {
+      "Pocket": 2,
+      "ToolIndex": 0,
+      "ToolInUse": false,
+      "Description": "Empty"
+    },
+    {
+      "Pocket": 3,
+      "ToolIndex": 0,
+      "ToolInUse": false,
+      "Description": "Empty"
+    },
+    {
+      "Pocket": 4,
+      "ToolIndex": 0,
+      "ToolInUse": false,
+      "Description": "Empty"
+    },
+    {
+      "Pocket": 5,
+      "ToolIndex": 0,
+      "ToolInUse": false,
+      "Description": "Empty"
+    },
+    {
+      "Pocket": 6,
+      "ToolIndex": 0,
+      "ToolInUse": false,
+      "Description": "Empty"
+    },
+    {
+      "Pocket": 7,
+      "ToolIndex": 0,
+      "ToolInUse": false,
+      "Description": "Empty"
+    },
+    {
+      "Pocket": 8,
+      "ToolIndex": 0,
+      "ToolInUse": false,
+      "Description": "Empty"
+    }
+  ]
+}

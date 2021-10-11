@@ -26,6 +26,7 @@ namespace KFLOP_Test3
         public double TS_FR2 { get; set; }    // tool height setter FeedRate 2 - touch
 
         public int CarouselSize { get; set; } // the number of slots in the tool carousel
+        public string CarouselToolsFileName { get; set; } // name of the carousel's loaded tool state 
 
     }
 

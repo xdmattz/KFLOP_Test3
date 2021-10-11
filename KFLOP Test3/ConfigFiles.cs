@@ -13,7 +13,7 @@ namespace KFLOP_Test3
 {
     // list of the files for configuration
     // links to a json file 
-    class ConfigFiles
+    public class ConfigFiles
     {
         public ConfigFiles()    // constructor
         { }
@@ -33,6 +33,7 @@ namespace KFLOP_Test3
         public string ToolFile { get; set; }  // Fusion 360 (json) tool file
         public string ToolFilePath { get; set; } // path to the ToolFile
         public string ToolChangeParams { get; set; } // json file with the tool changer settings
+        public string ToolCarouselCfg { get; set; } // json file with the current state of the tool carousel
 
         public string MotionParams { get; set; }
         
