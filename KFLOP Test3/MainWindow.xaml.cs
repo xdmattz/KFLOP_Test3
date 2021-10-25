@@ -114,8 +114,6 @@ namespace KFLOP_Test3
         // static ConfigFiles CFiles;
         static ConfigFiles CFiles;
 
-        static Machine BP308;
-
         // not sure if I need the Mutex if I'm using the Dispatcher but we will see...
         static Mutex ConsoleMutex = new Mutex();
 
@@ -129,6 +127,9 @@ namespace KFLOP_Test3
 
         // console window
         static ConsolWindow ConWin;
+
+        // class that contains the Tool table and tool carousel table
+        static ToolInfo toolInfo;
 
         int[] PVars;
 
@@ -286,20 +287,27 @@ namespace KFLOP_Test3
             OffsetPanel1.InitG30(fixG30);
 
             // Tool Change Panel
-            ToolChangerPanel1 = new ToolChangerPanel(ref KM, ref SpindleAxis, ref CFiles);
+            toolInfo = new ToolInfo();
+            toolInfo.toolTable = new KFLOP_Test3.ToolTable();
+            toolInfo.toolCarousel = new KFLOP_Test3.ToolCarousel();
+
+            ToolChangerPanel1 = new ToolChangerPanel(ref KM, ref SpindleAxis, ref CFiles, ref toolInfo);
             var Tab4 = new TabItem();
             Tab4.Name = "tabItemContent4";
             Tab4.Header = "Tool Changer";
             Tab4.Content = ToolChangerPanel1;
             tcMainTab.Items.Add(Tab4);
+            ToolChangerPanel1.LoadCarouselCfg();    // load the carousel state
+            toolInfo.toolCarousel = ToolChangerPanel1.GetCarousel();
 
             // Tool Table Panel
-            ToolTablePanel1 = new ToolTablePanel(ref KM);
+            ToolTablePanel1 = new ToolTablePanel(ref KM, ref CFiles, ref toolInfo);
             var Tab5 = new TabItem();
             Tab5.Name = "tabItemContent5";
             Tab5.Header = "Tool Table";
             Tab5.Content = ToolTablePanel1;
             tcMainTab.Items.Add(Tab5);
+            ToolTablePanel1.LoadToolTable();    // load the tool table
 
 
             // Probing tab panel
@@ -1152,6 +1160,10 @@ namespace KFLOP_Test3
             {
                 tbActiveGCodes.Text += str + " ";
             }
+
+            // set the tool in spindle value
+            CurrTool.SetTool(ToolChangerPanel.ToolInSpindle);
+            CurrTool.SetLen(0); // put the proper length value here!
         }
         #endregion
 

@@ -28,7 +28,7 @@
         <Button x:Name="btnSingleStep" Content="Single Step" HorizontalAlignment="Left" VerticalAlignment="Top" Width="75" Margin="396,842,0,0" Click="btnSingleStep_Click" />
         <Button x:Name="btnReStart" Content="Restart" HorizontalAlignment="Left" VerticalAlignment="Top" Width="66" Margin="488,842,0,0" Click="btnReStart_Click"  />
 
-        <local:LED_Indicator x:Name="Exe_LED" Margin="546,873,885,32" RenderTransformOrigin="-5.143,4.48" />
+        <local:LED_Indicator x:Name="Exe_LED" Margin="549,869,882,36" RenderTransformOrigin="-5.143,4.48" />
         <TextBox x:Name="tbGCodeFile" HorizontalAlignment="Left" Height="23" Margin="142,41,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="173"/>
         <Label Content="" Margin="0,109,213,0" VerticalAlignment="Top" HorizontalAlignment="Right" FontSize="36" Width="44"/>
 
@@ -41,7 +41,7 @@
         <TextBox x:Name="tbLineNo" HorizontalAlignment="Left" Height="23" Margin="1258,327,0,0" TextWrapping="Wrap" Text="TextBox" VerticalAlignment="Top" Width="120"/>
         <TextBox x:Name="tbSeq" HorizontalAlignment="Left" Height="23" Margin="1258,355,0,0" TextWrapping="Wrap" Text="TextBox" VerticalAlignment="Top" Width="120"/>
         <TextBox x:Name="tbErr" HorizontalAlignment="Left" Height="23" Margin="1258,383,0,0" TextWrapping="Wrap" Text="TextBox" VerticalAlignment="Top" Width="120"/>
-        <CheckBox x:Name="cbSimulate" Content="Simulate" HorizontalAlignment="Left" Margin="953,264,0,0" VerticalAlignment="Top" RenderTransformOrigin="2.595,0.438"/>
+        <CheckBox x:Name="cbSimulate" Content="Simulate" HorizontalAlignment="Left" Margin="882,268,0,0" VerticalAlignment="Top" RenderTransformOrigin="2.595,0.438"/>
         <TextBlock x:Name="tbExTime" HorizontalAlignment="Left" Margin="1191,481,0,0" TextWrapping="Wrap" Text="TextBlock" VerticalAlignment="Top" RenderTransformOrigin="0.76,-0.844"/>
         <Button x:Name="btnConsole" Content="Console" HorizontalAlignment="Left" Margin="421,41,0,0" VerticalAlignment="Top" Width="75" Click="btnConsole_Click"/>
         <TabControl x:Name="tcMainTab" HorizontalAlignment="Left" Width="700" Height="420" Margin="63,417,0,0" VerticalAlignment="Top" >
@@ -72,17 +72,23 @@
         <TextBox x:Name="tbSpindleSpeedRPM" HorizontalAlignment="Left" Height="24" Margin="1284,611,0,0" TextWrapping="Wrap" Text="1000" VerticalAlignment="Top" Width="68" RenderTransformOrigin="1.21,0.083"/>
         <TextBox x:Name="tbManualGcode" HorizontalAlignment="Left" Margin="90,869,0,0" TextWrapping="Wrap" Text="G28" VerticalAlignment="Top" Width="248"/>
         <Button x:Name="btnMDI" Content="MDI" HorizontalAlignment="Left" Margin="360,869,0,0" VerticalAlignment="Top" Width="46" Click="btnMDI_Click"/>
-
-        <local:DROBox x:Name="XDRO" Margin="1014,21,10,843" />
-        <local:DROBox x:Name="YDRO" Margin="1014,93,10,771" />
-        <local:DROBox x:Name="ZDRO" Margin="1014,165,10,699" />
+        
+        <!-- DRO Placement -->
+        <Grid Margin="1091,16,0,646">
+            <StackPanel Orientation="Vertical">
+            <local:DROBox x:Name="XDRO" Width="420" Height="70" Margin="5,5,5,5" />
+                <local:DROBox x:Name="YDRO" Width="420" Height="70" Margin="5,5,5,5"  />
+                <local:DROBox x:Name="ZDRO" Width="420" Height="70" Margin="5,5,5,5"  />
+            </StackPanel>
+        </Grid>
+        <local:CurrentTool x:Name="CurrTool" Width="120" Height="120" Margin="862,42,566,768"/>
         <Label Content="status" HorizontalAlignment="Left" Margin="1216,299,0,0" VerticalAlignment="Top"/>
         <Label Content="line no" HorizontalAlignment="Left" Margin="1212,327,0,0" VerticalAlignment="Top" RenderTransformOrigin="0.688,0.462"/>
         <Label Content="Seq" HorizontalAlignment="Left" Margin="1222,355,0,0" VerticalAlignment="Top"/>
         <Label Content="Err" HorizontalAlignment="Left" Margin="1228,383,0,0" VerticalAlignment="Top"/>
 
-        <Grid Margin="1381,567,106,31">
-            <local:LogSliderV x:Name="slSpindleOverride" Margin="10,-15,10,0" />
+        <Grid Margin="1396,550,102,31">
+            <local:LogSliderV x:Name="slSpindleOverride" Margin="5,5,5,5" />
         </Grid>
 
         <Grid Margin="928,464,486,39">

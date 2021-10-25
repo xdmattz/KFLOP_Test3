@@ -3,25 +3,25 @@
   "Items": [
     {
       "Pocket": 1,
-      "ToolIndex": 0,
+      "ToolIndex": 1,
       "ToolInUse": false,
       "Description": "Empty"
     },
     {
       "Pocket": 2,
-      "ToolIndex": 0,
+      "ToolIndex": 20,
       "ToolInUse": false,
       "Description": "Empty"
     },
     {
       "Pocket": 3,
-      "ToolIndex": 0,
+      "ToolIndex": 30,
       "ToolInUse": false,
       "Description": "Empty"
     },
     {
       "Pocket": 4,
-      "ToolIndex": 0,
+      "ToolIndex": 40,
       "ToolInUse": false,
       "Description": "Empty"
     },

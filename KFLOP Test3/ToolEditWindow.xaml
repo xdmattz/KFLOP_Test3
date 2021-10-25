@@ -1,0 +1,64 @@
+﻿<Window x:Class="KFLOP_Test3.ToolEditWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:KFLOP_Test3"
+        mc:Ignorable="d"
+        Title="Tool Edit" Height="300" Width="300">
+    <Grid>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="1*" />
+        </Grid.ColumnDefinitions>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="10" />
+            <RowDefinition Height="34" />
+            <RowDefinition Height="34" />
+            <RowDefinition Height="34" />
+            <RowDefinition Height="34" />
+            <RowDefinition Height="34" />
+            <RowDefinition Height="34" />
+            <RowDefinition Height="1*" />
+        </Grid.RowDefinitions>
+        
+        <StackPanel Grid.Row="1" Grid.Column="0" Orientation="Horizontal" HorizontalAlignment="Stretch" >
+            <Label Content="Slot" />
+            <TextBox x:Name="tbSlot" Width="50" Height="20" Margin="5"  />
+            <Label Content="Tool ID" />
+            <TextBox x:Name="tbIndex" Width="50" Height="20" Margin="5"/>
+            <Label Width="90" >
+                <Label.Content>
+                    <AccessText TextWrapping="Wrap" Text="These are often the same number" FontSize="8" />
+                </Label.Content>
+            </Label> 
+        </StackPanel >
+        <StackPanel Grid.Row="2" Grid.Column="0" Orientation="Horizontal">
+            <Label Content="Tool Length" />
+            <TextBox x:Name="tbLength" Width="60" Height="20"/>
+        </StackPanel>
+        <StackPanel Grid.Row="3" Grid.Column="0" Orientation="Horizontal">
+            <Label Content="Diameter" />
+            <TextBox x:Name="tbDiameter" Width="60" Height="20"/>
+        </StackPanel>
+        <StackPanel Grid.Row="4" Grid.Column="0" Orientation="Horizontal">
+            <Label Content="X Offset" />
+            <TextBox x:Name="tbXOffset" Width="60" Height="20"/>
+            <Label Content="Y Offset" />
+            <TextBox x:Name="tbYOffset" Width="60" Height="20"/>
+        </StackPanel>
+        <StackPanel Grid.Row="5" Grid.Column="0" Orientation="Horizontal">
+            <Label Content="Comment" />
+            <TextBox x:Name="tbComment" Width="220" Height="20"/>
+        </StackPanel>
+        <StackPanel Grid.Row="6" Grid.Column="0" Orientation="Horizontal" HorizontalAlignment="Stretch">
+            <Label Content="Image File" />
+            <TextBox x:Name="tbImage" Width="180" Height="20"/>
+            <Button x:Name="btnImage" Content="Open" Margin="5" />
+        </StackPanel>
+        <StackPanel Grid.Row="7" Orientation="Horizontal" HorizontalAlignment="Center" >
+            <Button x:Name="btnUpdate" Content="Update" Click="btnUpdate_Click"  Height="30" Margin="10"/>
+            <Button x:Name="btnCancel" Content="Cancel" Click="btnCancel_Click" Height="30" Margin="10" />
+        </StackPanel>
+
+    </Grid>
+</Window>
