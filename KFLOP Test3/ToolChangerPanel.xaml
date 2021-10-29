@@ -119,8 +119,12 @@
         <Button x:Name="btnReload" Content="Reload" HorizontalAlignment="Left" Margin="55,344,0,0" VerticalAlignment="Top" Width="75" Click="btnReload_Click" RenderTransformOrigin="0.547,-1.091"/>
 
         <Button x:Name="btnAbort" Content="Abort" HorizontalAlignment="Left" Margin="514,169,0,0" VerticalAlignment="Top" Width="46" Click="btnAbort_Click"/>
-        <Label x:Name="lblTCProgress" Content="Progress:" HorizontalAlignment="Left" Margin="205,79,0,0" VerticalAlignment="Top"/>
-        <Label x:Name="lblTCP2" Content="" HorizontalAlignment="Left" Margin="205,96,0,0" VerticalAlignment="Top"/>
+        <Label x:Name="lblTCProgress" Content="Progress:" HorizontalAlignment="Left" Margin="196,66,0,0" VerticalAlignment="Top"/>
+        <Label x:Name="lblTCP2" Content="" HorizontalAlignment="Left" Margin="205,96,0,0" VerticalAlignment="Top" RenderTransformOrigin="0.7,1.615" />
+        <Label x:Name="lblStepProgress" Content="Progress:" HorizontalAlignment="Left" Margin="325,66,0,0" VerticalAlignment="Top"/>
+        <Label x:Name="lblStepP2" Content="" HorizontalAlignment="Left" Margin="338,96,0,0" VerticalAlignment="Top" RenderTransformOrigin="3.8,0.038" />
+
+
         <local:LED_Indicator x:Name="LED_SPEN" Margin="478,36,140,329" RenderTransformOrigin="0.449,0.557" />
         <TextBox x:Name="tbCarouselSize" HorizontalAlignment="Left" Height="23" Margin="55,42,0,0" TextWrapping="Wrap" Text="8" VerticalAlignment="Top" Width="21" RenderTransformOrigin="1.559,0.522"/>
         <Label Content="Size" HorizontalAlignment="Left" Margin="25,42,0,0" VerticalAlignment="Top" RenderTransformOrigin="0.539,-1.008" Height="22" Width="30"/>
@@ -141,14 +145,7 @@
             <Button x:Name="btnToolSetter" Content="Tool Setter" Click="btnToolSetter_Click"/>
         </Grid>
         <Button x:Name="btnInitCarousel" Content="Init" HorizontalAlignment="Left" Margin="25,96,0,0" VerticalAlignment="Top" Width="42" Click="btnInitCarousel_Click"/>
-        <ListView x:Name="CarouselListView" HorizontalAlignment="Left" Height="159" Margin="321,69,0,0" VerticalAlignment="Top" Width="121">
-            <ListView.View>
-                <GridView>
-                    <GridViewColumn Header="Pocket" />
-                    <GridViewColumn Header="Tool Index"/>
-                </GridView>
-            </ListView.View>
-        </ListView>
+
         <Button x:Name="btn_TCTest" Content="TC Test" Click="TC_Test_Click" HorizontalAlignment="Left" Margin="576,344,0,0" VerticalAlignment="Top" Width="75" RenderTransformOrigin="-0.027,-0.591"/>
 
     </Grid>

@@ -54,7 +54,6 @@ namespace KFLOP_Test3
 
         static BackgroundWorker _pbw;    // Probing background worker
         ProbeResult ProbeState;
-        BitOps BTest;
 
         #endregion
 
@@ -68,7 +67,6 @@ namespace KFLOP_Test3
 
             ProbeState = new ProbeResult();
             ProbeState = ProbeResult.Idle;
-            BTest = new BitOps();
 
         }
 
@@ -300,11 +298,11 @@ namespace KFLOP_Test3
                 ProbeState = ProbeResult.T2_ProbeError;
                 // get the persist variables the indicate the probing has finished.
                 int ProbeStatus = KMx.GetUserData(PVConst.P_STATUS);
-                if (BTest.AnyInMask(ProbeStatus, unchecked((int)PVConst.SB_PROBE_STATUS_MASK)))  // only check the probe status bits
+                if (BitOps.AnyInMask(ProbeStatus, unchecked((int)PVConst.SB_PROBE_STATUS_MASK)))  // only check the probe status bits
                 {
-                    if(BTest.BitIsSet(ProbeStatus, PVConst.SB_PROBE_DETECT))
+                    if(BitOps.BitIsSet(ProbeStatus, PVConst.SB_PROBE_DETECT))
                     { ProbeState = ProbeResult.Detected; }
-                    else if (BTest.BitIsSet(ProbeStatus, PVConst.SB_PROBE_TIMEOUT))
+                    else if (BitOps.BitIsSet(ProbeStatus, PVConst.SB_PROBE_TIMEOUT))
                     { ProbeState = ProbeResult.MachineTimeOut; }
                 }
                 

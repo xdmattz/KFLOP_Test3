@@ -351,33 +351,33 @@ namespace KFLOP_Test3
 
     }
 
-    class BitOps
+    static class BitOps
     {
-        public int SetBit(int b)
+        static public int SetBit(int b)
         { return (1 << b); }
 
-        public void SetBit(ref int a, int b)
+        static public void SetBit(ref int a, int b)
         { a |= (1 << b); }
 
-        public int ClearBit(int b)
+        static public int ClearBit(int b)
         { return ~(1 << b); }
 
-        public void ClearBit(ref int a, int b)
+        static public void ClearBit(ref int a, int b)
         { a &= ~(1 << b); }
 
-        public bool BitIsSet(int var, int bit)  // if the bit number is set in var return true
+        static public bool BitIsSet(int var, int bit)  // if the bit number is set in var return true
         {
             if ((var & (1 << bit)) == 0) return false;
             return true;
         }
 
-        public bool AnyInMask(int var, int mask)   // if any bit in the mask is set return true
+        static public bool AnyInMask(int var, int mask)   // if any bit in the mask is set return true
         {
             if ((var & mask) == 0) return false;
             return true;
         }
 
-        public bool AllInMask(int var, int mask) // if all bits in the mask are set return true otherwise false
+        static public bool AllInMask(int var, int mask) // if all bits in the mask are set return true otherwise false
         {
             if ((var & mask) == mask) return true;
             return false;

@@ -59,9 +59,7 @@ namespace KFLOP_Test3
             // add a handler to get the tool row in for the Context Menu
             dgToolList.PreviewMouseRightButtonDown += new MouseButtonEventHandler(ToolTable_PreviewRightMouseButtonDown);
 
-
         }
-
         
 
         private void btnToolList_Click(object sender, RoutedEventArgs e)

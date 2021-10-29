@@ -26,8 +26,6 @@ namespace KFLOP_Test3
         // a copy of the KM controller 
         private KM_Controller KMx { get; set; }
 
-        BitOps B;
-
         // Status flags used in check machine status
         static int Prev_KanalogInputs;    // Kanalog Inputs
         static int Prev_KanalogOutputs;   // Kanalog Outputs
@@ -41,7 +39,7 @@ namespace KFLOP_Test3
         {
             InitializeComponent();
             KMx = X;
-            B = new BitOps();
+
             //  LED1.LED_Label = "test lable1";
             //  LED1.LED_Image.Source = new BitmapImage(new Uri("Small LED Off.png"));
             LED_Count = 0;
@@ -98,7 +96,7 @@ namespace KFLOP_Test3
             tbStatus1.Text = status.ToString("X8");
             // check the status bits for the Home Buttons
             // set the color of the home buttons - red = not yet homed, green = homed
-            if(B.BitIsSet(status, PVConst.SB_X_HOME))
+            if(BitOps.BitIsSet(status, PVConst.SB_X_HOME))
             {
                 btnHomeX.Background = new SolidColorBrush(Colors.Red);
             }
@@ -106,7 +104,7 @@ namespace KFLOP_Test3
             {
                 btnHomeX.Background = new SolidColorBrush(Colors.LightGreen);
             }
-            if (B.BitIsSet(status, PVConst.SB_Y_HOME))
+            if (BitOps.BitIsSet(status, PVConst.SB_Y_HOME))
             {
                 btnHomeY.Background = new SolidColorBrush(Colors.Red);
             }
@@ -114,7 +112,7 @@ namespace KFLOP_Test3
             {
                 btnHomeY.Background = new SolidColorBrush(Colors.LightGreen);
             }
-            if (B.BitIsSet(status, PVConst.SB_Z_HOME))
+            if (BitOps.BitIsSet(status, PVConst.SB_Z_HOME))
             {
                 btnHomeZ.Background = new SolidColorBrush(Colors.Red);
             }
@@ -122,7 +120,7 @@ namespace KFLOP_Test3
             {
                 btnHomeZ.Background = new SolidColorBrush(Colors.LightGreen);
             }
-            if (B.BitIsSet(status, PVConst.SB_TLAUX_HOME))
+            if (BitOps.BitIsSet(status, PVConst.SB_TLAUX_HOME))
             {
                 btnHomeTC.Background = new SolidColorBrush(Colors.Red);
             }
@@ -130,7 +128,7 @@ namespace KFLOP_Test3
             {
                 btnHomeTC.Background = new SolidColorBrush(Colors.LightGreen);
             }
-            if (B.BitIsSet(status, PVConst.SB_SPIN_HOME))
+            if (BitOps.BitIsSet(status, PVConst.SB_SPIN_HOME))
             {
                 btnHomeS.Background = new SolidColorBrush(Colors.Red);
             }
@@ -147,15 +145,15 @@ namespace KFLOP_Test3
             // check the status bits for the Limit switches
    //         if (B.AllInMask(status, PVConst.SB_LIMIT_MASK) == false) // if anyone is not set then on a limit switch
    //         {
-                if (B.BitIsSet(status, PVConst.SB_X_LIMIT))
+                if (BitOps.BitIsSet(status, PVConst.SB_X_LIMIT))
                 { cbLimX.IsChecked = false; }
                 else { cbLimX.IsChecked = true; }
 
-                if (B.BitIsSet(status, PVConst.SB_Y_LIMIT))
+                if (BitOps.BitIsSet(status, PVConst.SB_Y_LIMIT))
                 { cbLimY.IsChecked = false; }
                 else { cbLimY.IsChecked = true; }
 
-                if (B.BitIsSet(status, PVConst.SB_Z_LIMIT))
+                if (BitOps.BitIsSet(status, PVConst.SB_Z_LIMIT))
                 { cbLimZ.IsChecked = false; }
                 else { cbLimZ.IsChecked = true; }
    //         }
@@ -180,15 +178,15 @@ namespace KFLOP_Test3
             {
                 Prev_Status = status;
                 // Spindle Mode LED 
-                if(B.BitIsSet(status, PVConst.SB_SPINDLE_PID) && B.BitIsSet(status, PVConst.SB_SPINDLE_RPM))
+                if(BitOps.BitIsSet(status, PVConst.SB_SPINDLE_PID) && BitOps.BitIsSet(status, PVConst.SB_SPINDLE_RPM))
                 {
                     SMode_LED.Set_Label("Mode Error");
                     SMode_LED.Set_State(LED_State.On_Red);
-                } else if (B.BitIsSet(status, PVConst.SB_SPINDLE_PID))
+                } else if (BitOps.BitIsSet(status, PVConst.SB_SPINDLE_PID))
                 {
                     SMode_LED.Set_Label("Spindle PID");
                     SMode_LED.Set_State(LED_State.On_Blue);
-                } else if(B.BitIsSet(status, PVConst.SB_SPINDLE_RPM))
+                } else if(BitOps.BitIsSet(status, PVConst.SB_SPINDLE_RPM))
                 {
                     SMode_LED.Set_Label("Spindle RPM");
                     SMode_LED.Set_State(LED_State.On_Yellow);

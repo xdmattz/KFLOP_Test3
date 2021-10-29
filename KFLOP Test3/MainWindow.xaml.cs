@@ -110,6 +110,10 @@ namespace KFLOP_Test3
         static KMotion_dotNet.KM_Axis SpindleAxis;
         static KMotion_dotNet.KM_Axis _ZAxis;
 
+        static MachineMotion MM;    // base class for motions
+        static ToolChanger toolChanger;
+        
+
         static MotionParams_Copy Xparam;
         // static ConfigFiles CFiles;
         static ConfigFiles CFiles;
@@ -190,9 +194,9 @@ namespace KFLOP_Test3
             // get the spindle axis
             SpindleAxis = KM.GetAxis(AXConst.SPINDLE_AXIS, "Spindle");
             _ZAxis = KM.GetAxis(AXConst.Z_AXIS, "ZAxis");
-
             // get the axis group
 
+            MM = new MachineMotion(ref KM, ref SpindleAxis);
 
 
 
@@ -287,18 +291,25 @@ namespace KFLOP_Test3
             OffsetPanel1.InitG30(fixG30);
 
             // Tool Change Panel
+            // instantiate the toolChanger first
+           
             toolInfo = new ToolInfo();
             toolInfo.toolTable = new KFLOP_Test3.ToolTable();
             toolInfo.toolCarousel = new KFLOP_Test3.ToolCarousel();
 
-            ToolChangerPanel1 = new ToolChangerPanel(ref KM, ref SpindleAxis, ref CFiles, ref toolInfo);
+            toolChanger = new ToolChanger(ref toolInfo);
+
+            ToolChangerPanel1 = new ToolChangerPanel(ref toolChanger, ref CFiles);
             var Tab4 = new TabItem();
             Tab4.Name = "tabItemContent4";
             Tab4.Header = "Tool Changer";
             Tab4.Content = ToolChangerPanel1;
             tcMainTab.Items.Add(Tab4);
             ToolChangerPanel1.LoadCarouselCfg();    // load the carousel state
+            
             toolInfo.toolCarousel = ToolChangerPanel1.GetCarousel();
+            toolChanger.SetCarousel(toolInfo.toolCarousel);
+
 
             // Tool Table Panel
             ToolTablePanel1 = new ToolTablePanel(ref KM, ref CFiles, ref toolInfo);
@@ -560,14 +571,14 @@ namespace KFLOP_Test3
                 case 6: // M6 Callback - Tool Change
                     m_M6 = true;    // in a tool change
                      // call the tool change method. - found in Tool Change Panel.
-                    ToolChangerPanel.ToolChangerComplete = false;
+                    ToolChanger.ToolChangerComplete = false;
                     // Dispatcher.BeginInvoke(new System.Threading.ThreadStart(() => ToolChangerPanel1.ToolChangeM6()));
-                    ToolChangerPanel1.ToolChangeM6();
+                    toolChanger.ToolChangeM6();
                     do
                     {
                         // wait for tool change to complete
                         Thread.Sleep(100);
-                    } while (ToolChangerPanel.ToolChangerComplete != true);
+                    } while (ToolChanger.ToolChangerComplete != true);
                     m_M6 = false;    // tool change done
                     // if it returns successfully then continue
                     // check ToolChangerPanel.Status
@@ -887,38 +898,34 @@ namespace KFLOP_Test3
         #region KFLOP Status
         private void ServiceKFlopStatus(ref KM_MainStatus KStat)
         {
-            BitOps B = new BitOps();
-
             // this first little bit is just for testing
             //int X = KM.GetUserData(120);
             tbStatus1.Text = KStat.GetPC_comm(4).ToString("X");
-
-            //tbStatus1.Text = X.ToString("X");
 
             // check the status of the Machine P_STATUS is in PC_comm[4];
             int status = KStat.PC_comm[CSConst.P_STATUS];
             if (status != Prev_P_STATUS)    // check for a change in status - only do the following if that status has changed
             {
                 Prev_P_STATUS = status;     // save the status for next time through.
-                if (B.AnyInMask(status, PVConst.SB_ACTIVE_MASK))   // Active bit is set in P_STATUS means thread 1 is running properly 
+                if (BitOps.AnyInMask(status, PVConst.SB_ACTIVE_MASK))   // Active bit is set in P_STATUS means thread 1 is running properly 
                 {
                     T1Active = true;
                     // check the estop
-                    if (B.AnyInMask(status, PVConst.SB_ESTOP_MASK))
+                    if (BitOps.AnyInMask(status, PVConst.SB_ESTOP_MASK))
                     {
                         ESTOP_FLAG = false; // SB_ESTOP bit set means everything is OK - not in ESTOP
-                        if (B.AnyInMask(status, PVConst.SB_WARNING_STATUS_MASK))
+                        if (BitOps.AnyInMask(status, PVConst.SB_WARNING_STATUS_MASK))
                         { MachineWarning = true; }
                         else
                         { MachineWarning = false; }
-                        if (B.AllInMask(status, PVConst.SB_ERROR_STATUS_MASK))
+                        if (BitOps.AllInMask(status, PVConst.SB_ERROR_STATUS_MASK))
                         { MachineError = false; }
                         else { MachineError = true; }
                         // check if the machine has been homed - don't trust any coordinates until it is!
-                        if (B.AnyInMask(status, PVConst.SB_HOME_STATUS_MASK))
+                        if (BitOps.AnyInMask(status, PVConst.SB_HOME_STATUS_MASK))
                         { MachineIsHomed = false; }
                         else { MachineIsHomed = true; }
-                        if (B.AllInMask(status, PVConst.SB_LIMIT_MASK))
+                        if (BitOps.AllInMask(status, PVConst.SB_LIMIT_MASK))
                         { MachineAxisLimit = false; }   // all the limits must be 1 to operate - 0 = on the limit switch
                         else { MachineAxisLimit = true; }
                     }
