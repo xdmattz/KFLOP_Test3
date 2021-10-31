@@ -16,6 +16,17 @@ using KMotion_dotNet;
 
 namespace KFLOP_Test3
 {
+
+    enum CarouselUpdateStates : int
+    {
+        Error,
+        Done,
+        Update,
+        Reset,
+        Empty,
+        Put,
+        Get
+    }
     // Trying to orgainze this code a little better.
     // Thinking that the actual methods that run the tool changer would be better contained in its own class
     // and then it could be used from where ever, and not just from the toolCangerPanel
@@ -30,39 +41,41 @@ namespace KFLOP_Test3
         // tool table 
         static ToolTable TTable;
 
-
         // The back ground workers 
         static BackgroundWorker _bw2;   // process background worker.
         static BWResults BW2Res;
-
-        static TExchangePosition TExPos;
 
         // these static variable flags indicate tool change progress
         static bool TCActionProgress; // true indicates a process action (group of steps) is in progress, false indicates the action has finished 
 
         public static bool ToolChangerComplete; // true indicates that a series of steps is complete - like get a tool... false means it is still running
 
+        // some constants used in the tool changer
+
         const bool bARM_IN = true;
         const bool bARM_OUT = false;
         const bool bCLAMP = true;
         const bool bRELEASE = false;
 
-        static int ToolInSpindle { get; set; }   // the number of the tool in the spindle, 0 = spindle empty, 1 - 8, Tool 
+        const int cMsgOffset = 4000;
 
+        public static int ToolInSpindle { get; set; }  // the number of the tool in the spindle, 0 = spindle empty, 1 - 999, Tool Number from the tool table
+        public static double ToolInSpinLen { get; set; }
+        // this is the variable that the UI looks at to display the tool number and offset.
 
+        public event dStatusMsg ProcessUpdate;
+        public event dStatusMsg ProcessError;
+        public event dUpdateToolInfo UpdateCarousel;
 
         public ToolChanger(ref ToolInfo toolInfo)   // class construtor
         {
             xToolInfo = toolInfo;
             CarouselList1 = toolInfo.toolCarousel;
             TTable = toolInfo.toolTable;
-            TExPos = new TExchangePosition();
+            // TExPos = new TExchangePosition();
 
             _bw2 = new BackgroundWorker();
             BW2Res = new BWResults();
-
-
-
         }
 
         public ToolCarousel GetCarousel()
@@ -96,6 +109,7 @@ namespace KFLOP_Test3
         public void SetCurrentTool(int ToolSlot)
         {
             KMx.CoordMotion.Interpreter.SetupParams.CurrentToolSlot = ToolSlot; // update the interpreter slot position
+
         }
 
         public bool bwBusy()
@@ -131,6 +145,18 @@ namespace KFLOP_Test3
         // Put a tool assumes that the carousel slot is empty
         // Exchange a tool assumes there is a tool in the spindle and an empty slot to put it into.
         // all this needs to be managed from a higher level in the program because these are very low level functions
+        //
+        // There are two tool change methods: ToolChangerDeluxe and ToolChangerSimple
+        // ToolChangerDeluxe takes the Current and Selected Tool Numbers as arguments
+        // these are the tool numbers from the tool table, or from the GCode Interpreter 
+        // which should be the same as the tool table.
+        // It also checks for the tools to be in carousel and if they are not prompts for a manual tool change.
+        // this will also 
+        //
+        // ToolChangerSimple takes Current and Selected Carousel Pockets as arguments
+        // It will not put a tool into a pocket that it thinks has something in it already.
+        // other than than it is pretty "simple"
+        // 
 
         // In all of this who or what is managing what is currently in the carousel!!! have to figure this out soon!
         public void ToolChangeM6()
@@ -140,13 +166,7 @@ namespace KFLOP_Test3
             int selected_tool = KMx.CoordMotion.Interpreter.SetupParams.SelectedToolSlot;
             //      MessageBox.Show($"Current Tool: {current_tool} Selected tool {selected_tool}");
 
-
-
-//            Dispatcher.Invoke(() =>    // Dispatcher to the rescue!
-//                btnAbort.IsEnabled = false
-//            );
             // need to decide which tool action to take - see comments on tool change actions
-            // 
             // see the flow chart for details! 
 
             ToolChangerDeluxe(current_tool, selected_tool);
@@ -154,27 +174,20 @@ namespace KFLOP_Test3
             //            MessageBox.Show($"Tool {current_tool} changed to {selected_tool}");
             ToolChangerComplete = true;
 
-            //Start_PutTool(current_tool);
-            //do { Thread.Sleep(100); } while (TCActionProgress); // tool change completed ? TCAction progress = false...
-            //                                                    // how to wait for the action to complete?
+            // Tool changer is done.
+            // if not an error then update the tool carousel
+            // since this is in another thread what to do here?
 
-            //// check the results of the action.
-            //s = string.Format("Tool {0} put away", current_tool);
-            //MessageBox.Show(s);
-            //Start_GetTool(selected_tool);
-            //do { Thread.Sleep(100); } while (TCActionProgress); // wait for change complete. ? timeout needed?
-            //s = string.Format("Tool {0} aquired", selected_tool);
-            //MessageBox.Show(s);
-            //ToolChangerComplete = true;
             return;
         }
 
-
         public void ToolChangerDeluxe(int CurrentTool, int SelectedTool)
         {
-
             // changing to reflect the Tool Carousel Management
             // Note: Tool Slot 0 always means empty spindle - this is always the first row in the tool table and has zero length
+
+
+            // need to have some kind of tool change complete callback - to handle things when the thread is done.
 
             // should only have to do this once...
             int sPocket = getPocket(SelectedTool);  // selected pocket
@@ -234,20 +247,20 @@ namespace KFLOP_Test3
                     ToolInSpindle = 0;
                     ClearToolInUse(cPocket);
                     Manual_GetTool(SelectedTool); // get the selected tool manually - not in the carousel
-
                 }
                 else
                 {
-                    Start_ExchangeTool(CurrentTool, SelectedTool);  // if none of the other conditions apply then do a tool exchange!
+                    Start_ExchangeTool(cPocket, sPocket);  // if none of the other conditions apply then do a tool exchange!
                 }
             }
         }
 
+        // this tool changer will only put and get, no exchanges. 
         public void ToolChangerSimple(int CurrentSlot, int SelectedSlot)
         {
             if((CurrentSlot < 1) || (CurrentSlot > xTCP.CarouselSize))
             {
-           
+                // no valid tool in the spindle - should have been removed before calling
                 // get Selected Slot
                 if((SelectedSlot < 1) || (SelectedSlot > xTCP.CarouselSize))
                 {
@@ -273,9 +286,7 @@ namespace KFLOP_Test3
                 {
                     Start_GetTool(SelectedSlot);
                 }
-
             }
-
         }
 
         #region Get a Tool from the Tool Changer
@@ -283,7 +294,6 @@ namespace KFLOP_Test3
         {
 
             TCActionProgress = true; // process action is happening...
-
             _bw2.WorkerReportsProgress = true;
 
             _bw2.DoWork += GetToolWorker;
@@ -297,18 +307,13 @@ namespace KFLOP_Test3
             // Assume the following state:
             // 1. Spindle is empty
             // 2. The tool arm is retracted.
-            // tool number to get is passed in the argument
-
-//            Dispatcher.Invoke(() =>
-//            {
-//                lblProg2.Content = "In Get Tool";
-//            });
+            // 3. Tool Pocket Number to get is passed in the argument
 
             TCProgress = true;
             ToolChangeStatus = false;
             int progress_cnt = 0;
             BW2Res.Result = true; // start out at true;
-            BW2Res.Comment = "In Get Tool";
+
             _bw2.ReportProgress(progress_cnt++);
 
             SingleAxis tSAx = new SingleAxis();
@@ -321,7 +326,7 @@ namespace KFLOP_Test3
                 return;
             }
 
-            BW2Res.Comment = "Move to Z1";
+            BW2Res.Comment = "In Get Tool Move to Z1";
             _bw2.ReportProgress(progress_cnt++);
             // Move to H1 
             //!!!!!
@@ -353,13 +358,13 @@ namespace KFLOP_Test3
                 return;
             }
 
-            BW2Res.Comment = "Carousel Indexing";
-            _bw2.ReportProgress(progress_cnt++);
             // rotate carousel to tool number
-            //tSAx.ToolNumber = (int)e.Argument;  
-            // int PocketNumber = getPocket((int)e.Argument);
-            // tSAx.ToolNumber = PocketNumber;   // carousel position number
             tSAx.ToolNumber = (int)e.Argument;  // this contains the Carousel Pocket Numbr - ie. carousel position
+            tSAx.ToolPocket = (int)e.Argument;
+
+            BW2Res.Comment = $"Carousel Indexing to {tSAx.ToolPocket}";
+            _bw2.ReportProgress(progress_cnt++);
+
             Start_Carousel_Process(tSAx);
             if (WaitForProgress() == false)
             {
@@ -398,9 +403,6 @@ namespace KFLOP_Test3
                 return;
             }
             // at this point the new tool is clamped in the spindle // move this to the location from where it was called from 
-            //      ToolInSpindle = tSAx.ToolNumber;
-            // update the Carousel Empty slot 
-            //      SetToolInUse(PocketNumber);
 
             BW2Res.Comment = "Move to Z2";
             _bw2.ReportProgress(progress_cnt++);
@@ -445,6 +447,9 @@ namespace KFLOP_Test3
                 return;
             }
 
+            // report the carousel update 
+            _bw2.ReportProgress(cMsgOffset + tSAx.ToolPocket);
+
             BW2Res.Comment = "Spindle RPM Mode";
             _bw2.ReportProgress(progress_cnt++);
             // Spindle back to RPM Mode
@@ -467,19 +472,14 @@ namespace KFLOP_Test3
 
         private void GetToolProgressChanged(object sender, ProgressChangedEventArgs e)
         {
-            // update the progress label
-            //            Dispatcher.Invoke(() =>    // Dispatcher to the rescue!
-            //                lblTCProgress.Content = "Progress :" + e.ProgressPercentage.ToString()
-            //            );
-            string ps = BW2Res.Comment + " " + e.ProgressPercentage.ToString();
-            if (BW2Res.Result == false)
+            if (e.ProgressPercentage > cMsgOffset)
             {
-                
-                OnProcessError(ps); // send the error message
+                int Pocket = e.ProgressPercentage - cMsgOffset;
+                OnUpdateCarousel(Pocket, (int)CarouselUpdateStates.Get );
             }
             else
             {
-                OnProcessUpdate(ps); // send the status message
+                BWProgressUpdate(BW2Res, e.ProgressPercentage);
             }
         }
 
@@ -490,7 +490,6 @@ namespace KFLOP_Test3
             _bw2.ProgressChanged -= GetToolProgressChanged;
             _bw2.RunWorkerCompleted -= GetToolCompleted;
             CompleteActionStatus((BWResults)e.Result);
-
         }
         #endregion
 
@@ -528,19 +527,14 @@ namespace KFLOP_Test3
             // 1. Spindle has a tool in it
             // 2. The tool arm is retracted.
             // 3. the Carousel Slot to put the tool in is empty
-            // tool number to get is passed in the argument
-
-//            Dispatcher.Invoke(() =>
-//            {
-//                lblProg2.Content = "In Put Tool";
-//            });
+            // 4. Tool Pocket Number to get is passed in the argument
 
             SingleAxis tSAx = new SingleAxis();
 
             TCProgress = true;
             ToolChangeStatus = false;
+            BW2Res.Result = true; // start out at true;
             int progress_cnt = 0;
-
 
             if (MotionBusy()) // if the BW worker is busy then don't do this. - should probably set some kind of flag here...
             {
@@ -551,8 +545,10 @@ namespace KFLOP_Test3
                 return;
             }
 
-            // start a new background worker
+            BW2Res.Comment = "In Put Tool. Move to Z2";
             _bw2.ReportProgress(progress_cnt++);
+
+            // start a new background worker
             // Move to H2 
             tSAx.Pos = xTCP.TC_H2_Z; // Z Height position and feedrate
             tSAx.Rate = xTCP.TC_H2_FR;
@@ -565,9 +561,11 @@ namespace KFLOP_Test3
                 e.Result = BW2Res;
                 return;
             }
-            _bw2.ReportProgress(progress_cnt++);
 
             // Index the spindle
+            BW2Res.Comment = "Spindle Indexing";
+            _bw2.ReportProgress(progress_cnt++);
+
             tSAx.Pos = xTCP.TC_Index;    // Spindle position and feedrate 
             tSAx.Rate = xTCP.TC_S_FR;
             Start_Spindle_Process(tSAx);
@@ -579,22 +577,23 @@ namespace KFLOP_Test3
                 e.Result = BW2Res;
                 return;
             }
-            _bw2.ReportProgress(progress_cnt++);
 
             // rotate carousel to tool number
-            // 
-            // tSAx.ToolNumber = (int)e.Argument;  // carousel position number
-            int PocketNumber = (int)e.Argument;
-            if (GetToolInUse(PocketNumber) == false)
+            tSAx.ToolPocket = (int)e.Argument; // carousel position number
+            BW2Res.Comment = $"Carousel Indexing to {tSAx.ToolPocket}";
+            _bw2.ReportProgress(progress_cnt++);
+
+            if(CheckPocketEmpty(tSAx.ToolPocket) == false)
+//            if (GetToolInUse(tSAx.ToolPocket) == false)
             {
                 // this check to see if the pocket is assigned and the tool is in use ie the pocket is empty 
                 // waiting for the tool to be returned
-                BW2Res.Comment = "Carousel Not Empty Error";
+                BW2Res.Comment = $"Carousel {tSAx.ToolPocket} Not Empty Error";
                 BW2Res.Result = false;
                 e.Result = BW2Res;
                 return;
             }
-            tSAx.ToolNumber = PocketNumber;   // carousel position number
+
             Start_Carousel_Process(tSAx);
             if (WaitForProgress() == false)
             {
@@ -604,9 +603,11 @@ namespace KFLOP_Test3
                 e.Result = BW2Res;
                 return;
             }
-            _bw2.ReportProgress(progress_cnt++);
 
             // Arm Out
+            BW2Res.Comment = $"TLAUX Arm Out";
+            _bw2.ReportProgress(progress_cnt++);
+
             tSAx.Move = bARM_OUT;
             Start_ARM_Process(tSAx);
             if (WaitForProgress() == false)
@@ -617,9 +618,11 @@ namespace KFLOP_Test3
                 e.Result = BW2Res;
                 return;
             }
-            _bw2.ReportProgress(progress_cnt++);
 
             // Clamp Release
+            BW2Res.Comment = $"Clamp Release";
+            _bw2.ReportProgress(progress_cnt++);
+
             tSAx.Move = bRELEASE;
             Start_TClamp_Process(tSAx);
             if (WaitForProgress() == false)
@@ -633,6 +636,8 @@ namespace KFLOP_Test3
             // at this point the tool clamp has been released and has let go of the tool
 
             ToolInSpindle = 0;
+
+            BW2Res.Comment = $"Move to Z1";
             _bw2.ReportProgress(progress_cnt++);
 
             // move to H1
@@ -647,9 +652,11 @@ namespace KFLOP_Test3
                 e.Result = BW2Res;
                 return;
             }
-            _bw2.ReportProgress(progress_cnt++);
 
             // Clamp Engage
+            BW2Res.Comment = $"Clamp Engage";
+            _bw2.ReportProgress(progress_cnt++);
+
             tSAx.Move = bCLAMP;
             Start_TClamp_Process(tSAx);
             if (WaitForProgress() == false)
@@ -660,9 +667,11 @@ namespace KFLOP_Test3
                 e.Result = BW2Res;
                 return;
             }
-            _bw2.ReportProgress(progress_cnt++);
 
             // Arm In
+            BW2Res.Comment = $"TLAUX Arm In";
+            _bw2.ReportProgress(progress_cnt++);
+
             tSAx.Move = bARM_IN;
             Start_ARM_Process(tSAx);
             if (WaitForProgress() == false)
@@ -673,9 +682,13 @@ namespace KFLOP_Test3
                 e.Result = BW2Res;
                 return;
             }
-            _bw2.ReportProgress(progress_cnt++);
+
+            _bw2.ReportProgress(cMsgOffset + tSAx.ToolPocket);
 
             // Spindle back to RPM Mode
+            BW2Res.Comment = $"Spindle to RPM";
+            _bw2.ReportProgress(progress_cnt++);
+
             Start_SpindleRPM_Process(tSAx);
             if (WaitForProgress() == false)
             {
@@ -685,7 +698,6 @@ namespace KFLOP_Test3
                 e.Result = BW2Res;
                 return;
             }
-            _bw2.ReportProgress(progress_cnt++);
 
             BW2Res.Comment = "Put Tool Success";
             BW2Res.Result = true;
@@ -694,9 +706,15 @@ namespace KFLOP_Test3
 
         private void PutToolProgressedChanged(object sender, ProgressChangedEventArgs e)
         {
-//            Dispatcher.Invoke(() =>    // Dispatcher to the rescue!
-//                lblTCProgress.Content = "Progress :" + e.ProgressPercentage.ToString()
-//            );
+            if (e.ProgressPercentage > cMsgOffset)
+            {
+                int Pocket = e.ProgressPercentage - cMsgOffset;
+                OnUpdateCarousel(Pocket, (int)CarouselUpdateStates.Put);
+            }
+            else
+            {
+                BWProgressUpdate(BW2Res, e.ProgressPercentage);
+            }
         }
 
         private void PutToolCompleted(object sender, RunWorkerCompletedEventArgs e)
@@ -723,18 +741,19 @@ namespace KFLOP_Test3
         }
         #endregion
 
-        #region Tool Exchange - Put A Get B without retract
+        #region Tool Exchange - Put A Get B without intermediate Arm retract
 
         public void Start_ExchangeTool(int PutTool, int GetTool)
         {
             TCActionProgress = true; // process action is happening...
+            TExchangePosition TExPos = new TExchangePosition();
             TExPos.PutTool = PutTool;
             TExPos.GetTool = GetTool;
             _bw2.WorkerReportsProgress = true;
             _bw2.DoWork += ExchangeToolWorker;
             _bw2.ProgressChanged += ExchangeToolProgressChanged;
             _bw2.RunWorkerCompleted += ExchangeToolCompleted;
-            _bw2.RunWorkerAsync(TExPos);
+            _bw2.RunWorkerAsync(TExPos);    // will this get cleaned up before the other thread can access it?
         }
 
         private void ExchangeToolWorker(object sender, DoWorkEventArgs e)
@@ -745,22 +764,21 @@ namespace KFLOP_Test3
             // 1. Spindle contains the "Put Tool"
             // 2. The tool arm is retracted.
             // 3. The Carousel space for the Put Tool is empty
-            // tool numbers to exchange are passed in the argument
-
-//            Dispatcher.Invoke(() =>
-//            {
-//                lblProg2.Content = "In Exchange Tool";
-//            });
+            // 4. Tool Pocket Numbers to exchange are passed in the argument
+            // this means that the tool numbers (not the carousel pocket) was already 
+            // vetted and that both exist in the carousel 
+            // - otherwise it a get tool and put tool would have been called by the ToolChangerDelux
 
             TCProgress = true;
             ToolChangeStatus = false;
+            BW2Res.Result = true; // start out at true;
             int progress_cnt = 0;
 
-            TExchangePosition tTexch;
-            tTexch = (TExchangePosition)e.Argument;
+            int PutPocket = ((TExchangePosition)e.Argument).PutTool;
+            int GetPocket = ((TExchangePosition)e.Argument).GetTool;
 
             SingleAxis tSAx = new SingleAxis();
-            // start a new background worker
+
             if (MotionBusy()) // if the BW worker is busy
             {
                 BW2Res.Result = false;
@@ -769,8 +787,10 @@ namespace KFLOP_Test3
                 return;
             }
 
-            // start a new background worker
+            BW2Res.Comment = "Tool Exchange Move to Z2";
             _bw2.ReportProgress(progress_cnt++);
+            // start a new background worker
+
             // Move to H2 
             tSAx.Pos = xTCP.TC_H2_Z; // Z Height position and feedrate
             tSAx.Rate = xTCP.TC_H2_FR;
@@ -783,9 +803,11 @@ namespace KFLOP_Test3
                 e.Result = BW2Res;
                 return;
             }
-            _bw2.ReportProgress(progress_cnt++);
 
             // Index the spindle
+            BW2Res.Comment = "Spindle Indexing";
+            _bw2.ReportProgress(progress_cnt++);
+
             tSAx.Pos = xTCP.TC_Index;    // Spindle position and feedrate 
             tSAx.Rate = xTCP.TC_S_FR;
             Start_Spindle_Process(tSAx);
@@ -797,20 +819,23 @@ namespace KFLOP_Test3
                 e.Result = BW2Res;
                 return;
             }
+
+            if(CheckPocketEmpty(PutPocket) == false)
+//            if (GetToolInUse(PutPocket) == false)
+            {
+            // this check is to see if the pocket is assigned and the tool is in use ie the pocket is empty 
+            // waiting for the tool to be returned
+                     BW2Res.Comment = $"Carousel {PutPocket} Not Empty Error";
+                     BW2Res.Result = false;
+                     e.Result = BW2Res;
+                     return;
+            }
+
+            // rotate carousel to put tool number
+            BW2Res.Comment = $"Carousel index to {PutPocket}";
             _bw2.ReportProgress(progress_cnt++);
 
-            int PocketNumber = getPocket(tTexch.PutTool);
-            if (GetToolInUse(PocketNumber) == false)
-            {
-                // this check to see if the pocket is assigned and the tool is in use ie the pocket is empty 
-                // waiting for the tool to be returned
-                BW2Res.Comment = "Carousel Not Empty Error";
-                BW2Res.Result = false;
-                e.Result = BW2Res;
-                return;
-            }
-            // rotate carousel to put tool number
-            tSAx.ToolNumber = PocketNumber;   // carousel position number
+            tSAx.ToolPocket = PutPocket; // carousel position number
             Start_Carousel_Process(tSAx);
             if (WaitForProgress() == false)
             {
@@ -820,9 +845,11 @@ namespace KFLOP_Test3
                 e.Result = BW2Res;
                 return;
             }
-            _bw2.ReportProgress(progress_cnt++);
 
             // Arm Out
+            BW2Res.Comment = "TLAUX Arm Out";
+            _bw2.ReportProgress(progress_cnt++);
+
             tSAx.Move = bARM_OUT;
             Start_ARM_Process(tSAx);
             if (WaitForProgress() == false)
@@ -833,9 +860,11 @@ namespace KFLOP_Test3
                 e.Result = BW2Res;
                 return;
             }
-            _bw2.ReportProgress(progress_cnt++);
 
             // Clamp Release
+            BW2Res.Comment = "Clamp Release";
+            _bw2.ReportProgress(progress_cnt++);
+
             tSAx.Move = bRELEASE;
             Start_TClamp_Process(tSAx);
             if (WaitForProgress() == false)
@@ -846,12 +875,16 @@ namespace KFLOP_Test3
                 e.Result = BW2Res;
                 return;
             }
+
+            _bw2.ReportProgress(cMsgOffset + cMsgOffset + PutPocket);
             // at this point the tool clamp has been released and has let go of the tool
-            ClearToolInUse(PocketNumber); // clear the tool in use flag for that carousel pocket
+     //       ClearToolInUse(PutPocket); // clear the tool in use flag for that carousel pocket
             ToolInSpindle = 0;
-            _bw2.ReportProgress(progress_cnt++);
 
             // move to H1
+            BW2Res.Comment = "Move to Z1";
+            _bw2.ReportProgress(progress_cnt++);
+
             tSAx.Pos = xTCP.TC_H1_Z;
             tSAx.Rate = xTCP.TC_H1_FR;
             Start_MoveZ_Process(tSAx);
@@ -865,9 +898,10 @@ namespace KFLOP_Test3
             }
 
             // rotate carousel to the get tool number
-            PocketNumber = getPocket(tTexch.GetTool);
-            // tSAx.ToolNumber = tTexch.GetTool;  // carousel position number
-            tSAx.ToolNumber = PocketNumber;
+            BW2Res.Comment = $"Carousel Index to {GetPocket}";
+            _bw2.ReportProgress(progress_cnt++);
+
+            tSAx.ToolPocket = GetPocket;
             Start_Carousel_Process(tSAx);
             if (WaitForProgress() == false)
             {
@@ -877,9 +911,12 @@ namespace KFLOP_Test3
                 e.Result = BW2Res;
                 return;
             }
-            _bw2.ReportProgress(progress_cnt++);
+
 
             // move to H2
+            BW2Res.Comment = "Move to Z2";
+            _bw2.ReportProgress(progress_cnt++);
+
             tSAx.Pos = xTCP.TC_H2_Z;
             tSAx.Rate = xTCP.TC_H2_FR;
             Start_MoveZ_Process(tSAx);
@@ -891,9 +928,11 @@ namespace KFLOP_Test3
                 e.Result = BW2Res;
                 return;
             }
-            _bw2.ReportProgress(progress_cnt++);
 
             // Clamp Engage
+            BW2Res.Comment = "Clamp Engage";
+            _bw2.ReportProgress(progress_cnt++);
+
             tSAx.Move = bCLAMP;
             Start_TClamp_Process(tSAx);
             if (WaitForProgress() == false)
@@ -905,11 +944,13 @@ namespace KFLOP_Test3
                 return;
             }
             // at this point the spindle contains the new tool
-            SetToolInUse(PocketNumber);
-            ToolInSpindle = getSlot(tTexch.GetTool);
-            _bw2.ReportProgress(progress_cnt++);
+            //            SetToolInUse(GetPocket);
+            //            ToolInSpindle = GetPocket;
 
             // Arm In
+            BW2Res.Comment = "TLAUX Arm In";
+            _bw2.ReportProgress(progress_cnt++);
+
             tSAx.Move = bARM_IN;
             Start_ARM_Process(tSAx);
             if (WaitForProgress() == false)
@@ -920,9 +961,11 @@ namespace KFLOP_Test3
                 e.Result = BW2Res;
                 return;
             }
-            _bw2.ReportProgress(progress_cnt++);
 
             // Spindle back to RPM Mode
+            BW2Res.Comment = "Spindle to RPM";
+            _bw2.ReportProgress(progress_cnt++);
+
             Start_SpindleRPM_Process(tSAx);
             if (WaitForProgress() == false)
             {
@@ -943,10 +986,20 @@ namespace KFLOP_Test3
 
         private void ExchangeToolProgressChanged(object sender, ProgressChangedEventArgs e)
         {
-            // update the progress label
-//            Dispatcher.Invoke(() =>    // Dispatcher to the rescue!
-//                lblTCProgress.Content = "Progress :" + e.ProgressPercentage.ToString()
-//            );
+            if (e.ProgressPercentage > (cMsgOffset + cMsgOffset))
+            {
+                int Pocket = e.ProgressPercentage - cMsgOffset - cMsgOffset;
+                OnUpdateCarousel(Pocket, (int)CarouselUpdateStates.Put);
+            }
+            else if (e.ProgressPercentage > cMsgOffset)
+            {
+                int Pocket = e.ProgressPercentage - cMsgOffset;
+                OnUpdateCarousel(Pocket, (int)CarouselUpdateStates.Get);
+            }
+            else
+            {
+                BWProgressUpdate(BW2Res, e.ProgressPercentage);
+            }
         }
 
         private void ExchangeToolCompleted(object sender, RunWorkerCompletedEventArgs e)
@@ -968,7 +1021,7 @@ namespace KFLOP_Test3
             int stuckCount = 0;
             do
             {
-                if(stuckCount++ > 200)  // 200 seconds
+                if(stuckCount++ > 200)  // 20 seconds - seems like a long time for some action
                 {
                     TCProgress = false;
                     ToolChangeStatus = false;
@@ -993,11 +1046,28 @@ namespace KFLOP_Test3
                 // Action had an error somewhere.
                 MessageBox.Show(res.Comment);
                 OnProcessError(res.Comment);
+                OnUpdateCarousel(0, (int)CarouselUpdateStates.Error);
             }
             TCActionProgress = false; // the action is done
         }
 
+        private void BWProgressUpdate(BWResults br, int cnt)
+        {
+            string ps = br.Comment + " " + cnt.ToString();
+            if (br.Result == false)
+            {
+
+                OnProcessError(ps); // send the error message
+            }
+            else
+            {
+                OnProcessUpdate(ps); // send the status message
+            }
+        }
+
         #endregion
+
+        #region Tool Table and Carousel Management
 
         // get the carousel pocket number given the tool index (SLOT in the tool table)
         // can also be used to determine if the tool is in the carousel. a -1 means that the tool is not in the carousel
@@ -1031,7 +1101,11 @@ namespace KFLOP_Test3
                 if (CI.Pocket == Pocket)
                 {
                     CI.ToolInUse = true;
-                    break;
+                    
+                }
+                else
+                {
+                    CI.ToolInUse = false;
                 }
             }
         }
@@ -1042,7 +1116,7 @@ namespace KFLOP_Test3
             {
                 if (CI.Pocket == Pocket)
                 {
-                    CI.ToolInUse = true;
+                    CI.ToolInUse = false;
                     break;
                 }
             }
@@ -1057,14 +1131,42 @@ namespace KFLOP_Test3
             }
             return false;   // should never get here... assuming a valid pocket is given
         }
+        private bool CheckPocketEmpty(int Pocket)
+        {
+            // check for an empty space in the tool carousel
+            // the criteria for emtpy carousel are either the tool number is 0 or the tool in use is checked. 
+            // ToolInUse true means that the carousel pocket is assigned a tool, but the pocket is empty 
+            // becasue that tool is in the spindle.
+            foreach(CarouselItem CI in CarouselList1.Items)
+            {
+                if(CI.Pocket == Pocket)
+                {
+                    if (CI.ToolIndex == 0)
+                    {
+                        // pocket is not assigned
+                        return true;
+                    }
+                    if(CI.ToolInUse == true)
+                    {
+                        // current pocket's tool is in the spindle so pocket is empty
+                        return true;
+                    }
+                }
+            }
+            return false;
+        }
 
-        // delegates - 
-        public delegate void dStatusMsg(string s);
-        public delegate void dTCDone();
+        public bool ToolInTable(int ToolNumber)
+        {
+            foreach (Tool tl in TTable.Tools)
+            {
+                if (tl.ID == ToolNumber) return true;
+                if (tl.slot == ToolNumber) return true;
+            }
+            return false;
+        }
 
-
-        public event dStatusMsg ProcessUpdate;
-        public event dStatusMsg ProcessError;
+        #endregion
 
         protected virtual void OnProcessUpdate(string x)
         {
@@ -1074,6 +1176,11 @@ namespace KFLOP_Test3
         protected virtual void OnProcessError(string x)
         {
             ProcessError?.Invoke(x); // if the ProcessError delegate has been defined then call that delegate
+        }
+
+        protected virtual void OnUpdateCarousel(int pocket, int state)
+        {
+            UpdateCarousel?.Invoke(pocket, state); // if the UpdateCarousel delegate has been defined then call that delegate.
         }
 
     }
@@ -1478,9 +1585,7 @@ namespace KFLOP_Test3
         }
         public bool MotionBusy()
         {
-            if (_bw.IsBusy)
-                return true;
-            return false;
+            return _bw.IsBusy;
         }
 
         #region Individual tool changer motions
@@ -1550,34 +1655,20 @@ namespace KFLOP_Test3
             }
         }
 
-// this is the part that really needs to be rewritten! 
-// !!!!!
         public void CompleteStatus(BWResults res)
         {
             if (res.Result == true)  // process ended successfully - 
             {
-                // maybe put something on a label - like the 
-                //                Dispatcher.Invoke(() =>
-                //                {
-                //                    lblTCP2.Content = res.Comment;
                 OnStepUpdate(BWRes.Comment);
                 ToolChangeStatus = true; // everything is OK
-                                         //                });
             }
             else
             {
-                // process ended with a fault condition - set a flag???
-                // update the UI label
-                //                Dispatcher.Invoke(() =>
-                //                {
-                //                    lblTCP2.Content = res.Comment;
                 OnStepError(BWRes.Comment);
                 ToolChangeStatus = false; // there was some kind of fault or error.
-                                          //                });
             }
             TCProgress = false; // the phase is done
         }
-
 
         #region MoveZ background process
         // the move Z background process
@@ -1745,7 +1836,7 @@ namespace KFLOP_Test3
             _bw.ProgressChanged += Carousel_ProgressChanged;
             _bw.RunWorkerCompleted += Carousel_Completed;
 
-            _bw.RunWorkerAsync(SA.ToolNumber);
+            _bw.RunWorkerAsync(SA.ToolPocket);
         }
 
         private void Carousel_Worker(object sender, DoWorkEventArgs e)
@@ -2260,6 +2351,7 @@ namespace KFLOP_Test3
         // delegates - 
         public delegate void dStatusMsg(string s);
         public delegate void dTCDone();
+        public delegate void dUpdateToolInfo(int pocket, int state);
 
 
         public event dStatusMsg StepUpdate;
@@ -2295,8 +2387,4 @@ namespace KFLOP_Test3
 #endregion
 
     }
-
-
-
-
 }

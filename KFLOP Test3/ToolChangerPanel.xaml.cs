@@ -70,8 +70,6 @@ namespace KFLOP_Test3
 
         static private ToolChangeParams TCP;
 
-        static public int ToolInSpindle;   // the number of the tool in the spindle, 0 = spindle empty, 1 - 8, Tool 
-
         static ToolChanger xToolChanger;
         
 
@@ -97,6 +95,8 @@ namespace KFLOP_Test3
             xToolChanger.ProcessError += TC_ProcessError;
             xToolChanger.StepUpdate += TC_StepChanged;
             xToolChanger.StepError += TC_StepError;
+
+            xToolChanger.UpdateCarousel += TC_CarouselUpdate;
 
             ledClamp.Set_State(LED_State.Off);
             ledClamp.Set_Label("Tool Clamp");
@@ -149,12 +149,9 @@ namespace KFLOP_Test3
             SpindleHomed = !(BitOps.BitIsSet(iPVStatus, PVConst.SB_SPIN_HOME));
             // update the tool in spindle
 // this needs to change to reflect the new tool managment
-            if(ToolInSpindle == 0)
-            { lblCurrentTool.Foreground = Brushes.Green; }
-            else if (ToolInSpindle > TCP.CarouselSize)
-            { lblCurrentTool.Foreground = Brushes.Red; }
-            else { lblCurrentTool.Foreground = Brushes.Black; }
-            lblCurrentTool.Content = string.Format("Current tool in the Spindle: {0}", ToolInSpindle);
+
+            lblCurrentTool.Foreground = Brushes.Black; 
+            lblCurrentTool.Content = string.Format("Tool in the Spindle");
 
         }
         public void SetToolSlot(int ToolSlot)
@@ -188,18 +185,18 @@ namespace KFLOP_Test3
             MessageBoxResult result = MessageBox.Show("Is the Spindle Empty?", "Spindle Check", MessageBoxButton.YesNo);
             if (result == MessageBoxResult.No)
             {
-                string toolmsg = string.Format("Exchange tools {0} and {1}", ToolInSpindle, ToolNumber);
+                string toolmsg = string.Format("Exchange tools {0} and {1}", ToolChanger.ToolInSpindle, ToolNumber);
                 MessageBoxResult rslt = MessageBox.Show(toolmsg, "Verify", MessageBoxButton.YesNo);
                 if (rslt == MessageBoxResult.Yes)
                 {
                     // xToolChanger.ToolChangerDeluxe(ToolInSpindle, ToolNumber);
-                    xToolChanger.ToolChangerSimple(ToolInSpindle, ToolNumber);
+                    xToolChanger.ToolChangerSimple(ToolChanger.ToolInSpindle, ToolNumber);
                 }
                 xToolChanger.SetCurrentTool(ToolNumber); // update the interpreter slot number
                 return;
             }
 
-            ToolInSpindle = 0;
+            ToolChanger.ToolInSpindle = 0;
 
             // check the tool number.
             if(ToolNumber == 0)
@@ -211,7 +208,7 @@ namespace KFLOP_Test3
             {
                 string toolmsg = string.Format("Manualy insert Tool number {0} now", ToolNumber);
                 MessageBox.Show(toolmsg);
-                ToolInSpindle = ToolNumber;
+               // ToolInSpindle = ToolNumber;
                 xToolChanger.SetCurrentTool(ToolNumber); // update the interpreter slot number
                 return;
             }
@@ -226,12 +223,6 @@ namespace KFLOP_Test3
 
             // update the Tool change parameters
 
-            // start the process background worker for Get Tool
-            // move Z to TC_Z1
-
-            // UpdateCfg();    // this should load all the variables into the TCP class
-            // Start_GetTool(ToolNumber);
-//            xToolChanger.ToolChangerDeluxe(0, ToolNumber); // this should get "ToolNumber" from the carousel from an empty spindle
             xToolChanger.ToolChangerSimple(0, ToolNumber); // this should get "ToolNumber" from the carousel from an empty spindle
         }
 
@@ -264,10 +255,7 @@ namespace KFLOP_Test3
             // Start_PutTool(ToolNumber);
         }
 
-        private void btnExchangeTool_Click(object sender, RoutedEventArgs e)
-        {
 
-        }
         #endregion
 
         #region Tool Changer Test buttons
@@ -717,7 +705,6 @@ namespace KFLOP_Test3
             lblTCP2.Foreground = Brushes.ForestGreen;
             lblTCP2.Content = s;
         }
-
         private void TC_ProcessError(string s)
         {
             Dispatcher.BeginInvoke(new System.Threading.ThreadStart(() => TC_ProcessError1(s)));
@@ -730,7 +717,7 @@ namespace KFLOP_Test3
             lblTCP2.Content = s;
         }
 
-        // Status update from the tool changer steps = double dispatched because it is another thread down.
+        // Status update from the tool changer steps -- double dispatched because it is another thread down.
         private void TC_StepChanged(string s)
         {
             Dispatcher.BeginInvoke(new System.Threading.ThreadStart(() => TC_StepChanged1(s)));
@@ -741,6 +728,16 @@ namespace KFLOP_Test3
             lblStepProgress.Content = "Step Status";
             lblStepP2.Foreground = Brushes.ForestGreen;
             lblStepP2.Content = s;
+        }
+
+        // Status update for the tool Carousel - updating CarouselList based on what action the carousel took
+        private void TC_CarouselUpdate(int pocket, int state)
+        {
+            Dispatcher.BeginInvoke(new System.Threading.ThreadStart(() => TC_CarouselUpdate1(pocket, state)));
+        }
+        private void TC_CarouselUpdate1(int pocket, int state)
+        {
+            MessageBox.Show($"Pocket = {pocket} state = {state}");
         }
 
 
@@ -798,15 +795,42 @@ namespace KFLOP_Test3
             // 
         }
 
- 
-
         #endregion
-
-
 
         private void TC_Test_Click(object sender, RoutedEventArgs e)
         {
 
+        }
+
+        private void btnToolInSpindleUpdate_Click(object sender, RoutedEventArgs e)
+        {
+            // get the text from tbToolInSpindle and update the spindle state 
+            // do this when manually inserting and removing tools
+            SpindleUpdate SPUpdate = new SpindleUpdate(0);  // really put the current tool number in here!
+            SPUpdate.ShowDialog();
+            if (SPUpdate.DialogResult == true)
+            {
+                if (SPUpdate.value == 0)
+                {
+                    // Remove the current tool from the spindle and clear its carousel pocket
+                }
+                else
+                {
+                    // check that the number is in the tool table
+                    if (xToolChanger.ToolInTable(SPUpdate.value))
+                    {
+                        xToolChanger.SetCurrentTool(SPUpdate.value);
+                        
+                    }
+                    else
+                    {
+                        MessageBox.Show($"Tool Number {SPUpdate.value} is not in the tool table\rEnter new tools in the tool table panel");
+                    }
+                }
+            } else
+            {
+                // dialog was canceled do nothing.
+            }
         }
     }
 
@@ -816,6 +840,7 @@ namespace KFLOP_Test3
         public double Rate { get; set; }
         public bool Move { get; set; }  // in / out or clamp / release 
         public int ToolNumber { get; set; }
+        public int ToolPocket { get; set; }
     }
 
     public class PlaneAxis

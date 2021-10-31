@@ -149,6 +149,9 @@
     <Compile Include="ResumeDialog.xaml.cs">
       <DependentUpon>ResumeDialog.xaml</DependentUpon>
     </Compile>
+    <Compile Include="SpindleUpdate.xaml.cs">
+      <DependentUpon>SpindleUpdate.xaml</DependentUpon>
+    </Compile>
     <Compile Include="StatusPanel.xaml.cs">
       <DependentUpon>StatusPanel.xaml</DependentUpon>
     </Compile>
@@ -225,6 +228,10 @@
       <Generator>MSBuild:Compile</Generator>
     </Page>
     <Page Include="ResumeDialog.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="SpindleUpdate.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>

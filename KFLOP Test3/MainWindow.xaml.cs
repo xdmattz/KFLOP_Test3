@@ -1168,9 +1168,9 @@ namespace KFLOP_Test3
                 tbActiveGCodes.Text += str + " ";
             }
 
-            // set the tool in spindle value
-            CurrTool.SetTool(ToolChangerPanel.ToolInSpindle);
-            CurrTool.SetLen(0); // put the proper length value here!
+            // set the tool in spindle number and length
+            CurrTool.SetTool(ToolChanger.ToolInSpindle);
+            CurrTool.SetLen(ToolChanger.ToolInSpinLen); // put the proper length value here!
         }
         #endregion
 
