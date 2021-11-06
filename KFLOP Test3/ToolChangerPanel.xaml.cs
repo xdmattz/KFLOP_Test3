@@ -470,7 +470,7 @@ namespace KFLOP_Test3
             if (SpindleEnabled && SpindlePID)
             {
                 MessageBox.Show("StartSpindle");
-                Start_Spindle_Process(SX);
+                xToolChanger.Start_Spindle_Process(SX);
             }
             else
             {
