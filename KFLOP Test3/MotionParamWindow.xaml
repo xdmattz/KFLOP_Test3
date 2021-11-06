@@ -7,7 +7,7 @@
         mc:Ignorable="d"
         Title="Motion Parameters Setup" Height="600" Width="450">
 
-    <!-- window for setting up the Trajectory and Motion parameters for the KMotion KM_Controller class  -->
+    <!--  window for setting up the Trajectory and Motion parameters for the KMotion KM_Controller class  -->
     <Grid x:Name="MainGrid" Margin="20,10">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />

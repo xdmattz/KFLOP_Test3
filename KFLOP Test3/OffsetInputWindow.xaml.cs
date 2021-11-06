@@ -16,6 +16,7 @@ namespace KFLOP_Test3
 {
     /// <summary>
     /// Interaction logic for OffsetInputWindow.xaml
+    /// 
     /// </summary>
     public partial class OffsetInputWindow : Window
     {

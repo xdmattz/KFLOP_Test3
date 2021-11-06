@@ -83,6 +83,5 @@ namespace KFLOP_Test3
             X.DegreesB = DegreesB;
             X.DegreesC = DegreesC;
         }
-
     }
 }

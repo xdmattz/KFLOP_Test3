@@ -31,8 +31,6 @@ using KMotion_dotNet;
 
 namespace KFLOP_Test3
 {
-
-
     /// <summary>
     /// Interaction logic for ToolChangerPanel.xaml
     /// </summary>

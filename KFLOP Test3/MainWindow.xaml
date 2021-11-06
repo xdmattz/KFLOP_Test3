@@ -8,7 +8,7 @@
         mc:Ignorable="d"
         Title="MainWindow" Height="950" Width="1600" Closed="Window_Closed" >
 
-    <!--  this is a comment -->
+    <!--  this is a comment  -->
     <Grid Height="930" VerticalAlignment="Top" Margin="0,0,-8,0">
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="597*"/>

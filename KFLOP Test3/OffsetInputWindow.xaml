@@ -6,6 +6,7 @@
         xmlns:local="clr-namespace:KFLOP_Test3"
         mc:Ignorable="d"
         Title="Axis Offset Input" Height="180" Width="270" ContentRendered="Window_ContentRendered">
+    
     <Grid>
 
         <Label Content="Enter the current value for the selected axis" HorizontalAlignment="Left" Margin="10,21,0,0" VerticalAlignment="Top" Grid.ColumnSpan="2"/>

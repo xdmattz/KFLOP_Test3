@@ -19,6 +19,7 @@ namespace KFLOP_Test3
 {
     /// <summary>
     /// Interaction logic for OffsetPanel.xaml
+    /// 
     /// </summary>
     public partial class OffsetPanel : UserControl
     {
