@@ -196,7 +196,7 @@ namespace KFLOP_Test3
             _ZAxis = KM.GetAxis(AXConst.Z_AXIS, "ZAxis");
             // get the axis group
 
-            MM = new MachineMotion(ref KM, ref SpindleAxis);
+ 
 
 
 
@@ -215,6 +215,8 @@ namespace KFLOP_Test3
             // get the configuration file names
             CFiles = new ConfigFiles();
             OpenConfig(ref CFiles);
+
+            MM = new MachineMotion(ref KM, ref SpindleAxis, ref CFiles);
 
             // Initialize the GCode Interpreter
             GetInterpVars();    // load the emcvars and tool files
@@ -296,7 +298,7 @@ namespace KFLOP_Test3
             toolInfo = new ToolInfo();
             toolInfo.toolTable = new KFLOP_Test3.ToolTable();
             toolInfo.toolCarousel = new KFLOP_Test3.ToolCarousel();
-
+ 
             toolChanger = new ToolChanger(ref toolInfo);
 
             ToolChangerPanel1 = new ToolChangerPanel(ref toolChanger, ref CFiles);
@@ -305,20 +307,24 @@ namespace KFLOP_Test3
             Tab4.Header = "Tool Changer";
             Tab4.Content = ToolChangerPanel1;
             tcMainTab.Items.Add(Tab4);
-            ToolChangerPanel1.LoadCarouselCfg();    // load the carousel state
+            // ToolChangerPanel1.LoadCarouselCfg();    // load the carousel state
             
-            toolInfo.toolCarousel = ToolChangerPanel1.GetCarousel();
-            toolChanger.SetCarousel(toolInfo.toolCarousel);
+ //           toolInfo.toolCarousel = ToolChangerPanel1.GetCarousel();
+ //           toolChanger.SetCarousel(toolInfo.toolCarousel);
 
 
             // Tool Table Panel
-            ToolTablePanel1 = new ToolTablePanel(ref KM, ref CFiles, ref toolInfo);
+            ToolTablePanel1 = new ToolTablePanel(ref KM, ref CFiles, ref toolInfo, ref toolChanger);
             var Tab5 = new TabItem();
             Tab5.Name = "tabItemContent5";
             Tab5.Header = "Tool Table";
             Tab5.Content = ToolTablePanel1;
             tcMainTab.Items.Add(Tab5);
             ToolTablePanel1.LoadToolTable();    // load the tool table
+            // update the UI?
+            ToolTablePanel1.ListToolTable();
+            ToolTablePanel1.ListCarousel();
+            
 
 
             // Probing tab panel
@@ -571,14 +577,10 @@ namespace KFLOP_Test3
                 case 6: // M6 Callback - Tool Change
                     m_M6 = true;    // in a tool change
                      // call the tool change method. - found in Tool Change Panel.
-                    ToolChanger.ToolChangerComplete = false;
-                    // Dispatcher.BeginInvoke(new System.Threading.ThreadStart(() => ToolChangerPanel1.ToolChangeM6()));
-                    toolChanger.ToolChangeM6();
-                    do
+                    if(toolChanger.ToolChangeM6() == false)
                     {
-                        // wait for tool change to complete
-                        Thread.Sleep(100);
-                    } while (ToolChanger.ToolChangerComplete != true);
+                        MessageBox.Show("Tool Change Error - now what?");
+                    }
                     m_M6 = false;    // tool change done
                     // if it returns successfully then continue
                     // check ToolChangerPanel.Status

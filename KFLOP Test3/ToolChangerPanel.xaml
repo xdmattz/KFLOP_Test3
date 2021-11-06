@@ -9,11 +9,14 @@
     <!-- allow 30 height for tab-->
     <Grid>
         <Button x:Name="btnGetTool" Content="Get Tool" HorizontalAlignment="Left" Margin="91,42,0,0" VerticalAlignment="Top" Width="90" Click="btnGetTool_Click"/>
-        <Button x:Name="btnPutTool" Content="Put Tool" HorizontalAlignment="Left" Margin="91,69,0,0" VerticalAlignment="Top" Width="90" Click="btnPutTool_Click"/>
+        <Button x:Name="btnPutTool" Content="Put Tool" HorizontalAlignment="Left" Margin="91,66,0,0" VerticalAlignment="Top" Width="90" Click="btnPutTool_Click"/>
+        <Button x:Name="btnLoadTool" Content="Load Tool" HorizontalAlignment="Left" Margin="91,88,0,0" VerticalAlignment="Top" Width="90" Click="btnLoadTool_Click"/>
+        <Button x:Name="btnUnloadTool" Content="Unload Tool" HorizontalAlignment="Left" Margin="91,110,0,0" VerticalAlignment="Top" Width="90" Click="btnUnloadTool_Click"/>
 
-        <TextBox x:Name="tbSlotNumber" HorizontalAlignment="Left" Height="23" Margin="91,14,0,0" TextWrapping="Wrap" Text="TextBox" VerticalAlignment="Top" Width="61"/>
+        <TextBox x:Name="tbPocketNumber" HorizontalAlignment="Left" Height="23" Margin="91,14,0,0" TextWrapping="Wrap" Text="TextBox" VerticalAlignment="Top" Width="61"/>
         <Label Content="Carousel No:" HorizontalAlignment="Left" Margin="13,11,0,0" VerticalAlignment="Top" RenderTransformOrigin="-0.338,0.662" Width="78"/>
-        <Label x:Name="lblCurrentTool" Content="Tool in the Spindle" HorizontalAlignment="Left" Margin="196,10,0,0" VerticalAlignment="Top"/>
+        <Label x:Name="lblCurrentTool" Content="Current Tool:" HorizontalAlignment="Left" Margin="196,10,0,0" VerticalAlignment="Top"/>
+        <TextBox x:Name="tbToolNumber" HorizontalAlignment="Left" Height="23" Margin="313,14,0,0" TextWrapping="Wrap" Text="TextBox" VerticalAlignment="Top" Width="61"/>
         <Button x:Name="btnToolInSpindleUpdate" Content="Update" Height="25"  Margin="215,36,425,329" Click="btnToolInSpindleUpdate_Click"  />
 
         <Grid Margin="25,136,400,113">
@@ -114,8 +117,6 @@
         <TextBox x:Name="tbTLAUXStatus" HorizontalAlignment="Left" Height="23" Margin="290,342,0,0" TextWrapping="Wrap" Text="TextBox" VerticalAlignment="Top" Width="120"/>
         <Label Content="TLAUX Status:" HorizontalAlignment="Left" Margin="180,342,0,0" VerticalAlignment="Top"/>
         <local:LED_Indicator x:Name="ledClamp" Margin="576,166,19,199" />
-        <Button x:Name="btnSave" Content="Save" HorizontalAlignment="Left" Margin="55,317,0,0" VerticalAlignment="Top" Width="75" Click="btnSave_Click" RenderTransformOrigin="0.547,-1.091"/>
-        <Button x:Name="btnReload" Content="Reload" HorizontalAlignment="Left" Margin="55,344,0,0" VerticalAlignment="Top" Width="75" Click="btnReload_Click" RenderTransformOrigin="0.547,-1.091"/>
 
         <Button x:Name="btnAbort" Content="Abort" HorizontalAlignment="Left" Margin="514,169,0,0" VerticalAlignment="Top" Width="46" Click="btnAbort_Click"/>
         <Label x:Name="lblTCProgress" Content="Progress:" HorizontalAlignment="Left" Margin="196,64,0,0" VerticalAlignment="Top" Height="25"/>

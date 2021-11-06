@@ -18,6 +18,14 @@ using System.Windows.Controls.Primitives;
 
 using KMotion_dotNet;
 
+// for the JSON stuff
+using Newtonsoft.Json;
+
+// for file dialog libraries
+using Microsoft.Win32;
+using System.IO;
+//
+
 namespace KFLOP_Test3
 {
     /// <summary>
@@ -33,22 +41,28 @@ namespace KFLOP_Test3
         static ToolCarousel CarouselList;
         // tool table 
         static ToolTable TTable;
+        // tool changer
+        static ToolChanger TCx;
 
         // mouse event elements
         public delegate Point GetPosition(IInputElement element);
         int rowIndex = -1; // the row position when a left mouse button event occurs
         int rowIndexRtBtn = -1; // the row position when a right mouse button event occurs
+        int rowIndexRtBtn_Carousel = -1;
 
         Tool DraggedObject; // maybe think of a different name for this?
 
 
-        public ToolTablePanel(ref KM_Controller X, ref ConfigFiles CfgFiles, ref ToolInfo toolInfo)
+        public ToolTablePanel(ref KM_Controller X, ref ConfigFiles CfgFiles, ref ToolInfo toolInfo, ref ToolChanger toolChanger)
         {
             InitializeComponent();
             KMx = X;    // point to the KM controller - this exposes all the KFLOP .net library functions
             CFx = CfgFiles; // point to the configuration files
-            CarouselList = toolInfo.toolCarousel;   // point to the Tool Carousel 
+            CarouselList = toolChanger.GetCarousel();
+            //CarouselList = ToolChanger.CarouselList1;   // point to the Tool Carousel 
+
             TTable = toolInfo.toolTable;            // point to the Tool Table
+            TCx = toolChanger;  // point to the Tool Changer
 
             // add a handler to the preview left button down event on the tool table datagrid
             dgToolList.PreviewMouseLeftButtonDown += new MouseButtonEventHandler(ToolTable_PreviewMouseLeftButtonDown);
@@ -59,12 +73,14 @@ namespace KFLOP_Test3
             // add a handler to get the tool row in for the Context Menu
             dgToolList.PreviewMouseRightButtonDown += new MouseButtonEventHandler(ToolTable_PreviewRightMouseButtonDown);
 
+            dgCarousel.PreviewMouseRightButtonDown += new MouseButtonEventHandler(Carousel_PreviewRightMouseButtonDown);
         }
         
 
         private void btnToolList_Click(object sender, RoutedEventArgs e)
         {
             ListToolTable();
+            ListCarousel();
         }
 
         #region Mouse Event Handlers
@@ -125,10 +141,33 @@ namespace KFLOP_Test3
             if(SelectedItem == null)    // make sure the selected carousel item is not empty
             { return; }
 
-            MessageBox.Show($"putting tool {DraggedObject.ID} into pocket {SelectedItem.Pocket}");
-            // look at the 
 
+            // TCx.CarouselAddTool()
+            int newToolNumber;
+            if(DraggedObject.slot < 100)
+            {
+                newToolNumber = DraggedObject.slot;
+            } else
+            {
+                newToolNumber = DraggedObject.ID;
+            }
+            // Check if the tool is already in the carousel
+            if (TCx.ToolInCarousel(newToolNumber))
+            {
+                return; // tool is already in the carousel don't put it in again
+            }
+            MessageBox.Show($"putting tool {newToolNumber} into pocket {SelectedItem.Pocket}");
+            TCx.LoadTool(newToolNumber, SelectedItem.Pocket);
 
+            dgCarousel.Items.Refresh(); // refresh the data grid.
+
+        }
+
+        void Carousel_PreviewRightMouseButtonDown(object sender, MouseButtonEventArgs e)
+        {
+            rowIndexRtBtn_Carousel = GetCurrentRowIndex(e.GetPosition, dgCarousel);
+            if (rowIndexRtBtn_Carousel < 0)
+            { return; }
         }
 
 
@@ -272,6 +311,35 @@ namespace KFLOP_Test3
         }
         #endregion
 
+        #region Carousel Menu Drop Down Menu Actions
+        private void CarouselMenu_Unload(object sender, RoutedEventArgs e)
+        {
+            CarouselItem ItemToUnload = dgCarousel.Items[rowIndexRtBtn_Carousel] as CarouselItem;
+            TCx.UnloadTool(ItemToUnload.Pocket);
+            dgCarousel.Items.Refresh();
+        }
+
+        private void CarouselMenu_Save(object sender, RoutedEventArgs e)
+        {
+            TCx.SaveCarouselCfg();  // save under the standard file name.
+            // save the Carousel config
+        }
+
+        private void CarouselMenu_SaveAs(object sender, RoutedEventArgs e)
+        {
+            TCx.SaveCarouselCfg("");
+        }
+
+        private void CarouselMenu_Cancel(object sender, RoutedEventArgs e)
+        {
+
+        }
+
+        private void CarouselMenu_Update(object sender, RoutedEventArgs e)
+        {
+            dgCarousel.Items.Refresh();
+        }
+
         private bool CheckForDuplicateSlot(int Slot)
         {
             foreach (Tool tTool in TTable.Tools)
@@ -281,6 +349,7 @@ namespace KFLOP_Test3
             }
             return false;
         }
+        #endregion
 
         #endregion
 
@@ -385,7 +454,7 @@ namespace KFLOP_Test3
                     }
                     // close the file
                     infile.Close();
-                    MessageBox.Show("tool file read!");
+                //    MessageBox.Show("tool file read!");
                 }
                 catch (Exception e)
                 {
@@ -468,6 +537,10 @@ namespace KFLOP_Test3
             {
                 dgToolList.Items.Add(xTool);
             }
+        }
+
+        public void ListCarousel()
+        {
             dgCarousel.Items.Clear();
 
             foreach (CarouselItem xItem in CarouselList.Items)
@@ -480,24 +553,108 @@ namespace KFLOP_Test3
         #region Carousel Actions
         private void UnloadCarousel_Click(object sender, RoutedEventArgs e)
         {
-            // unload the carousel
-            foreach(CarouselItem cItem in CarouselList.Items)
+            if (MessageBox.Show("Make Sure the Spindle is empty! Remove any tool NOW!", "URGENT", MessageBoxButton.OKCancel) == MessageBoxResult.OK)
             {
-                // is the spindle empty?
-                if (MessageBox.Show("Make Sure the Spindle is empty! Remove any tool NOW!", "URGENT", MessageBoxButton.OKCancel) == MessageBoxResult.OK)
-                {
-                    int PocketNumber = cItem.Pocket; // get pocket
-                    // get tool
-                    // prompt for manual tool removal from the spindle
-                    // ToolChangerPanel1.Start_GetTool(PocketNumber);
-                }
-                if (cItem.ToolIndex != 0) //  
-                {
 
+                // unload the carousel
+                foreach (CarouselItem cItem in CarouselList.Items)
+                {
+                    // is the spindle empty?
+
+                    if (cItem.ToolIndex != 0) //  
+                    {
+                        TCx.UnloadTool(cItem.Pocket);
+                        dgCarousel.Items.Refresh();
+                    }
                 }
             }
         }
+
+
+        // load the carousel file
+        public void LoadCarouselCfg()
+        {
+            string CFileName = System.IO.Path.Combine(CFx.ConfigPath, CFx.ToolCarouselCfg);
+            // load the tool changer files
+            // xToolChanger.LoadCarCfg(CFileName);
+            if (System.IO.File.Exists(CFileName) == true)
+            {
+                try
+                {
+                    JsonSerializer Jser = new JsonSerializer();
+                    StreamReader sr = new StreamReader(CFileName);
+                    JsonReader Jreader = new JsonTextReader(sr);
+                    CarouselList = Jser.Deserialize<ToolCarousel>(Jreader);
+                    sr.Close();
+                }
+                catch (JsonSerializationException ex)
+                {
+                    MessageBox.Show(String.Format("{0} Exception! Carousel Not Loaded!", ex.Message));
+                    return;
+                }
+            }
+            else
+            {
+                MessageBox.Show("File not found - Reinialize the Carousel");
+                // ResetCarousel();
+                // saveCarouselCfg(FileName);
+                return;
+            }
+        }
+
+        // save the carousel file
+        public void saveCarouselCfg(string CFileName)
+        {
+
+            var SaveFile = new SaveFileDialog();
+            SaveFile.FileName = CFileName;
+            if (SaveFile.ShowDialog() == true)
+            {
+                try
+                {
+                    JsonSerializer Jser = new JsonSerializer();
+                    StreamWriter sw = new StreamWriter(SaveFile.FileName);
+                    JsonTextWriter Jwrite = new JsonTextWriter(sw);
+                    Jser.NullValueHandling = NullValueHandling.Ignore;
+                    Jser.Formatting = Newtonsoft.Json.Formatting.Indented;
+                    Jser.Serialize(Jwrite, CarouselList);
+                    sw.Close();
+                }
+                catch (JsonSerializationException ex)
+                {
+                    MessageBox.Show(String.Format("{0} Exception", ex.Message));
+                }
+            }
+
+        }
+        // clear the carousel list and reset every thing
+        private void ResetCarousel()
+        {
+            // check for null carousel list
+            if (CarouselList.Items == null) { CarouselList.Items = new List<CarouselItem>(); }
+
+            CarouselList.Items.Clear(); // clear the list
+
+            // fill the list with nothing
+            for (int i = 0; i < ToolChanger.xTCP.CarouselSize; i++)
+            {
+                CarouselItem CI = new CarouselItem();
+                CI.Pocket = i + 1;
+                CI.ToolIndex = 0;
+                CI.ToolInUse = false;
+                CI.Description = "Empty";
+                CarouselList.Items.Add(CI);
+                // CarouselList.Count = i + 1;
+            }
+        }
+
         #endregion
+
+        private void bntCUpdate_Click(object sender, RoutedEventArgs e)
+        {
+            dgCarousel.Items.Refresh();
+        }
+
 
     }
 }

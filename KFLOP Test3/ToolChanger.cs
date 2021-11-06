@@ -14,6 +14,13 @@ using System.ComponentModel;
 // for KMotion
 using KMotion_dotNet;
 
+// for the JSON stuff
+using Newtonsoft.Json;
+
+// for file dialog libraries
+using Microsoft.Win32;
+using System.IO;
+
 namespace KFLOP_Test3
 {
 
@@ -36,10 +43,10 @@ namespace KFLOP_Test3
     public class ToolChanger : MachineMotion
     {
         // Tool Carousel configuration
-        static ToolInfo xToolInfo;
-        static ToolCarousel CarouselList1;
+        static public ToolInfo xToolInfo;
+        static public ToolCarousel CarouselList1;
         // tool table 
-        static ToolTable TTable;
+        static public ToolTable TTable;
 
         // The back ground workers 
         static BackgroundWorker _bw2;   // process background worker.
@@ -47,8 +54,6 @@ namespace KFLOP_Test3
 
         // these static variable flags indicate tool change progress
         static bool TCActionProgress; // true indicates a process action (group of steps) is in progress, false indicates the action has finished 
-
-        public static bool ToolChangerComplete; // true indicates that a series of steps is complete - like get a tool... false means it is still running
 
         // some constants used in the tool changer
 
@@ -76,6 +81,8 @@ namespace KFLOP_Test3
 
             _bw2 = new BackgroundWorker();
             BW2Res = new BWResults();
+
+            LoadCarouselCfg();
         }
 
         public ToolCarousel GetCarousel()
@@ -101,6 +108,118 @@ namespace KFLOP_Test3
             return (TTable);
         }
 
+        // load carousel from the standard file
+        public bool LoadCarouselCfg()
+        {
+            string CFileName = System.IO.Path.Combine(CFx.ConfigPath, CFx.ToolCarouselCfg);
+            // load the tool changer files
+            // xToolChanger.LoadCarCfg(CFileName);
+            if (System.IO.File.Exists(CFileName) == true)
+            {
+                try
+                {
+                    JsonSerializer Jser = new JsonSerializer();
+                    StreamReader sr = new StreamReader(CFileName);
+                    JsonReader Jreader = new JsonTextReader(sr);
+                    CarouselList1 = Jser.Deserialize<ToolCarousel>(Jreader);
+                    sr.Close();
+                }
+                catch (JsonSerializationException ex)
+                {
+                    MessageBox.Show(String.Format("{0} Exception! Carousel Not Loaded!", ex.Message));
+                    return false;
+                }
+            }
+            else
+            {
+                MessageBox.Show("File not found - Reinialize the Carousel");
+                // ResetCarousel();
+                // saveCarouselCfg(FileName);
+                return false;
+            }
+
+            return true;
+        }
+
+        // load carousel from another filename;
+        public bool LoadCarouselCfg(string CFileName)
+        {
+            var OpenFile = new OpenFileDialog();
+            OpenFile.FileName = CFileName;
+            if(OpenFile.ShowDialog() == true)
+            {
+                if (System.IO.File.Exists(OpenFile.FileName) == true)
+                {
+                    try
+                    {
+                        JsonSerializer Jser = new JsonSerializer();
+                        StreamReader sr = new StreamReader(OpenFile.FileName);
+                        JsonReader Jreader = new JsonTextReader(sr);
+                        CarouselList1 = Jser.Deserialize<ToolCarousel>(Jreader);
+                        sr.Close();
+                        return true;
+                    }
+                    catch (JsonSerializationException ex)
+                    {
+                        MessageBox.Show(String.Format("{0} Exception! Carousel Not Loaded!", ex.Message));
+                        return false;
+                    }
+                }
+                else
+                {
+                    MessageBox.Show("File not found - Reinialize the Carousel");
+                    // ResetCarousel();
+                    // saveCarouselCfg(FileName);
+                    return false;
+                }
+            }
+            return true;
+        }
+
+        // save the carousel file
+
+        // save the carousel under another filename
+        public void SaveCarouselCfg(string CFileName)
+        {
+            var SaveFile = new SaveFileDialog();
+            SaveFile.FileName = CFileName;
+            if (SaveFile.ShowDialog() == true)
+            {
+                saveCarouselCfg1(SaveFile.FileName);
+            }
+        }
+
+        // save the carousel in the standard file
+        public void SaveCarouselCfg()
+        {
+            string CFileName = System.IO.Path.Combine(CFx.ConfigPath, CFx.ToolCarouselCfg);
+            var SaveFile = new SaveFileDialog();
+
+            SaveFile.FileName = CFileName;
+            if (SaveFile.ShowDialog() == true)
+            {
+                saveCarouselCfg1(SaveFile.FileName);
+            }
+        }
+
+        void saveCarouselCfg1(string FileName)
+        {
+            try
+            {
+                JsonSerializer Jser = new JsonSerializer();
+                StreamWriter sw = new StreamWriter(FileName);
+                JsonTextWriter Jwrite = new JsonTextWriter(sw);
+                Jser.NullValueHandling = NullValueHandling.Ignore;
+                Jser.Formatting = Newtonsoft.Json.Formatting.Indented;
+                Jser.Serialize(Jwrite, CarouselList1);
+                sw.Close();
+            }
+            catch (JsonSerializationException ex)
+            {
+                MessageBox.Show(String.Format("{0} Exception", ex.Message));
+            }
+        }
+
         public void TCMessage(string str)
         {
             MessageBox.Show(str);
@@ -109,7 +228,6 @@ namespace KFLOP_Test3
         public void SetCurrentTool(int ToolSlot)
         {
             KMx.CoordMotion.Interpreter.SetupParams.CurrentToolSlot = ToolSlot; // update the interpreter slot position
-
         }
 
         public bool bwBusy()
@@ -158,38 +276,92 @@ namespace KFLOP_Test3
         // other than than it is pretty "simple"
         // 
 
-        // In all of this who or what is managing what is currently in the carousel!!! have to figure this out soon!
-        public void ToolChangeM6()
+       // this function is called when loading a new tool into from the spindle into the carousel
+       // 
+       public void LoadTool(int ToolNumber, int PocketNumber)
         {
-            ToolChangerComplete = false;
+            // Assuming that the calling function already checked that the ToolNumber and Pocket are valid
+            MessageBoxResult MRB = MessageBox.Show($"Put Tool Number {ToolNumber} int the spindle", "Load Carousel", MessageBoxButton.OKCancel);
+            if(MRB == MessageBoxResult.OK)
+            {
+                if (CheckPocketEmpty(PocketNumber) == false) // check for empty pocket number
+                {
+                    MRB = MessageBox.Show($"Is Carousel Pocket {PocketNumber} Empty?", "*WARNING* Pocket Not Empty", MessageBoxButton.YesNoCancel);
+                    if((MRB == MessageBoxResult.Cancel) || (MRB == MessageBoxResult.No))
+                    {
+                        MessageBox.Show("You Must Remove the tool from Carousel Pocket {PocketNumber} before loading", "*WARNING* Pocket Not Empty");
+                        return;
+                    }
+                }
+                ToolChangerSimple(PocketNumber, 0); // put the tool into the pocket
+                CarouselAddTool(ToolNumber, PocketNumber);
+            }
+        }
+
+        // this function is called when unloading a tool from the carousel.
+        public void UnloadTool(int PocketNumber)
+        {
+            ToolChangerSimple(0, PocketNumber); // get the tool from the carousel into the spindle
+            CarouselDeleteTool(PocketNumber);  // remove the tool from the carousel list
+            MessageBox.Show("Remove the Tool from the Spindle!", "ATTENTION!"); // prompt the user to manually remove the tool from the spindle
+            ToolInSpindle = 0;  // clear the tool in spindle
+
+
+        }
+
+        // In all of this who or what is managing what is currently in the carousel!!! have to figure this out soon!
+        public bool ToolChangeM6()
+        {
             int current_tool = KMx.CoordMotion.Interpreter.SetupParams.CurrentToolSlot;
             int selected_tool = KMx.CoordMotion.Interpreter.SetupParams.SelectedToolSlot;
             //      MessageBox.Show($"Current Tool: {current_tool} Selected tool {selected_tool}");
 
             // need to decide which tool action to take - see comments on tool change actions
             // see the flow chart for details! 
-
             ToolChangerDeluxe(current_tool, selected_tool);
-            do { Thread.Sleep(100); } while (TCActionProgress);
+            int TimeoutCount = 0;   // this may be unnessary
+            do {
+                Thread.Sleep(100);
+                if (TimeoutCount++ > 1200)  // two minutes
+                {
+                    MessageBoxResult MSR = MessageBox.Show("Tool Changer Timeout\rContinue?", "Tool Change Error", MessageBoxButton.YesNo);
+                    if (MSR == MessageBoxResult.No)
+                    {
+                        BW2Res.Result = false;
+                        break;  // break out of the do loop
+                    }
+                    else
+                    {
+                        BW2Res.Result = true;
+                        break;
+                    }
+                }
+            } while (TCActionProgress); // wait for the tool change operation to finish
             //            MessageBox.Show($"Tool {current_tool} changed to {selected_tool}");
-            ToolChangerComplete = true;
 
+            if(BW2Res.Result == false)  // something went wrong with the tool change
+            {
+                // take care of anything that needs to be cleaned up.
+                return false;
+            }
+            else
+            {
+                // update the tool in spindle and tool in use?
+            }
             // Tool changer is done.
+            // Check for an error.
+            return true;
             // if not an error then update the tool carousel
             // since this is in another thread what to do here?
-
-            return;
         }
 
         public void ToolChangerDeluxe(int CurrentTool, int SelectedTool)
         {
             // changing to reflect the Tool Carousel Management
             // Note: Tool Slot 0 always means empty spindle - this is always the first row in the tool table and has zero length
-
-
             // need to have some kind of tool change complete callback - to handle things when the thread is done.
-
             // should only have to do this once...
+
             int sPocket = getPocket(SelectedTool);  // selected pocket
             int cPocket = getPocket(CurrentTool);   // current pocket
 
@@ -270,12 +442,15 @@ namespace KFLOP_Test3
                 else
                 {
                     Start_GetTool(SelectedSlot);
+                    // wait for the process to finish
                 }
             }
             else
             {
                 // put current spindle into carousel slot
                 Start_PutTool(CurrentSlot);
+                // wait for the process to finish
+
                 // get Selected Slot
                 if ((SelectedSlot < 1) || (SelectedSlot > xTCP.CarouselSize))
                 {
@@ -285,6 +460,8 @@ namespace KFLOP_Test3
                 else
                 {
                     Start_GetTool(SelectedSlot);
+                    // wait for the process to finish
+
                 }
             }
         }
@@ -475,6 +652,8 @@ namespace KFLOP_Test3
             if (e.ProgressPercentage > cMsgOffset)
             {
                 int Pocket = e.ProgressPercentage - cMsgOffset;
+                // just grabbed the tool from pocket number "Pocket"
+                SetToolInUse(Pocket);   // update the ToolInSpindle number and the tool in use flag.
                 OnUpdateCarousel(Pocket, (int)CarouselUpdateStates.Get );
             }
             else
@@ -497,12 +676,14 @@ namespace KFLOP_Test3
         // this looks kind of redundant... have to see how this works out.
         public void Manual_GetTool(int ToolNumber)
         {
+            TCActionProgress = true;
             int ToolSlot;
             ToolSlot = getSlot(ToolNumber);
             string toolmsg = string.Format("Insert Tool Number {0} into the spindle", ToolSlot);
             MessageBox.Show(toolmsg, "WARNING - DO NOT IGNORE!");
             // can I somehow make a red blinking warning on this? maybe a custom message box?
             ToolInSpindle = ToolSlot;
+            TCActionProgress = false;
         }
         #endregion
 
@@ -518,7 +699,6 @@ namespace KFLOP_Test3
             _bw2.ProgressChanged += PutToolProgressedChanged;
             _bw2.RunWorkerCompleted += PutToolCompleted;
             _bw2.RunWorkerAsync(xPocketNumber);
-
         }
 
         private void PutToolWorker(object sender, DoWorkEventArgs e)
@@ -583,16 +763,17 @@ namespace KFLOP_Test3
             BW2Res.Comment = $"Carousel Indexing to {tSAx.ToolPocket}";
             _bw2.ReportProgress(progress_cnt++);
 
-            if(CheckPocketEmpty(tSAx.ToolPocket) == false)
-//            if (GetToolInUse(tSAx.ToolPocket) == false)
-            {
-                // this check to see if the pocket is assigned and the tool is in use ie the pocket is empty 
-                // waiting for the tool to be returned
-                BW2Res.Comment = $"Carousel {tSAx.ToolPocket} Not Empty Error";
-                BW2Res.Result = false;
-                e.Result = BW2Res;
-                return;
-            }
+            // Check to see if the Carousel pocket is available.
+//            if(CheckPocketEmpty(tSAx.ToolPocket) == false)
+////            if (GetToolInUse(tSAx.ToolPocket) == false)
+//            {
+//                // this check to see if the pocket is assigned and the tool is in use ie the pocket is empty 
+//                // waiting for the tool to be returned
+//                BW2Res.Comment = $"Carousel {tSAx.ToolPocket} Not Empty Error";
+//                BW2Res.Result = false;
+//                e.Result = BW2Res;
+//                return;
+//            }
 
             Start_Carousel_Process(tSAx);
             if (WaitForProgress() == false)
@@ -733,11 +914,13 @@ namespace KFLOP_Test3
         #region Manual Tool Removal
         public void Manual_PutTool(int ToolNumber)
         {
+            TCActionProgress = true;
             int ToolSlot;
             ToolSlot = getSlot(ToolNumber);
             string toolmsg = string.Format("Remove Tool number {0} from the spindle", ToolSlot);
             MessageBox.Show(toolmsg, "WARNING - DO NOT IGNORE!");
             ToolInSpindle = 0;
+            TCActionProgress = false;
         }
         #endregion
 
@@ -820,16 +1003,17 @@ namespace KFLOP_Test3
                 return;
             }
 
-            if(CheckPocketEmpty(PutPocket) == false)
-//            if (GetToolInUse(PutPocket) == false)
-            {
-            // this check is to see if the pocket is assigned and the tool is in use ie the pocket is empty 
-            // waiting for the tool to be returned
-                     BW2Res.Comment = $"Carousel {PutPocket} Not Empty Error";
-                     BW2Res.Result = false;
-                     e.Result = BW2Res;
-                     return;
-            }
+            // Check to see if the Carousel pocket is available.
+//            if(CheckPocketEmpty(PutPocket) == false)
+////            if (GetToolInUse(PutPocket) == false)
+//            {
+//            // this check is to see if the pocket is assigned and the tool is in use ie the pocket is empty 
+//            // waiting for the tool to be returned
+//                     BW2Res.Comment = $"Carousel {PutPocket} Not Empty Error";
+//                     BW2Res.Result = false;
+//                     e.Result = BW2Res;
+//                     return;
+//            }
 
             // rotate carousel to put tool number
             BW2Res.Comment = $"Carousel index to {PutPocket}";
@@ -1093,20 +1277,53 @@ namespace KFLOP_Test3
             return s;
         }
 
-        // set get and clear the tool in use flag
-        private void SetToolInUse(int Pocket)
+        public bool CarouselAddTool(int toolNumber, int Pocket)
         {
-            foreach (CarouselItem CI in CarouselList1.Items)
+           foreach(CarouselItem CI in CarouselList1.Items)
             {
                 if (CI.Pocket == Pocket)
                 {
-                    CI.ToolInUse = true;
-                    
+                    CI.ToolIndex = toolNumber;
+                    CI.ToolInUse = false;
+                    return true;    // success!
                 }
-                else
+            }
+            return false;   // Problem
+        }
+        public bool CarouselDeleteTool(int Pocket)
+        {
+            foreach(CarouselItem CI in CarouselList1.Items)
+            {
+                if(CI.Pocket == Pocket)
+                {
+                    CI.ToolIndex = 0;   // clear the tool
+                    CI.ToolInUse = false;
+                    return true;    // success!
+                }
+            }
+            return false;   // Problem
+        }
+
+        // set the tool in use flag for the current pocket, clear all others
+        private void SetToolInUse(int Pocket)
+        {
+            bool toolExists = false;
+            foreach (CarouselItem CI in CarouselList1.Items)
+            {
+                if (CI.Pocket == Pocket)    
+                {
+                    CI.ToolInUse = true;
+                    ToolInSpindle = CI.ToolIndex;   // update the tool in spindle
+                    toolExists = true;
+                }
+                else  // can only have one tool in use at a time... so make everything else false.
                 {
                     CI.ToolInUse = false;
                 }
+            }
+            if(!toolExists) // if toolExists
+            {
+                MessageBox.Show("unknown tool int the spindle!");
             }
         }
 
@@ -1156,6 +1373,17 @@ namespace KFLOP_Test3
             return false;
         }
 
+        // check for a tool already in the carousel
+        public bool ToolInCarousel(int ToolNumber)
+        {
+            foreach(CarouselItem CI in CarouselList1.Items)
+            {
+                if (CI.ToolIndex == ToolNumber)
+                    return true;
+            }
+            return false;
+        }
+
         public bool ToolInTable(int ToolNumber)
         {
             foreach (Tool tl in TTable.Tools)
@@ -1165,6 +1393,7 @@ namespace KFLOP_Test3
             }
             return false;
         }
+
 
         #endregion
 
@@ -1525,6 +1754,11 @@ namespace KFLOP_Test3
         // used to point to the instance of KM_Axis that is the spindle axis
         static public KM_Axis SPx { get; set; }
 
+        // used to point to the configuration file list. 
+        static public ConfigFiles CFx { get; set; }
+
+        static public ToolChangeParams xTCP;    // this will be initialized from teh configuration files
+
         // background workers
         static BackgroundWorker _bw;    // motion background worker
         static BWResults BWRes;
@@ -1539,9 +1773,6 @@ namespace KFLOP_Test3
         // because they are for more than just the tool changer
         static public bool ToolChangeStatus; // true indicates everything OK false indcates an fault occured
         static public bool TCProgress; // true indicates a process step is in progress, false indicates the process has finished. 
-
-
-        static public ToolChangeParams xTCP;
 
         // global variables for the user control
         // since there is only one Machine and tool changer these are all static.
@@ -1569,20 +1800,70 @@ namespace KFLOP_Test3
             }
         }
 
-        public MachineMotion(ref KM_Controller X, ref KM_Axis SP)
+        public MachineMotion(ref KM_Controller X, ref KM_Axis SP, ref ConfigFiles CFiles)
         {
             KMx = X;
             SPx = SP;
+            CFx = CFiles;
 
             _bw = new BackgroundWorker();
             BWRes = new BWResults();
 
+            LoadTCCfg();
+
         }
 
-        public void SetParams(ref ToolChangeParams tcp)
+        #region Configuration File methods
+        // Configuration file - get the tool changer variables saved in the JSON file
+        // these are all the tool change coordinates and speeds.
+        public void LoadTCCfg()   // load the tool changer configuration
         {
-            xTCP = tcp; // this sets the static item in the base class!
+            string LFileName = System.IO.Path.Combine(CFx.ConfigPath, CFx.ToolChangeParams);
+            // load the tool changer files
+            try
+            {
+                if (System.IO.File.Exists(LFileName) == true)
+                {
+                    JsonSerializer Jser = new JsonSerializer();
+                    StreamReader sr = new StreamReader(LFileName);
+                    JsonReader Jreader = new JsonTextReader(sr);
+                    xTCP = Jser.Deserialize<ToolChangeParams>(Jreader);
+                    sr.Close();
+                }
+            }
+            catch
+            {
+                MessageBox.Show(LFileName, "TLAUX Parameters Load Error!");
+            }
         }
+
+        private void SaveTCCfg() // Save tool changer config
+        {
+            string FName = System.IO.Path.Combine(CFx.ConfigPath, CFx.ToolChangeParams);
+            try
+            {
+                var SaveFile = new SaveFileDialog();
+                SaveFile.FileName = FName;
+                if (SaveFile.ShowDialog() == true)
+                {
+                    JsonSerializer Jser = new JsonSerializer();
+                    StreamWriter sw = new StreamWriter(SaveFile.FileName);
+                    JsonTextWriter Jwrite = new JsonTextWriter(sw);
+                    Jser.NullValueHandling = NullValueHandling.Ignore;
+                    Jser.Formatting = Newtonsoft.Json.Formatting.Indented;
+                    Jser.Serialize(Jwrite, xTCP);
+                    sw.Close();
+                }
+            }
+            catch
+            {
+                MessageBox.Show(FName, "TLAUX Parameters Save Error!");
+            }
+        }
+
+        #endregion
+        // load and save the parameters
+
         public bool MotionBusy()
         {
             return _bw.IsBusy;
@@ -1590,6 +1871,7 @@ namespace KFLOP_Test3
 
         #region Individual tool changer motions
 
+        #region Spindle Control
         // enable and align the spindle to the tool change position. 
         public bool AlignSpindle(double pos, double rate)
         {
@@ -1655,20 +1937,8 @@ namespace KFLOP_Test3
             }
         }
 
-        public void CompleteStatus(BWResults res)
-        {
-            if (res.Result == true)  // process ended successfully - 
-            {
-                OnStepUpdate(BWRes.Comment);
-                ToolChangeStatus = true; // everything is OK
-            }
-            else
-            {
-                OnStepError(BWRes.Comment);
-                ToolChangeStatus = false; // there was some kind of fault or error.
-            }
-            TCProgress = false; // the phase is done
-        }
+        #endregion
+
 
         #region MoveZ background process
         // the move Z background process
@@ -2104,7 +2374,7 @@ namespace KFLOP_Test3
 
 #endregion
 
-#region Tool Changer Arm process
+        #region Tool Changer Arm process
         // TC Arm In/Out background process
         public void Start_ARM_Process(SingleAxis SA)
         {
@@ -2199,7 +2469,7 @@ namespace KFLOP_Test3
         }
 #endregion
 
-#region Tool Clamp Process
+        #region Tool Clamp Process
         // Tool Clamp background process
         public void Start_TClamp_Process(SingleAxis SA)
         {
@@ -2283,9 +2553,26 @@ namespace KFLOP_Test3
             _bw.RunWorkerCompleted -= TClamp_Completed;
             CompleteStatus((BWResults)e.Result);
         }
-#endregion
+        #endregion
 
-#region Abort button
+        public void CompleteStatus(BWResults res)
+        {
+            if (res.Result == true)  // process ended successfully - 
+            {
+                OnStepUpdate(BWRes.Comment);
+                ToolChangeStatus = true; // everything is OK
+            }
+            else
+            {
+                OnStepError(BWRes.Comment);
+                ToolChangeStatus = false; // there was some kind of fault or error.
+            }
+            TCProgress = false; // the phase is done
+        }
+        #endregion
+
+
+        #region Abort button
         // the abort button.
         private void Abort()
         {
@@ -2311,7 +2598,7 @@ namespace KFLOP_Test3
 
 #endregion
 
-#region Status methods 
+        #region Status methods 
         // get the status Tool Carousel and of the Spindle position
         private void getTLAUX_Status()
         {
@@ -2343,10 +2630,7 @@ namespace KFLOP_Test3
             }
         }
 
-#endregion
-
-
-#endregion
+    #endregion
 
         // delegates - 
         public delegate void dStatusMsg(string s);
@@ -2367,7 +2651,7 @@ namespace KFLOP_Test3
             StepError?.Invoke(x); // if the ProcessError delegate has been defined then call that delegate
         }
 
-#region Machine Coordinates
+    #region Machine Coordinates
         public MachineCoordinates GetCoordinates()
         {
             MachineCoordinates MC = new MachineCoordinates();

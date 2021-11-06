@@ -1,5 +1,4 @@
 {
-  "Count": 8,
   "Items": [
     {
       "Pocket": 1,
@@ -27,7 +26,7 @@
     },
     {
       "Pocket": 5,
-      "ToolIndex": 0,
+      "ToolIndex": 2000,
       "ToolInUse": false,
       "Description": "Empty"
     },

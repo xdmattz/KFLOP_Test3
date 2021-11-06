@@ -68,8 +68,6 @@ namespace KFLOP_Test3
         // tool table 
         static ToolTable TTable;
 
-        static private ToolChangeParams TCP;
-
         static ToolChanger xToolChanger;
         
 
@@ -87,16 +85,20 @@ namespace KFLOP_Test3
 
             xToolChanger = X;    // point to the KM controller - this exposes all the KFLOP .net library functions
 
-            TCP = new ToolChangeParams();   // get the tool changer parameters
-            LoadCfg();
-            xToolChanger.SetParams(ref TCP);
+//            TCP = new ToolChangeParams();   // get the tool changer parameters
+            xToolChanger.LoadTCCfg();
+//            LoadCfg();
+//            xToolChanger.SetParams(ref TCP);
 
+            // Events 
             xToolChanger.ProcessUpdate += TC_ProcessChanged;
             xToolChanger.ProcessError += TC_ProcessError;
             xToolChanger.StepUpdate += TC_StepChanged;
             xToolChanger.StepError += TC_StepError;
 
             xToolChanger.UpdateCarousel += TC_CarouselUpdate;
+
+            //
 
             ledClamp.Set_State(LED_State.Off);
             ledClamp.Set_Label("Tool Clamp");
@@ -173,10 +175,10 @@ namespace KFLOP_Test3
 
             // get the tool number
             int ToolNumber;
-            if (int.TryParse(tbSlotNumber.Text, out ToolNumber) == false)
+            if (int.TryParse(tbPocketNumber.Text, out ToolNumber) == false)
             {
-                tbSlotNumber.Text = "0";
-                MessageBox.Show("Invalid tool number - Reset");
+                tbPocketNumber.Text = "0";
+                MessageBox.Show("Invalid Tool Number - Reset");
                 xToolChanger.SetCurrentTool(0);
                 return;
             }
@@ -204,7 +206,7 @@ namespace KFLOP_Test3
                 MessageBox.Show("Spindle is empty!");
                 return;
             }
-            else if (ToolNumber > TCP.CarouselSize)
+            else if (ToolNumber > MachineMotion.xTCP.CarouselSize)
             {
                 string toolmsg = string.Format("Manualy insert Tool number {0} now", ToolNumber);
                 MessageBox.Show(toolmsg);
@@ -232,9 +234,9 @@ namespace KFLOP_Test3
             // insure that the ARM is in, the tool is in the spindle and the slot where it goes is empty
             // first get the slot number from the UI
             int ToolNumber;
-            if (int.TryParse(tbSlotNumber.Text, out ToolNumber) == false)
+            if (int.TryParse(tbPocketNumber.Text, out ToolNumber) == false)
             {
-                tbSlotNumber.Text = "0";
+                tbPocketNumber.Text = "0";
                 MessageBox.Show("Invalid tool number - Reset");
                 return;
             }
@@ -254,6 +256,51 @@ namespace KFLOP_Test3
             // UpdateCfg();
             // Start_PutTool(ToolNumber);
         }
+
+        // similar to get tool
+        private void btnUnloadTool_Click(object sender, RoutedEventArgs e)
+        {
+            int PocketNumber;
+            // check for valid carousel number
+            if (int.TryParse(tbPocketNumber.Text, out PocketNumber) == false)
+            {
+                tbPocketNumber.Text = "0";
+                MessageBox.Show("Invalid Carousel Number - Reset");
+                return;
+            }
+            // unload the tool
+            xToolChanger.UnloadTool(PocketNumber);
+
+        }
+        private void btnLoadTool_Click(object sender, RoutedEventArgs e)
+        {
+            int PocketNumber;
+            int ToolNumber;
+            // check for valid carousel and tool numbers
+            if (int.TryParse(tbPocketNumber.Text, out PocketNumber) == false)
+            {
+                tbPocketNumber.Text = "0";
+                MessageBox.Show("Invalid Carousel Number - Reset");
+                return;
+            }
+            if (int.TryParse(tbToolNumber.Text, out ToolNumber) == false)
+            {
+                tbToolNumber.Text = "0";
+                MessageBox.Show("Invalid Tool Number - Reset");
+                xToolChanger.SetCurrentTool(0);
+                return;
+            }
+            // check if tool is in the tool list
+            if(xToolChanger.ToolInTable(ToolNumber))
+            {
+                xToolChanger.LoadTool(ToolNumber, PocketNumber);
+            }
+            else
+            {
+                MessageBox.Show($"Tool {ToolNumber} is not in the Tool Table");
+            }
+        }
+
 
 
         #endregion
@@ -439,14 +486,14 @@ namespace KFLOP_Test3
 
             // get the tool number from the text box
             int ToolNumber;
-            if (int.TryParse(tbSlotNumber.Text, out ToolNumber) == false)
+            if (int.TryParse(tbPocketNumber.Text, out ToolNumber) == false)
             {
-                tbSlotNumber.Text = "1";
+                tbPocketNumber.Text = "1";
                 MessageBox.Show("Invalid tool number - Reset");
                 return;
             }
             // send the command to KFLOP
-            if ((ToolNumber > 0) && (ToolNumber <= TCP.CarouselSize))
+            if ((ToolNumber > 0) && (ToolNumber <= ToolChanger.xTCP.CarouselSize))
             {
                 SingleAxis xSA = new SingleAxis();
                 xSA.ToolNumber = ToolNumber;
@@ -458,51 +505,32 @@ namespace KFLOP_Test3
         #region Configuration File methods
         // Configuration file - get the tool changer variables saved in the JSON file
         // these are all the tool change coordinates and speeds.
-        public void LoadCfg()   // load the tool changer configuration
-        {
-            string LFileName = System.IO.Path.Combine(CFx.ConfigPath, CFx.ToolChangeParams);
-            // load the tool changer files
-            try
-            {
-                if (System.IO.File.Exists(LFileName) == true)
-                {
-                    JsonSerializer Jser = new JsonSerializer();
-                    StreamReader sr = new StreamReader(LFileName);
-                    JsonReader Jreader = new JsonTextReader(sr);
-                    TCP = Jser.Deserialize<ToolChangeParams>(Jreader);
-                    sr.Close();
-                }
-            }
-            catch
-            {
-                MessageBox.Show(LFileName, "TLAUX Parameters Load Error!");
-            }
-        }
 
         private void UpdateCfgUI() // update the UI
         {
             //// populate the table with the parameter values
             // had to check for null because it crashes if the file isn't present.
-            if (TCP != null)
+            
+            if (ToolChanger.xTCP != null)
             {
-                tbTCH1.Text = TCP.TC_H1_Z.ToString();
-                tbTCH1FR.Text = TCP.TC_H1_FR.ToString();
-                tbTCH2.Text = TCP.TC_H2_Z.ToString();
-                tbTCH2FR.Text = TCP.TC_H2_FR.ToString();
-                tbSPIndex.Text = TCP.TC_Index.ToString();
-                tbSPRate.Text = TCP.TC_S_FR.ToString();
+                tbTCH1.Text = ToolChanger.xTCP.TC_H1_Z.ToString();
+                tbTCH1FR.Text = ToolChanger.xTCP.TC_H1_FR.ToString();
+                tbTCH2.Text = ToolChanger.xTCP.TC_H2_Z.ToString();
+                tbTCH2FR.Text = ToolChanger.xTCP.TC_H2_FR.ToString();
+                tbSPIndex.Text = ToolChanger.xTCP.TC_Index.ToString();
+                tbSPRate.Text = ToolChanger.xTCP.TC_S_FR.ToString();
 
-                tbTSX.Text = TCP.TS_X.ToString();
-                tbTSY.Text = TCP.TS_Y.ToString();
-                tbTSZ.Text = TCP.TS_Z.ToString();
-                tbTSZSafe.Text = TCP.TS_SAFE_Z.ToString();
-                tbTSIndex.Text = TCP.TS_S.ToString();
+                tbTSX.Text = ToolChanger.xTCP.TS_X.ToString();
+                tbTSY.Text = ToolChanger.xTCP.TS_Y.ToString();
+                tbTSZ.Text = ToolChanger.xTCP.TS_Z.ToString();
+                tbTSZSafe.Text = ToolChanger.xTCP.TS_SAFE_Z.ToString();
+                tbTSIndex.Text = ToolChanger.xTCP.TS_S.ToString();
 
-                tbTSRate1.Text = TCP.TS_FR1.ToString();
-                tbTSRate2.Text = TCP.TS_FR2.ToString();
+                tbTSRate1.Text = ToolChanger.xTCP.TS_FR1.ToString();
+                tbTSRate2.Text = ToolChanger.xTCP.TS_FR2.ToString();
 
 
-                tbCarouselSize.Text = TCP.CarouselSize.ToString();
+                tbCarouselSize.Text = ToolChanger.xTCP.CarouselSize.ToString();
             }
         }
 
@@ -512,78 +540,44 @@ namespace KFLOP_Test3
 
             double temp;
             if (double.TryParse(tbTCH1.Text, out temp))
-            { TCP.TC_H1_Z = temp; }
+            { ToolChanger.xTCP.TC_H1_Z = temp; }
             if (double.TryParse(tbTCH1FR.Text, out temp))
-            { TCP.TC_H1_FR = temp; }
+            { ToolChanger.xTCP.TC_H1_FR = temp; }
             if (double.TryParse(tbTCH2.Text, out temp))
-            { TCP.TC_H2_Z = temp; }
+            { ToolChanger.xTCP.TC_H2_Z = temp; }
             if (double.TryParse(tbTCH2FR.Text, out temp))
-            { TCP.TC_H2_FR = temp; }
+            { ToolChanger.xTCP.TC_H2_FR = temp; }
             if (double.TryParse(tbSPIndex.Text, out temp))
-            { TCP.TC_Index = temp; }
+            { ToolChanger.xTCP.TC_Index = temp; }
             if (double.TryParse(tbSPRate.Text, out temp))
-            { TCP.TC_S_FR = temp; }
+            { ToolChanger.xTCP.TC_S_FR = temp; }
 
             if (double.TryParse(tbTSX.Text, out temp))
-            { TCP.TS_X = temp; }
+            { ToolChanger.xTCP.TS_X = temp; }
             if (double.TryParse(tbTSY.Text, out temp))
-            { TCP.TS_Y = temp; }
+            { ToolChanger.xTCP.TS_Y = temp; }
             if (double.TryParse(tbTSZ.Text, out temp))
-            { TCP.TS_Z = temp; }
+            { ToolChanger.xTCP.TS_Z = temp; }
             if(double.TryParse(tbTSZSafe.Text, out temp))
-            { TCP.TS_SAFE_Z = temp; }
+            { ToolChanger.xTCP.TS_SAFE_Z = temp; }
             if (double.TryParse(tbTSIndex.Text, out temp))
-            { TCP.TS_S = temp; }
+            { ToolChanger.xTCP.TS_S = temp; }
             if (double.TryParse(tbTSRate1.Text, out temp))
-            { TCP.TS_FR1 = temp; }
+            { ToolChanger.xTCP.TS_FR1 = temp; }
             if (double.TryParse(tbTSRate2.Text, out temp))
-            { TCP.TS_FR2 = temp; }
+            { ToolChanger.xTCP.TS_FR2 = temp; }
             int itemp;
             if (int.TryParse(tbCarouselSize.Text, out itemp))
-            { TCP.CarouselSize = itemp; }
+            { ToolChanger.xTCP.CarouselSize = itemp; }
 
-        }
-
-        private void SaveCfg() // Save tool changer config
-        {
-            string FName = System.IO.Path.Combine(CFx.ConfigPath, CFx.ToolChangeParams);
-            try
-            {
-                var SaveFile = new SaveFileDialog();
-                SaveFile.FileName = FName;
-                if (SaveFile.ShowDialog() == true)
-                {
-                    JsonSerializer Jser = new JsonSerializer();
-                    StreamWriter sw = new StreamWriter(SaveFile.FileName);
-                    JsonTextWriter Jwrite = new JsonTextWriter(sw);
-                    Jser.NullValueHandling = NullValueHandling.Ignore;
-                    Jser.Formatting = Newtonsoft.Json.Formatting.Indented;
-                    Jser.Serialize(Jwrite, TCP);
-                    sw.Close();
-                }
-            }
-            catch
-            {
-                MessageBox.Show(FName, "TLAUX Parameters Save Error!");
-            }
-        }
-
-        private void btnSave_Click(object sender, RoutedEventArgs e)
-        {
-            UpdateCfg();
-            SaveCfg();
-        }
-
-        private void btnReload_Click(object sender, RoutedEventArgs e)
-        {
-            LoadCfg();
         }
 
         #region Tool Carousel Configuration File
 
         private void btnInitCarousel_Click(object sender, RoutedEventArgs e)
         {
-            LoadCarouselCfg();
+            // LoadCarouselCfg();
+            xToolChanger.LoadCarouselCfg();
             // populate the ToolCarouselDataGrid
             // LoadToolTable();
             xToolChanger.SetCurrentTool(0);   // initialize the current tool to tool 0
@@ -591,33 +585,36 @@ namespace KFLOP_Test3
             
         }
 
-        // load the carousel file
-        public void LoadCarouselCfg()
-        {
-            string CFileName = System.IO.Path.Combine(CFx.ConfigPath, CFx.ToolCarouselCfg);
-            // load the tool changer files
-            if (System.IO.File.Exists(CFileName) == true)
-                {
-                    try
-                    {
-                        JsonSerializer Jser = new JsonSerializer();
-                        StreamReader sr = new StreamReader(CFileName);
-                        JsonReader Jreader = new JsonTextReader(sr);
-                        CarouselList = Jser.Deserialize<ToolCarousel>(Jreader);
-                        sr.Close();
-                    } catch(JsonSerializationException ex)
-                    {
-                        MessageBox.Show(String.Format("{0} Exception! Carousel Not Loaded!", ex.Message));
-                        return;
-                    }
-                } 
-                else
-                {
-                   MessageBox.Show("File not found - Reinializing Carousel");
-                   ResetCarousel();
-                   saveCarouselCfg(CFileName);
-                }
-        }
+        //// load the carousel file
+        //public void LoadCarouselCfg()
+        //{
+        //    string CFileName = System.IO.Path.Combine(CFx.ConfigPath, CFx.ToolCarouselCfg);
+        //    // load the tool changer files
+        //   // xToolChanger.LoadCarCfg(CFileName);
+        //    if (System.IO.File.Exists(CFileName) == true)
+        //    {
+        //        try
+        //        {
+        //            JsonSerializer Jser = new JsonSerializer();
+        //            StreamReader sr = new StreamReader(CFileName);
+        //            JsonReader Jreader = new JsonTextReader(sr);
+        //            CarouselList = Jser.Deserialize<ToolCarousel>(Jreader);
+        //            sr.Close();
+        //        }
+        //        catch (JsonSerializationException ex)
+        //        {
+        //            MessageBox.Show(String.Format("{0} Exception! Carousel Not Loaded!", ex.Message));
+        //            return;
+        //        }
+        //    }
+        //    else
+        //    {
+        //        MessageBox.Show("File not found - Reinialize the Carousel");
+        //        // ResetCarousel();
+        //        // saveCarouselCfg(FileName);
+        //        return;
+        //    }
+        //}
 
         // save the carousel file
         public void saveCarouselCfg(string CFileName)
@@ -653,7 +650,7 @@ namespace KFLOP_Test3
             CarouselList.Items.Clear(); // clear the list
 
             // fill the list with nothing
-            for (int i = 0; i < TCP.CarouselSize; i++)  
+            for (int i = 0; i < ToolChanger.xTCP.CarouselSize; i++)  
             {
                 CarouselItem CI = new CarouselItem();
                 CI.Pocket = i + 1;
@@ -737,7 +734,7 @@ namespace KFLOP_Test3
         }
         private void TC_CarouselUpdate1(int pocket, int state)
         {
-            MessageBox.Show($"Pocket = {pocket} state = {state}");
+//            MessageBox.Show($"Pocket = {pocket} state = {state}");
         }
 
 
@@ -783,11 +780,11 @@ namespace KFLOP_Test3
             // get the arguments
             ToolSetterArguments TSx = new ToolSetterArguments();
             // load the arguments from the Tool change parameters
-            TSx.X = TCP.TS_X;
-            TSx.Y = TCP.TS_Y;
-            TSx.SafeZ = TCP.TS_SAFE_Z;
-            TSx.ToolZ = TCP.TS_Z;
-            TSx.Rate = TCP.TS_FR1;
+            TSx.X = ToolChanger.xTCP.TS_X;
+            TSx.Y = ToolChanger.xTCP.TS_Y;
+            TSx.SafeZ = ToolChanger.xTCP.TS_SAFE_Z;
+            TSx.ToolZ = ToolChanger.xTCP.TS_Z;
+            TSx.Rate = ToolChanger.xTCP.TS_FR1;
 
 //            Start_ToolSetter(TSx);
 
@@ -832,6 +829,8 @@ namespace KFLOP_Test3
                 // dialog was canceled do nothing.
             }
         }
+
+
     }
 
     public class SingleAxis

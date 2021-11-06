@@ -26,10 +26,20 @@
         <StackPanel Grid.Row="2" Grid.Column="0" Orientation="Horizontal" >
            
             <Button x:Name="btnToolList" Content="List Tools" Height="25" Click="btnToolList_Click" Margin="5" HorizontalAlignment="Center" />
+            <Button x:Name="btnCUpdate" Content="Update C" Click="bntCUpdate_Click" Height="25" />
         </StackPanel>
         <StackPanel Grid.Row="1" Grid.Column="0" Orientation="Vertical" >
         <Grid DataContext="{Binding CarouselList}" Margin="8">
             <DataGrid x:Name="dgCarousel" ItemsSource="{Binding Items}" AutoGenerateColumns="False" VerticalAlignment="Top" AllowDrop="True" AlternationCount="2" AlternatingRowBackground="Bisque" >
+                <DataGrid.ContextMenu>
+                        <ContextMenu ItemsSource="{Binding RelativeSource={RelativeSource Self}}" >
+                            <MenuItem Header="Unload" Click="CarouselMenu_Unload" />
+                            <MenuItem Header="Save" Click="CarouselMenu_Save" />
+                            <MenuItem Header="SaveAs" Click="CarouselMenu_SaveAs" />
+                            <MenuItem Header="Update" Click="CarouselMenu_Update" />
+                            <MenuItem Header="Cancel" Click="CarouselMenu_Cancel" />
+                        </ContextMenu>
+                    </DataGrid.ContextMenu>
                 <DataGrid.Columns>
                     <DataGridTextColumn Header="Pocket" Binding="{Binding Pocket}" />
                     <DataGridTextColumn Header="Index" Binding="{Binding ToolIndex}" />
