@@ -12,7 +12,6 @@
         <Button x:Name="btnPutTool" Content="Put Tool" HorizontalAlignment="Left" Margin="91,66,0,0" VerticalAlignment="Top" Width="90" Click="btnPutTool_Click"/>
         <Button x:Name="btnLoadTool" Content="Load Tool" HorizontalAlignment="Left" Margin="91,88,0,0" VerticalAlignment="Top" Width="90" Click="btnLoadTool_Click"/>
         <Button x:Name="btnUnloadTool" Content="Unload Tool" HorizontalAlignment="Left" Margin="91,110,0,0" VerticalAlignment="Top" Width="90" Click="btnUnloadTool_Click"/>
-
         <TextBox x:Name="tbPocketNumber" HorizontalAlignment="Left" Height="23" Margin="91,14,0,0" TextWrapping="Wrap" Text="TextBox" VerticalAlignment="Top" Width="61"/>
         <Label Content="Carousel No:" HorizontalAlignment="Left" Margin="13,11,0,0" VerticalAlignment="Top" RenderTransformOrigin="-0.338,0.662" Width="78"/>
         <Label x:Name="lblCurrentTool" Content="Current Tool:" HorizontalAlignment="Left" Margin="196,10,0,0" VerticalAlignment="Top"/>

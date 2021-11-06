@@ -19,7 +19,6 @@
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="1.4*" />
             <ColumnDefinition Width="4*" />
-            
         </Grid.ColumnDefinitions>
         <Label Content="ToolTable" Grid.Row="0" Grid.Column="1" FontSize="15" VerticalAlignment="Bottom"  />
         <Label Content="Tool Carousel" Grid.Row="0" Grid.Column="0" FontSize="15" VerticalAlignment="Bottom"  />
