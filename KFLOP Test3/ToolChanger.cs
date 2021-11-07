@@ -1,5 +1,5 @@
 ﻿// Must put this in every file that will look for it!
-#define TESTBENCH  // defining this will allow operation on the testbench
+// #define TESTBENCH  // defining this will allow operation on the testbench
 
 using System;
 using System.Collections.Generic;
@@ -1479,7 +1479,7 @@ namespace KFLOP_Test3
             tSAx.Rate = 0;  // move at Traverse rate
             Start_MoveZ_Process(tSAx);
 
-            if (WaitForProgress() == false)
+            if (WaitForTSProgress() == false)
             {
                 // There was an error of some kind!
                 BW3Res.Comment = "Safe Z Move Error";
@@ -1498,7 +1498,7 @@ namespace KFLOP_Test3
                 tPAx.PosY = tTSArg.Y;
                 tPAx.Rate = 0;  // move at traverse rate
                 Start_MoveXY_Process(tPAx);
-                if (WaitForProgress() == false)
+                if (WaitForTSProgress() == false)
                 {
                     // There was an error of some kind!
                     BW3Res.Comment = "X Y Move Error";
@@ -1516,7 +1516,7 @@ namespace KFLOP_Test3
                 tSAx.Pos = tTSArg.ToolZ;
                 tSAx.Rate = 0;
                 Start_MoveZ_Process(tSAx);
-                if (WaitForProgress() == false)
+                if (WaitForTSProgress() == false)
                 {
                     // There was an error of some kind!
                     BW3Res.Comment = "Tool Z Move Error";
@@ -1534,7 +1534,7 @@ namespace KFLOP_Test3
                 // move while waiting for the tool setter to detect
                 // the probing command
                 Start_ToolSetterZProbe(2.0);
-                if (WaitForProgress() == false)
+                if (WaitForTSProgress() == false)
                 {
                     // There was an error
                     ProcessError = true;
@@ -1552,7 +1552,7 @@ namespace KFLOP_Test3
             tSAx.Rate = 0;  // move at Traverse rate
             Start_MoveZ_Process(tSAx);
 
-            if (WaitForProgress() == false)
+            if (WaitForTSProgress() == false)
             {
                 // There was an error of some kind!
                 BW3Res.Comment = "Safe Z Move Error";
@@ -1584,7 +1584,7 @@ namespace KFLOP_Test3
             CompleteActionStatus((BWResults)e.Result);
         }
 
-        private bool WaitForProgress()
+        private bool WaitForTSProgress()
         {
             // sleep while waiting for the global variable TCProgress to be set true by the 
             // background worker thread.
@@ -1595,7 +1595,7 @@ namespace KFLOP_Test3
             } while (TSProgress);
             TSProgress = true;
             // check the results for faults and errors
-            return TSChangeStatus;
+            return TSChangeStatus;  // this cannot be correct
         }
 
         private void CompleteActionStatus(BWResults res)
@@ -1777,13 +1777,12 @@ namespace KFLOP_Test3
 
         // global variables for the user control
         // since there is only one Machine and tool changer these are all static.
-        static bool SpindleEnabled;
-        static bool SpindlePID;
-        static bool SpindleRPM;
-        static bool SpindleHomed;
+        public static bool SpindleEnabled;
+        public static bool SpindlePID;
+        public static bool SpindleRPM;
+        public static bool SpindleHomed;
         static double Spindle_Position;
         static int iSpindle_Status;
-        static int iPVStatus;
         static bool bTC_Clamped;
         static bool bTC_UnClamped;
         static bool bTLAUX_ARM_IN;
@@ -2619,7 +2618,7 @@ namespace KFLOP_Test3
             }
         }
 
-        private void getSpindle_Status()
+        public void getSpindle_Status()
         {
             lock (_Slocker) // lock so only one thread can access at a time - Spindle position lock
             {

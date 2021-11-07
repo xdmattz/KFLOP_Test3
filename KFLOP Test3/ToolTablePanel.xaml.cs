@@ -563,6 +563,20 @@ namespace KFLOP_Test3
 
                     if (cItem.ToolIndex != 0) //  
                     {
+                        // check for the Tool Changer busy
+                        if (TCx.bwBusy())
+                        {
+                            int bwWaitCount = 0;
+                            do
+                            {
+                                System.Threading.Thread.Sleep(50);
+                                if(bwWaitCount++ > 80)  // wait up to 2 seconds.
+                                {
+                                    MessageBox.Show("Something is busy!\nAborting!");
+                                    return;
+                                }
+                            } while (TCx.bwBusy());
+                        }
                         TCx.UnloadTool(cItem.Pocket);
                         dgCarousel.Items.Refresh();
                     }

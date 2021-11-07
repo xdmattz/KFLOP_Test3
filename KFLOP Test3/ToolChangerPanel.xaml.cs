@@ -1,5 +1,5 @@
 ﻿// Must put this in every file that will look for it!
-#define TESTBENCH  // defining this will allow operation on the testbench
+// #define TESTBENCH  // defining this will allow operation on the testbench
 
 using System;
 using System.Collections.Generic;
@@ -37,14 +37,7 @@ namespace KFLOP_Test3
     public partial class ToolChangerPanel : UserControl
     {
         #region Global Variables
-        // global variables for the user control
-        // since there is only one Machine and tool changer these are all static.
-        static bool SpindleEnabled;
-        static bool SpindlePID;
-        static bool SpindleRPM;
-        static bool SpindleHomed;
-        static double Spindle_Position;
-        static int iPVStatus;
+
         static bool bTC_Clamped;
         static bool bTC_UnClamped;
         static bool bTLAUX_ARM_IN;
@@ -82,10 +75,7 @@ namespace KFLOP_Test3
 
             xToolChanger = X;    // point to the KM controller - this exposes all the KFLOP .net library functions
 
-//            TCP = new ToolChangeParams();   // get the tool changer parameters
             xToolChanger.LoadTCCfg();
-//            LoadCfg();
-//            xToolChanger.SetParams(ref TCP);
 
             // Events 
             xToolChanger.ProcessUpdate += TC_ProcessChanged;
@@ -137,15 +127,16 @@ namespace KFLOP_Test3
 
             tbTLAUXStatus.Text = string.Format("{0:X4}", iTLAUX_STATUS);
 
+            xToolChanger.getSpindle_Status();
             // get the spindle status from KSTAT
-            iPVStatus = KStat.PC_comm[CSConst.P_STATUS];
+            //iPVStatus = KStat.PC_comm[CSConst.P_STATUS];
 
-            SpindleEnabled = BitOps.BitIsSet(iPVStatus, PVConst.SB_SPINDLE_ON);
-            SpindlePID = BitOps.BitIsSet(iPVStatus, PVConst.SB_SPINDLE_PID);
-            if (SpindleEnabled) { LED_SPEN.Set_State(LED_State.On_Green); }
+           // SpindleEnabled = BitOps.BitIsSet(iPVStatus, PVConst.SB_SPINDLE_ON);
+           // SpindlePID = BitOps.BitIsSet(iPVStatus, PVConst.SB_SPINDLE_PID);
+            if (MachineMotion.SpindleEnabled) { LED_SPEN.Set_State(LED_State.On_Green); }
             else { LED_SPEN.Set_State(LED_State.Off); }
-            SpindleRPM = BitOps.BitIsSet(iPVStatus, PVConst.SB_SPINDLE_RPM);
-            SpindleHomed = !(BitOps.BitIsSet(iPVStatus, PVConst.SB_SPIN_HOME));
+            //SpindleRPM = BitOps.BitIsSet(iPVStatus, PVConst.SB_SPINDLE_RPM);
+            //SpindleHomed = !(BitOps.BitIsSet(iPVStatus, PVConst.SB_SPIN_HOME));
             // update the tool in spindle
 // this needs to change to reflect the new tool managment
 
@@ -308,7 +299,7 @@ namespace KFLOP_Test3
         private void btnSP_PID_Click(object sender, RoutedEventArgs e)
         {
             // set the spindle to PID mode. And leave it enabled!
-            if (SpindleEnabled == true)
+            if (MachineMotion.SpindleEnabled == true)
             {
                 // MessageBox.Show("Turning Off Spindle");
                 btnSP_PID.Content = "Enable Spindle";
@@ -458,15 +449,17 @@ namespace KFLOP_Test3
             SX.Pos = Spos;
             SX.Rate = Srate;
 
-            
+
 
 #if TESTBENCH
             MessageBox.Show("TB StartSpindle");
             xToolChanger.Start_Spindle_Process(SX);
 #else
-            if (SpindleEnabled && SpindlePID)
+            // get the spindle status?
+            xToolChanger.getSpindle_Status();
+            if (MachineMotion.SpindleEnabled && MachineMotion.SpindlePID)
             {
-                MessageBox.Show("StartSpindle");
+//                MessageBox.Show("StartSpindle");
                 xToolChanger.Start_Spindle_Process(SX);
             }
             else
@@ -490,7 +483,7 @@ namespace KFLOP_Test3
                 return;
             }
             // send the command to KFLOP
-            if ((ToolNumber > 0) && (ToolNumber <= ToolChanger.xTCP.CarouselSize))
+            if ((ToolNumber > 0) && (ToolNumber <= MachineMotion.xTCP.CarouselSize))
             {
                 SingleAxis xSA = new SingleAxis();
                 xSA.ToolNumber = ToolNumber;
