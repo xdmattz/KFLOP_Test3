@@ -217,6 +217,10 @@ namespace KFLOP_Test3
             OpenConfig(ref CFiles);
 
             MM = new MachineMotion(ref KM, ref SpindleAxis, ref CFiles);
+            if(MachineMotion.TestBench == true)
+            {
+                lblTestBench.Content = "TESTBENCH";
+            }
 
             // Initialize the GCode Interpreter
             GetInterpVars();    // load the emcvars and tool files

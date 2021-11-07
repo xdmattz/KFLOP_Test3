@@ -1,5 +1,6 @@
 ﻿// Must put this in every file that will look for it!
 // #define TESTBENCH  // defining this will allow operation on the testbench
+// don't forget the TESTBENCH in ToolChanger.cs
 
 using System;
 using System.Collections.Generic;
