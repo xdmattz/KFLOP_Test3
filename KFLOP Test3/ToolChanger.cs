@@ -2187,8 +2187,9 @@ namespace KFLOP_Test3
             getSpindle_Status();
 
             if ((SpindleHomed == false)   // the spindle has not been homed.
-                || (Spindle_Position > 10000)                       // or position is far high
-                || (Spindle_Position < -10000))                     // or position is far low
+                || (Spindle_Position > 5000)                       // or position is far high
+                || (Spindle_Position < -5000)                     // or position is far low
+                || (SpindleRPM == true))                          // or it is in RPM mode.
             {
                 KMx.SetUserData(PVConst.P_NOTIFY, T2Const.T2_SPINDLE_ZERO);
                 KMx.ExecuteProgram(2);
@@ -2215,7 +2216,7 @@ namespace KFLOP_Test3
                 KMx.ExecuteProgram(2);
                 do
                 {
-                    Thread.Sleep(50);
+                    Thread.Sleep(100);
                     if (timeoutCnt++ > 20)
                     {
                         BWRes.Result = false;
@@ -2223,7 +2224,7 @@ namespace KFLOP_Test3
                         e.Result = BWRes;
                         return;
                     }
-                    // getSpindle_Status();
+                    getSpindle_Status();
                 } while (SpindlePID == false);
             }
 
