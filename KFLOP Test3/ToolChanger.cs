@@ -2335,7 +2335,7 @@ namespace KFLOP_Test3
                         return;
                     }
                     getSpindle_Status();
-                } while (SpindleEnabled == false);
+                } while (SpindleEnabled == true);
             }
             if (SpindleRPM == false)
             {
