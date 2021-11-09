@@ -1,5 +1,6 @@
 ﻿// Must put this in every file that will look for it!
-// #define TESTBENCH  // defining this will allow operation on the testbench
+#define TESTBENCH  // defining this will allow operation on the testbench
+// The other TESTBENCH is in ToolChangerPanel.xaml.cs
 
 using System;
 using System.Collections.Generic;
@@ -1481,9 +1482,12 @@ namespace KFLOP_Test3
 
         static ProbeResult TSProbeState;
 
+        public event dStatusMsg ProcessUpdate;
+        public event dStatusMsg ProcessError;
+
         static private ToolChangeParams TSP;
 
-        ToolSetter(ref ToolInfo toolInfo)
+        public ToolSetter(ref ToolInfo toolInfo)
         {
             TSProbeState = new ProbeResult();
 
@@ -1495,19 +1499,22 @@ namespace KFLOP_Test3
 
         }
 
-        private void Start_ToolSetter(ToolSetterArguments TSArgs)
+        public bool Start_ToolSetter(ToolSetterArguments TSArgs)
         {
             // check that the background process isn't already running.
             if (_bw3.IsBusy)
-            { return; } // don't run if the background worker is busy
+            { return false; } // don't run if the background worker is busy
 
             TSActionProgress = true; // process action is happening...
             // need a class to hold the tool setter arguments?
+            _bw3.WorkerReportsProgress = true;
+        
 
             _bw3.DoWork += ToolSetter_Worker;
             _bw3.ProgressChanged += ToolSetterProgressChanged;
             _bw3.RunWorkerCompleted += ToolSetterCompleted;
             _bw3.RunWorkerAsync(TSArgs);
+            return true;
 
         }
 
@@ -1517,15 +1524,17 @@ namespace KFLOP_Test3
             tTSArg = (ToolSetterArguments)e.Argument;    // get the arguments
             bool ProcessError = false;
 
-            MessageBox.Show("Move to Safe Z");
+//            MessageBox.Show("Move to Safe Z");
 
             TSProgress = true;
+            TSChangeStatus = true;
 
             BW3Res.Result = true; // start out with this set.
-
+            BW3Res.Comment = "Move to Safe Z";
+            _bw3.ReportProgress(0);
             // Move to safe Z
             SingleAxis tSAx = new SingleAxis();
-            tSAx.Pos = tTSArg.SafeZ;
+            tSAx.Pos = xTCP.TS_SAFE_Z;
             tSAx.Rate = 0;  // move at Traverse rate
             Start_MoveZ_Process(tSAx);
 
@@ -1540,12 +1549,13 @@ namespace KFLOP_Test3
 
             if (ProcessError == false)
             {
-                MessageBox.Show("Move to X Y");
-
+//                MessageBox.Show("Move to X Y");
+                BW3Res.Comment = "Move to X Y";
+                _bw3.ReportProgress(0);
                 // move to Tool Setter X, Y
                 PlaneAxis tPAx = new PlaneAxis();
-                tPAx.PosX = tTSArg.X;
-                tPAx.PosY = tTSArg.Y;
+                tPAx.PosX = xTCP.TS_X + tTSArg.X_Offset;    // tool setter X + tool X offset
+                tPAx.PosY = xTCP.TS_Y + tTSArg.Y_Offset;    // tool setter Y + tool Y offset
                 tPAx.Rate = 0;  // move at traverse rate
                 Start_MoveXY_Process(tPAx);
                 if (WaitForTSProgress() == false)
@@ -1560,10 +1570,12 @@ namespace KFLOP_Test3
 
             if (ProcessError == false)
             {
-                MessageBox.Show("Move to Tool Z");
+                // MessageBox.Show("Move to Tool Z");
+                BW3Res.Comment = "Move to Tool Z";
+                _bw3.ReportProgress(0);
 
                 // move to Tool Setter Z (somewhere above the tool setter TBD inches)
-                tSAx.Pos = tTSArg.ToolZ;
+                tSAx.Pos = xTCP.TS_Z;  // subtract the Z Offset because all Z is negative...
                 tSAx.Rate = 0;
                 Start_MoveZ_Process(tSAx);
                 if (WaitForTSProgress() == false)
@@ -1580,10 +1592,12 @@ namespace KFLOP_Test3
 
             if (ProcessError == false)
             {
-                MessageBox.Show("Probing");
+                //MessageBox.Show("Probing");
+                BW3Res.Comment = "Probing";
+                _bw3.ReportProgress(0);
                 // move while waiting for the tool setter to detect
                 // the probing command
-                Start_ToolSetterZProbe(2.0);
+                Start_ToolSetterZProbe((tTSArg.Z_Offset + 0.25));    // this should be a little more than the current offset
                 if (WaitForTSProgress() == false)
                 {
                     // There was an error
@@ -1593,8 +1607,9 @@ namespace KFLOP_Test3
             // save the length / offset
 
             // move back to Safe Z
-            MessageBox.Show("Back to Safe Z");
-
+            // MessageBox.Show("Back to Safe Z");
+            BW3Res.Comment = "Move back to Safe Z";
+            _bw3.ReportProgress(0);
             TSProgress = true;
 
             // !!!!
@@ -1623,7 +1638,9 @@ namespace KFLOP_Test3
         }
 
         private void ToolSetterProgressChanged(object sender, ProgressChangedEventArgs e)
-        { }
+        {
+            TSProgressUpdate(BW3Res);
+        }
 
         private void ToolSetterCompleted(object sender, RunWorkerCompletedEventArgs e)
         {
@@ -1639,11 +1656,18 @@ namespace KFLOP_Test3
             // sleep while waiting for the global variable TCProgress to be set true by the 
             // background worker thread.
             // should there be a count here so it doesn't get stuck forever?
+            int stuckCount = 0;
             do
             {
-                Thread.Sleep(50);
-            } while (TSProgress);
-            TSProgress = true;
+                Thread.Sleep(100);
+                if(stuckCount++ > 200) // 10 seconds seems like long enough
+                {
+                    TCProgress = false;
+                    TSChangeStatus = false;
+                    break; // return TSChangeStatus;
+                }
+            } while (TCProgress);
+            TCProgress = true;
             // check the results for faults and errors
             return TSChangeStatus;  // this cannot be correct
         }
@@ -1720,25 +1744,26 @@ namespace KFLOP_Test3
             } while (CheckForTSProbeComplete() != true);
             // look at the probe results to determine what to do next
             string Pmsg = "Done";
-            MachineCoordinates MCx = GetCoordinates();
+            // MachineCoordinates MCx = new MachineCoordinates();
+            GetCoordinates(ref TSCoord);
             switch (TSProbeState)
             {
                 case ProbeResult.Detected:
                     {
                         // get the machine coordinates.
-                        Pmsg = String.Format("Probe Detect at\n X:{0}\nY:{1}\nZ{2}", MCx.X, MCx.Y, MCx.Z);
+                        Pmsg = String.Format("Probe Detect at\n X:{0}\nY:{1}\nZ{2}", TSCoord.X, TSCoord.Y, TSCoord.Z);
                         BWtsRes.Result = true;
                         break;
                     }
                 case ProbeResult.MachineTimeOut:
                     {
-                        Pmsg = String.Format("Machine timeout. Currently at\n X:{0}\nY:{1}\nZ{2}", MCx.X, MCx.Y, MCx.Z);
+                        Pmsg = String.Format("Machine timeout. Currently at\n X:{0}\nY:{1}\nZ{2}", TSCoord.X, TSCoord.Y, TSCoord.Z);
                         BWtsRes.Result = true;
                         break;
                     }
                 case ProbeResult.T2_ProbeError:
                     {
-                        Pmsg = String.Format("Probe Error\nMachine at\n X:{0}\nY:{1}\nZ{2}", MCx.X, MCx.Y, MCx.Z);
+                        Pmsg = String.Format("Probe Error\nMachine at\n X:{0}\nY:{1}\nZ{2}", TSCoord.X, TSCoord.Y, TSCoord.Z);
                         BWtsRes.Result = false;
                         BWtsRes.Comment = "Probe Error";
                         break;
@@ -1788,8 +1813,34 @@ namespace KFLOP_Test3
             return false;
         }
 
+        private void TSProgressUpdate(BWResults br)
+        {
+            string ps = br.Comment;
+            if (br.Result == false)
+            {
+
+                OnProcessError(ps); // send the error message
+            }
+            else
+            {
+                OnProcessUpdate(ps); // send the status message
+            }
+        }
+
+        #region Events
+        protected virtual void OnProcessUpdate(string x)
+        {
+            ProcessUpdate?.Invoke(x);   // if the ProcessUpdate delegate has been defined then call the delegate.
+        }
+
+        protected virtual void OnProcessError(string x)
+        {
+            ProcessError?.Invoke(x); // if the ProcessError delegate has been defined then call that delegate
+        }
         #endregion
+
     }
+    #endregion
 
     public class Probe : MachineMotion
     {
@@ -1808,7 +1859,7 @@ namespace KFLOP_Test3
         // used to point to the configuration file list. 
         static public ConfigFiles CFx { get; set; }
 
-        static public ToolChangeParams xTCP;    // this will be initialized from teh configuration files
+        static public ToolChangeParams xTCP;    // this will be initialized from the configuration files
 
         // background workers
         static BackgroundWorker _bw;    // motion background worker
@@ -1842,6 +1893,11 @@ namespace KFLOP_Test3
         static int iTLAUX_STATUS;
 
         static public bool TestBench { get; set; }
+
+        static public MachineCoordinates MC; // some machine coordinate
+        static public MachineCoordinates TSCoord;   // last known Tool setter coordinate
+        static public MachineCoordinates ProbeCoord;  // last known Probe coordinate
+
 
         #endregion
 
@@ -1896,7 +1952,7 @@ namespace KFLOP_Test3
             }
         }
 
-        private void SaveTCCfg() // Save tool changer config
+        public void SaveTCCfg() // Save tool changer config
         {
             string FName = System.IO.Path.Combine(CFx.ConfigPath, CFx.ToolChangeParams);
             try
@@ -2715,23 +2771,73 @@ namespace KFLOP_Test3
         }
 
 #region Machine Coordinates
-        public MachineCoordinates GetCoordinates()
+        public void GetCoordinates(ref MachineCoordinates MCx)
         {
-            MachineCoordinates MC = new MachineCoordinates();
+            // MachineCoordinates MC = new MachineCoordinates();
             double x, y, z, a, b, c;
             x = y = z = a = b = c = 0.0;
             KMx.CoordMotion.UpdateCurrentPositionsABS(ref x, ref y, ref z, ref a, ref b, ref c, true);
 
-            MC.X = x;
-            MC.Y = y;
-            MC.Z = z;
-            MC.A = a;
-            MC.B = b;
-            MC.C = c;
+            MCx.X = x;
+            MCx.Y = y;
+            MCx.Z = z;
+            MCx.A = a;
+            MCx.B = b;
+            MCx.C = c;
 
-            return MC;
+            //return MC;
         }
+
 #endregion
 
+    }
+
+    public struct MachineCoordinates
+    {
+
+        public double X { get; set; }
+        public double Y { get; set; }
+        public double Z { get; set; }
+        public double A { get; set; }
+        public double B { get; set; }
+        public double C { get; set; }
+    }
+
+    public class SingleAxis
+    {
+        public double Pos { get; set; }
+        public double Rate { get; set; }
+        public bool Move { get; set; }  // in / out or clamp / release 
+        public int ToolNumber { get; set; }
+        public int ToolPocket { get; set; }
+    }
+
+    public class PlaneAxis
+    {
+        public double PosX { get; set; }
+        public double PosY { get; set; }
+        public double Rate { get; set; }
+        public bool Move { get; set; }
+        public int ToolNumber { get; set; }
+    }
+
+    // Background Worker results 
+    public class BWResults
+    {
+        public bool Result { get; set; }
+        public string Comment { get; set; }
+    }
+
+    public class TExchangePosition
+    {
+        public int PutTool { get; set; }
+        public int GetTool { get; set; }
+    }
+
+    public class ToolSetterArguments
+    {
+        public double X_Offset { get; set; }
+        public double Y_Offset { get; set; }
+        public double Z_Offset { get; set; }
     }
 }

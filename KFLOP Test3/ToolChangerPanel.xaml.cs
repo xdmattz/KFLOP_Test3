@@ -1,5 +1,5 @@
 ﻿// Must put this in every file that will look for it!
-// #define TESTBENCH  // defining this will allow operation on the testbench
+#define TESTBENCH  // defining this will allow operation on the testbench
 // don't forget the TESTBENCH in ToolChanger.cs
 
 using System;
@@ -60,6 +60,7 @@ namespace KFLOP_Test3
         static ToolTable TTable;
 
         static ToolChanger xToolChanger;
+        static ToolSetter xToolSetter;
         
 
         #endregion
@@ -68,13 +69,14 @@ namespace KFLOP_Test3
         // arguments ref of the KM_Controller in use
         // KM_Axis for the spindle control
         // configuration files
-        public ToolChangerPanel(ref ToolChanger X, ref ConfigFiles CfgFiles)
+        public ToolChangerPanel(ref ToolChanger X, ref ToolSetter TS, ref ConfigFiles CfgFiles)
         {
             InitializeComponent();
 
             CFx = CfgFiles;
 
             xToolChanger = X;    // point to the KM controller - this exposes all the KFLOP .net library functions
+            xToolSetter = TS;
 
             xToolChanger.LoadTCCfg();
 
@@ -85,6 +87,9 @@ namespace KFLOP_Test3
             xToolChanger.StepError += TC_StepError;
 
             xToolChanger.UpdateCarousel += TC_CarouselUpdate;
+
+            xToolSetter.ProcessUpdate += TC_ProcessChanged;
+            xToolSetter.ProcessError += TC_ProcessError;
 
             //
 
@@ -496,32 +501,32 @@ namespace KFLOP_Test3
         #region Configuration File methods
         // Configuration file - get the tool changer variables saved in the JSON file
         // these are all the tool change coordinates and speeds.
-
+        #region UI Config
         private void UpdateCfgUI() // update the UI
         {
             //// populate the table with the parameter values
             // had to check for null because it crashes if the file isn't present.
             
-            if (ToolChanger.xTCP != null)
+            if (MachineMotion.xTCP != null)
             {
-                tbTCH1.Text = ToolChanger.xTCP.TC_H1_Z.ToString();
-                tbTCH1FR.Text = ToolChanger.xTCP.TC_H1_FR.ToString();
-                tbTCH2.Text = ToolChanger.xTCP.TC_H2_Z.ToString();
-                tbTCH2FR.Text = ToolChanger.xTCP.TC_H2_FR.ToString();
-                tbSPIndex.Text = ToolChanger.xTCP.TC_Index.ToString();
-                tbSPRate.Text = ToolChanger.xTCP.TC_S_FR.ToString();
+                tbTCH1.Text = MachineMotion.xTCP.TC_H1_Z.ToString();
+                tbTCH1FR.Text = MachineMotion.xTCP.TC_H1_FR.ToString();
+                tbTCH2.Text = MachineMotion.xTCP.TC_H2_Z.ToString();
+                tbTCH2FR.Text = MachineMotion.xTCP.TC_H2_FR.ToString();
+                tbSPIndex.Text = MachineMotion.xTCP.TC_Index.ToString();
+                tbSPRate.Text = MachineMotion.xTCP.TC_S_FR.ToString();
 
-                tbTSX.Text = ToolChanger.xTCP.TS_X.ToString();
-                tbTSY.Text = ToolChanger.xTCP.TS_Y.ToString();
-                tbTSZ.Text = ToolChanger.xTCP.TS_Z.ToString();
-                tbTSZSafe.Text = ToolChanger.xTCP.TS_SAFE_Z.ToString();
-                tbTSIndex.Text = ToolChanger.xTCP.TS_S.ToString();
+                tbTSX.Text = MachineMotion.xTCP.TS_X.ToString();
+                tbTSY.Text = MachineMotion.xTCP.TS_Y.ToString();
+                tbTSZ.Text = MachineMotion.xTCP.TS_Z.ToString();
+                tbTSZSafe.Text = MachineMotion.xTCP.TS_SAFE_Z.ToString();
+                tbTSIndex.Text = MachineMotion.xTCP.TS_S.ToString();
 
-                tbTSRate1.Text = ToolChanger.xTCP.TS_FR1.ToString();
-                tbTSRate2.Text = ToolChanger.xTCP.TS_FR2.ToString();
+                tbTSRate1.Text = MachineMotion.xTCP.TS_FR1.ToString();
+                tbTSRate2.Text = MachineMotion.xTCP.TS_FR2.ToString();
 
 
-                tbCarouselSize.Text = ToolChanger.xTCP.CarouselSize.ToString();
+                tbCarouselSize.Text = MachineMotion.xTCP.CarouselSize.ToString();
             }
         }
 
@@ -531,37 +536,54 @@ namespace KFLOP_Test3
 
             double temp;
             if (double.TryParse(tbTCH1.Text, out temp))
-            { ToolChanger.xTCP.TC_H1_Z = temp; }
+            { MachineMotion.xTCP.TC_H1_Z = temp; }
             if (double.TryParse(tbTCH1FR.Text, out temp))
-            { ToolChanger.xTCP.TC_H1_FR = temp; }
+            { MachineMotion.xTCP.TC_H1_FR = temp; }
             if (double.TryParse(tbTCH2.Text, out temp))
-            { ToolChanger.xTCP.TC_H2_Z = temp; }
+            { MachineMotion.xTCP.TC_H2_Z = temp; }
             if (double.TryParse(tbTCH2FR.Text, out temp))
-            { ToolChanger.xTCP.TC_H2_FR = temp; }
+            { MachineMotion.xTCP.TC_H2_FR = temp; }
             if (double.TryParse(tbSPIndex.Text, out temp))
-            { ToolChanger.xTCP.TC_Index = temp; }
+            { MachineMotion.xTCP.TC_Index = temp; }
             if (double.TryParse(tbSPRate.Text, out temp))
-            { ToolChanger.xTCP.TC_S_FR = temp; }
+            { MachineMotion.xTCP.TC_S_FR = temp; }
 
             if (double.TryParse(tbTSX.Text, out temp))
-            { ToolChanger.xTCP.TS_X = temp; }
+            { MachineMotion.xTCP.TS_X = temp; }
             if (double.TryParse(tbTSY.Text, out temp))
-            { ToolChanger.xTCP.TS_Y = temp; }
+            { MachineMotion.xTCP.TS_Y = temp; }
             if (double.TryParse(tbTSZ.Text, out temp))
-            { ToolChanger.xTCP.TS_Z = temp; }
+            { MachineMotion.xTCP.TS_Z = temp; }
             if(double.TryParse(tbTSZSafe.Text, out temp))
-            { ToolChanger.xTCP.TS_SAFE_Z = temp; }
+            { MachineMotion.xTCP.TS_SAFE_Z = temp; }
             if (double.TryParse(tbTSIndex.Text, out temp))
-            { ToolChanger.xTCP.TS_S = temp; }
+            { MachineMotion.xTCP.TS_S = temp; }
             if (double.TryParse(tbTSRate1.Text, out temp))
-            { ToolChanger.xTCP.TS_FR1 = temp; }
+            { MachineMotion.xTCP.TS_FR1 = temp; }
             if (double.TryParse(tbTSRate2.Text, out temp))
-            { ToolChanger.xTCP.TS_FR2 = temp; }
+            { MachineMotion.xTCP.TS_FR2 = temp; }
             int itemp;
             if (int.TryParse(tbCarouselSize.Text, out itemp))
-            { ToolChanger.xTCP.CarouselSize = itemp; }
+            { MachineMotion.xTCP.CarouselSize = itemp; }
 
         }
+
+        private void btnCfgLoad_Click(object sender, RoutedEventArgs e)
+        {
+            xToolChanger.LoadTCCfg();   // get the configuration from the file
+            UpdateCfgUI();
+        }
+
+        private void btnCfgSave_Click(object sender, RoutedEventArgs e)
+        {
+            MessageBoxResult MBR = MessageBox.Show("Save the Tool Changer Configuration?","File Save", MessageBoxButton.OKCancel);
+            if (MBR == MessageBoxResult.OK)
+            {
+                UpdateCfg();
+                xToolChanger.SaveTCCfg();
+            }
+        }
+        #endregion
 
         #region Tool Carousel Configuration File
 
@@ -641,7 +663,7 @@ namespace KFLOP_Test3
             CarouselList.Items.Clear(); // clear the list
 
             // fill the list with nothing
-            for (int i = 0; i < ToolChanger.xTCP.CarouselSize; i++)  
+            for (int i = 0; i < MachineMotion.xTCP.CarouselSize; i++)  
             {
                 CarouselItem CI = new CarouselItem();
                 CI.Pocket = i + 1;
@@ -771,13 +793,11 @@ namespace KFLOP_Test3
             // get the arguments
             ToolSetterArguments TSx = new ToolSetterArguments();
             // load the arguments from the Tool change parameters
-            TSx.X = ToolChanger.xTCP.TS_X;
-            TSx.Y = ToolChanger.xTCP.TS_Y;
-            TSx.SafeZ = ToolChanger.xTCP.TS_SAFE_Z;
-            TSx.ToolZ = ToolChanger.xTCP.TS_Z;
-            TSx.Rate = ToolChanger.xTCP.TS_FR1;
+            TSx.X_Offset = 0;
+            TSx.Y_Offset = 0;
+            TSx.Z_Offset = 2.0;
 
-//            Start_ToolSetter(TSx);
+            xToolSetter.Start_ToolSetter(TSx);
 
             // record the detect position or if timed out report a no detect
             // 
@@ -824,45 +844,6 @@ namespace KFLOP_Test3
 
     }
 
-    public class SingleAxis
-    {
-        public double Pos { get; set; }
-        public double Rate { get; set; }
-        public bool Move { get; set; }  // in / out or clamp / release 
-        public int ToolNumber { get; set; }
-        public int ToolPocket { get; set; }
-    }
-
-    public class PlaneAxis
-    {
-        public double PosX { get; set; }
-        public double PosY { get; set; }
-        public double Rate { get; set; }
-        public bool Move { get; set; }
-        public int ToolNumber { get; set; }
-    }
-
-    // Background Worker results 
-    public class BWResults
-    {
-        public bool Result { get; set; }
-        public string Comment { get; set; }
-    }
-
-    public class TExchangePosition
-    {
-        public int PutTool { get; set; } 
-        public int GetTool { get; set; }
-    }
-
-    public class ToolSetterArguments
-    {
-        public double X { get; set; }
-        public double Y { get; set; }
-        public double SafeZ { get; set; }
-        public double ToolZ { get; set; }
-        public double ToolLength { get; set; }
-        public double Rate { get; set; }
-    }
+ 
 
 }

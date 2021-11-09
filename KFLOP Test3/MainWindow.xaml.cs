@@ -111,7 +111,9 @@ namespace KFLOP_Test3
         static KMotion_dotNet.KM_Axis _ZAxis;
 
         static MachineMotion MM;    // base class for motions
-        static ToolChanger toolChanger;
+        static ToolChanger toolChanger; // Tool Changer
+        static ToolSetter toolSetter;   // Tool Setter
+        static Probe probe;             // Probe. 
         
 
         static MotionParams_Copy Xparam;
@@ -216,11 +218,23 @@ namespace KFLOP_Test3
             CFiles = new ConfigFiles();
             OpenConfig(ref CFiles);
 
+            // the motion classes
+
             MM = new MachineMotion(ref KM, ref SpindleAxis, ref CFiles);
             if(MachineMotion.TestBench == true)
             {
                 lblTestBench.Content = "TESTBENCH";
             }
+
+            // instantiate the toolChanger first
+
+            toolInfo = new ToolInfo();
+            toolInfo.toolTable = new KFLOP_Test3.ToolTable();
+            toolInfo.toolCarousel = new KFLOP_Test3.ToolCarousel();
+
+            toolChanger = new ToolChanger(ref toolInfo);
+            toolSetter = new ToolSetter(ref toolInfo);
+
 
             // Initialize the GCode Interpreter
             GetInterpVars();    // load the emcvars and tool files
@@ -297,15 +311,9 @@ namespace KFLOP_Test3
             OffsetPanel1.InitG30(fixG30);
 
             // Tool Change Panel
-            // instantiate the toolChanger first
-           
-            toolInfo = new ToolInfo();
-            toolInfo.toolTable = new KFLOP_Test3.ToolTable();
-            toolInfo.toolCarousel = new KFLOP_Test3.ToolCarousel();
- 
-            toolChanger = new ToolChanger(ref toolInfo);
 
-            ToolChangerPanel1 = new ToolChangerPanel(ref toolChanger, ref CFiles);
+
+            ToolChangerPanel1 = new ToolChangerPanel(ref toolChanger, ref toolSetter, ref CFiles);
             var Tab4 = new TabItem();
             Tab4.Name = "tabItemContent4";
             Tab4.Header = "Tool Changer";
@@ -995,7 +1003,6 @@ namespace KFLOP_Test3
 
         #region User Interface updates
 
-        
         private void UpdateUI(ref KM_MainStatus KStat)
         {
             #region DRO update

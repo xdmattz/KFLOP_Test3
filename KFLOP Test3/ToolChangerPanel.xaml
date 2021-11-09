@@ -147,6 +147,8 @@
         <Button x:Name="btnInitCarousel" Content="Init" HorizontalAlignment="Left" Margin="34,70,0,0" VerticalAlignment="Top" Width="42" Click="btnInitCarousel_Click"/>
 
         <Button x:Name="btn_TCTest" Content="TC Test" Click="TC_Test_Click" HorizontalAlignment="Left" Margin="576,344,0,0" VerticalAlignment="Top" Width="75" RenderTransformOrigin="-0.027,-0.591"/>
+        <Button x:Name="btn_CfgLoad" Content="Load" Click="btnCfgLoad_Click" HorizontalAlignment="Left" Margin="25,307,0,0" VerticalAlignment="Top" Width="75" RenderTransformOrigin="-0.027,-0.591"/>
+        <Button x:Name="btn_CfgSave" Content="Save" Click="btnCfgSave_Click" HorizontalAlignment="Left" Margin="120,307,0,0" VerticalAlignment="Top" Width="75" RenderTransformOrigin="-0.027,-0.591"/>
 
     </Grid>
 </UserControl>

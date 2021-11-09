@@ -20,7 +20,7 @@ using KMotion_dotNet;
 namespace KFLOP_Test3
 {
     // possible probing results
-    public enum ProbeResult
+    public enum ProbeResult : int
     {
         Idle,
         Probing,
@@ -30,16 +30,7 @@ namespace KFLOP_Test3
         T2_ProbeError
     }
 
-    public struct MachineCoordinates
-    {
-        
-        public double X { get; set; }
-        public double Y { get; set; }
-        public double Z { get; set; }
-        public double A { get; set; }
-        public double B { get; set; }
-        public double C { get; set; }
-    }
+
 
 
     /// <summary>
