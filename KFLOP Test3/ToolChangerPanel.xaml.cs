@@ -1,5 +1,5 @@
 ﻿// Must put this in every file that will look for it!
-#define TESTBENCH  // defining this will allow operation on the testbench
+// #define TESTBENCH  // defining this will allow operation on the testbench
 // don't forget the TESTBENCH in ToolChanger.cs
 
 using System;
@@ -120,10 +120,12 @@ namespace KFLOP_Test3
         {
             ToolChange_LED.Set_State(LED_State.On_Blue);
         }
+
         public void ClearTC_Led()
         {
             ToolChange_LED.Set_State(LED_State.Off);
         }
+
         public void TLAUX_Status(ref KM_MainStatus KStat)
         {
             getTLAUX_Status();
@@ -521,6 +523,7 @@ namespace KFLOP_Test3
                 tbTSZ.Text = MachineMotion.xTCP.TS_Z.ToString();
                 tbTSZSafe.Text = MachineMotion.xTCP.TS_SAFE_Z.ToString();
                 tbTSIndex.Text = MachineMotion.xTCP.TS_S.ToString();
+                tbRefZ.Text = MachineMotion.xTCP.TS_RefZ.ToString();
 
                 tbTSRate1.Text = MachineMotion.xTCP.TS_FR1.ToString();
                 tbTSRate2.Text = MachineMotion.xTCP.TS_FR2.ToString();
@@ -557,6 +560,8 @@ namespace KFLOP_Test3
             if(double.TryParse(tbTSZSafe.Text, out temp))
             { MachineMotion.xTCP.TS_SAFE_Z = temp; }
             if (double.TryParse(tbTSIndex.Text, out temp))
+            { MachineMotion.xTCP.TS_RefZ = temp; }
+            if (double.TryParse(tbRefZ.Text, out temp))
             { MachineMotion.xTCP.TS_S = temp; }
             if (double.TryParse(tbTSRate1.Text, out temp))
             { MachineMotion.xTCP.TS_FR1 = temp; }

@@ -72,8 +72,8 @@
                 <TextBox x:Name="tbTSZ" Text="0.000" HorizontalAlignment="Stretch"/>
             </StackPanel>
             <StackPanel Grid.Row="3" Grid.Column="3" Orientation="Horizontal">
-                <Label Content="Z:"/>
-                <TextBox x:Name="tbZ3" Text="0.000" HorizontalAlignment="Stretch"/>
+                <Label Content="Z Ref:"/>
+                <TextBox x:Name="tbRefZ" Text="0.000" HorizontalAlignment="Stretch"/>
             </StackPanel>
 
             <!-- Row of coordinates-->
