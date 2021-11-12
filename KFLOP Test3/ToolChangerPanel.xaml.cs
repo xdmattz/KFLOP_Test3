@@ -993,7 +993,8 @@ namespace KFLOP_Test3
             {
                 if (ToolSetter.TSProbeState == ProbeResult.Detected)
                 {
-                    MessageBox.Show("Good Calibration");
+                    MessageBox.Show($"Calibration!\nX = {ToolSetter.TSCoord.X}\nY = {ToolSetter.TSCoord.Y}\nZ = {ToolSetter.TSCoord.Z}");
+
                 }
                 else
                 {
