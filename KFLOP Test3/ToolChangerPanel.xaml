@@ -8,19 +8,23 @@
              d:DesignHeight="390" d:DesignWidth="700">
     <!-- allow 30 height for tab-->
     <Grid>
-        <Button x:Name="btnGetTool" Content="Get Tool" HorizontalAlignment="Left" Margin="91,42,0,0" VerticalAlignment="Top" Width="90" Click="btnGetTool_Click"/>
-        <Button x:Name="btnPutTool" Content="Put Tool" HorizontalAlignment="Left" Margin="91,66,0,0" VerticalAlignment="Top" Width="90" Click="btnPutTool_Click"/>
-        <Button x:Name="btnLoadTool" Content="Load Tool" HorizontalAlignment="Left" Margin="91,88,0,0" VerticalAlignment="Top" Width="90" Click="btnLoadTool_Click"/>
-        <Button x:Name="btnUnloadTool" Content="Unload Tool" HorizontalAlignment="Left" Margin="91,110,0,0" VerticalAlignment="Top" Width="90" Click="btnUnloadTool_Click"/>
+        <StackPanel Margin="90,42,509,254">
+            <Button x:Name="btnGetTool" Content="Get Tool" HorizontalAlignment="Left"   Width="90" Click="btnGetTool_Click"/>
+            <Button x:Name="btnPutTool" Content="Put Tool" HorizontalAlignment="Left"   Width="90" Click="btnPutTool_Click"/>
+            <Button x:Name="btnLoadTool" Content="Load Tool" HorizontalAlignment="Left" Width="90" Click="btnLoadTool_Click"/>
+            <Button x:Name="btnUnloadTool" Content="Unload Tool" HorizontalAlignment="Left" Width="90" Click="btnUnloadTool_Click"/>
+        </StackPanel>
+
         <TextBox x:Name="tbPocketNumber" HorizontalAlignment="Left" Height="23" Margin="91,14,0,0" TextWrapping="Wrap" Text="TextBox" VerticalAlignment="Top" Width="61"/>
-        
+
         <Label Content="Carousel No:" HorizontalAlignment="Left" Margin="13,11,0,0" VerticalAlignment="Top" RenderTransformOrigin="-0.338,0.662" Width="78"/>
         <Label x:Name="lblCurrentTool" Content="Current Tool:" HorizontalAlignment="Left" Margin="196,10,0,0" VerticalAlignment="Top"/>
         <TextBox x:Name="tbToolNumber" HorizontalAlignment="Left" Height="23" Margin="313,14,0,0" TextWrapping="Wrap" Text="TextBox" VerticalAlignment="Top" Width="61"/>
         <Button x:Name="btnToolInSpindleUpdate" Content="Update" Height="25"  Margin="215,36,425,329" Click="btnToolInSpindleUpdate_Click"  />
 
-        <Grid Margin="25,136,400,113">
+        <Grid Margin="25,151,336,65">
             <Grid.RowDefinitions>
+                <RowDefinition Height="*"/>
                 <RowDefinition Height="*"/>
                 <RowDefinition Height="*"/>
                 <RowDefinition Height="*"/>
@@ -58,7 +62,7 @@
                 <TextBox x:Name="tbTSY" Text="0.000" HorizontalAlignment="Stretch"/>
             </StackPanel>
             <StackPanel Grid.Row="2" Grid.Column="3" Orientation="Horizontal">
-                <Label Content="Z Dist:"/>
+                <Label Content="TBD:"/>
                 <TextBox x:Name="tbZ2" Text="0.000" HorizontalAlignment="Stretch"/>
             </StackPanel>
 
@@ -68,32 +72,32 @@
                 <TextBox x:Name="tbSPIndex" Text="0.000" HorizontalAlignment="Stretch"/>
             </StackPanel>
             <StackPanel Grid.Row="3" Grid.Column="2" Orientation="Horizontal">
-                <Label Content="Z:"/>
+                <Label Content="Rapid Z:"/>
                 <TextBox x:Name="tbTSZ" Text="0.000" HorizontalAlignment="Stretch"/>
             </StackPanel>
             <StackPanel Grid.Row="3" Grid.Column="3" Orientation="Horizontal">
-                <Label Content="Z Ref:"/>
+                <Label Content="TS RefZ:"/>
                 <TextBox x:Name="tbRefZ" Text="0.000" HorizontalAlignment="Stretch"/>
             </StackPanel>
 
             <!-- Row of coordinates-->
-            <StackPanel Grid.Row="4" Grid.Column="2" Orientation="Horizontal">
+            <StackPanel Grid.Row="4" Grid.Column="3" Orientation="Horizontal">
                 <Label Content="Index:"/>
                 <TextBox x:Name="tbTSIndex" Text="0.000" HorizontalAlignment="Stretch"/>
             </StackPanel>
-            <StackPanel Grid.Row="5" Grid.Column="0" Orientation="Horizontal">
-                <Label Content="Rate1:" Height="23" VerticalAlignment="Bottom"/>
+            <StackPanel Grid.Row="5" Grid.Column="2" Orientation="Horizontal">
+                <Label Content="Rate1:"/>
                 <TextBox x:Name="tbTSRate1" Text="0.00" HorizontalAlignment="Stretch"/>
             </StackPanel>
-            <StackPanel Grid.Row="5" Grid.Column="2" Orientation="Horizontal">
+            <StackPanel Grid.Row="6" Grid.Column="2" Orientation="Horizontal">
                 <Label Content="Rate2:" Height="23" VerticalAlignment="Bottom"/>
                 <TextBox x:Name="tbTSRate2" Text="0.00" HorizontalAlignment="Stretch" Width="35"/>
             </StackPanel>
-            <StackPanel Grid.Row="4" Grid.Column="3" Orientation="Horizontal">
+            <StackPanel Grid.Row="5" Grid.Column="3" Orientation="Horizontal">
                 <Label Content="SP:"/>
                 <TextBox x:Name="tbSPtoPos" Text="0.000" HorizontalAlignment="Stretch"/>
             </StackPanel>
-            <StackPanel Grid.Row="5" Grid.Column="3" Orientation="Horizontal">
+            <StackPanel Grid.Row="6" Grid.Column="3" Orientation="Horizontal">
                 <Label Content="Rate:" Height="23" VerticalAlignment="Bottom"/>
                 <TextBox x:Name="tbSPJogRate" Text="0.00" HorizontalAlignment="Stretch"/>
             </StackPanel>
@@ -104,7 +108,7 @@
             <TextBox x:Name="tbTCH1FR" Text="0.00" Grid.Row="1" Grid.Column="1" />
             <TextBox x:Name="tbTCH2FR" Text="0.00" Grid.Row="2" Grid.Column="1" />
             <TextBox x:Name="tbSPRate" Text="0.00" Grid.Row="3" Grid.Column="1" />
-
+            <Button x:Name="btnCfgUpdate" Content="Update" Grid.Row="6" Grid.Column="1" Click="btnCfgUpdate_Click" />
         </Grid>
         <Button x:Name="btnTC_H1" Content="Move to 1 Z" HorizontalAlignment="Left" Margin="496,69,0,0" VerticalAlignment="Top" Width="75" Click="btnTC_H1_Click"/>
         <Button x:Name="btnTC_H2" Content="Move to 2 Z" HorizontalAlignment="Left" Margin="496,96,0,0" VerticalAlignment="Top" Width="75" RenderTransformOrigin="0.483,3.585" Click="btnTC_H2_Click"/>
@@ -114,11 +118,11 @@
         <Button x:Name="btnArm_In" Content="TC ARM OUT" HorizontalAlignment="Left" Margin="576,131,0,0" VerticalAlignment="Top" Width="78" Click="btnArm_In_Click"/>
         <Button x:Name="btnToolSel" Content="Carousel" HorizontalAlignment="Left" Margin="496,131,0,0" VerticalAlignment="Top" Width="75" RenderTransformOrigin="-0.862,0.426" Click="btnToolSel_Click"/>
 
-        <TextBox x:Name="tbTLAUXStatus" HorizontalAlignment="Left" Height="23" Margin="290,342,0,0" TextWrapping="Wrap" Text="TextBox" VerticalAlignment="Top" Width="120"/>
-        <Label Content="TLAUX Status:" HorizontalAlignment="Left" Margin="180,342,0,0" VerticalAlignment="Top"/>
+        <TextBox x:Name="tbTLAUXStatus" HorizontalAlignment="Left" Height="23" Margin="301,342,0,0" TextWrapping="Wrap" Text="TextBox" VerticalAlignment="Top" Width="120"/>
+        <Label Content="TLAUX Status:" HorizontalAlignment="Left" Margin="218,339,0,0" VerticalAlignment="Top"/>
         <local:LED_Indicator x:Name="ledClamp" Margin="576,166,19,199" />
 
-        <Button x:Name="btnAbort" Content="Abort" HorizontalAlignment="Left" Margin="514,169,0,0" VerticalAlignment="Top" Width="46" Click="btnAbort_Click"/>
+        <Button x:Name="btnAbort" Content="Abort" HorizontalAlignment="Left" Margin="496,169,0,0" VerticalAlignment="Top" Width="64" Click="btnAbort_Click" Height="36"/>
         <Label x:Name="lblTCProgress" Content="Progress:" HorizontalAlignment="Left" Margin="196,64,0,0" VerticalAlignment="Top" Height="25"/>
         <Label x:Name="lblTCP2" Content="" HorizontalAlignment="Left" Margin="205,96,0,0" VerticalAlignment="Top"   />
         <Label x:Name="lblStepProgress" Content="Progress:" HorizontalAlignment="Left" Margin="363,64,0,0" VerticalAlignment="Top" Height="25"/>
@@ -131,7 +135,7 @@
         <Label x:Name="lblProg2" Content="" HorizontalAlignment="Left" Margin="215,110,0,0" VerticalAlignment="Top"/>
         <local:LED_Indicator x:Name="ToolChange_LED" Margin="415,325,39,10" />
 
-        <Grid Margin="478,229,10,51">
+        <Grid Margin="450,229,10,51">
             <Grid.RowDefinitions>
                 <RowDefinition Height="*" />
                 <RowDefinition Height="*" />
@@ -142,13 +146,17 @@
                 <ColumnDefinition Width="*" />
                 <ColumnDefinition Width="*" />
             </Grid.ColumnDefinitions>
-            <Button x:Name="btnToolSetter" Content="Tool Setter" Click="btnToolSetter_Click"/>
+            <Button x:Name="btnToolSetter" Content="Tool Setter" Click="btnToolSetter_Click" Margin="5"/>
+            <Button x:Name="btnTS_Cal" Content="Calibrate" Click="btnTS_Cal_Click" Grid.Row="1" Margin="5"/>
+            <TextBlock x:Name="tbTS_Status" Text="" Grid.Row="0" Grid.Column="1"/>
+            <Button x:Name="btnTS_Reset" Content="Reset" Click="btnTS_Reset_Click" Grid.Row="2" Margin="5"/>
+
         </Grid>
         <Button x:Name="btnInitCarousel" Content="Init" HorizontalAlignment="Left" Margin="34,70,0,0" VerticalAlignment="Top" Width="42" Click="btnInitCarousel_Click"/>
 
         <Button x:Name="btn_TCTest" Content="TC Test" Click="TC_Test_Click" HorizontalAlignment="Left" Margin="576,344,0,0" VerticalAlignment="Top" Width="75" RenderTransformOrigin="-0.027,-0.591"/>
-        <Button x:Name="btn_CfgLoad" Content="Load" Click="btnCfgLoad_Click" HorizontalAlignment="Left" Margin="25,307,0,0" VerticalAlignment="Top" Width="75" RenderTransformOrigin="-0.027,-0.591"/>
-        <Button x:Name="btn_CfgSave" Content="Save" Click="btnCfgSave_Click" HorizontalAlignment="Left" Margin="120,307,0,0" VerticalAlignment="Top" Width="75" RenderTransformOrigin="-0.027,-0.591"/>
+        <Button x:Name="btn_CfgLoad" Content="Load" Click="btnCfgLoad_Click" HorizontalAlignment="Left" Margin="20,343,0,0" VerticalAlignment="Top" Width="75" RenderTransformOrigin="-0.027,-0.591"/>
+        <Button x:Name="btn_CfgSave" Content="Save" Click="btnCfgSave_Click" HorizontalAlignment="Left" Margin="115,343,0,0" VerticalAlignment="Top" Width="75" RenderTransformOrigin="-0.027,-0.591"/>
 
     </Grid>
 </UserControl>

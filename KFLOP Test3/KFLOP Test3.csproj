@@ -167,6 +167,9 @@
     <Compile Include="ToolTablePanel.xaml.cs">
       <DependentUpon>ToolTablePanel.xaml</DependentUpon>
     </Compile>
+    <Compile Include="TS_Calibrate.xaml.cs">
+      <DependentUpon>TS_Calibrate.xaml</DependentUpon>
+    </Compile>
     <Page Include="ButtonGrid.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
@@ -248,6 +251,10 @@
       <Generator>MSBuild:Compile</Generator>
     </Page>
     <Page Include="ToolTablePanel.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="TS_Calibrate.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>

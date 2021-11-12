@@ -25,6 +25,10 @@ namespace KFLOP_Test3
         public double TS_FR1 { get; set; }    // tool height setter FeedRate 1 - hunt
         public double TS_FR2 { get; set; }    // tool height setter FeedRate 2 - touch
         public double TS_RefZ { get; set; }   // The tool setter absolute Z coordinate
+        // max tool length is TS_Z - TS_RefZ 
+         // this is the maximum length that the tool changer can take 
+        // the tool setter will rapid to the TS_RefZ - TS_MaxToolLen position then continue at the TS_FR1 (hunt) rate until it detects or times out
+        // if it detects
 
         public int CarouselSize { get; set; } // the number of slots in the tool carousel
         public string CarouselToolsFileName { get; set; } // name of the carousel's loaded tool state 

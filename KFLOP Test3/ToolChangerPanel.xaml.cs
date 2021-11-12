@@ -35,6 +35,14 @@ namespace KFLOP_Test3
     /// <summary>
     /// Interaction logic for ToolChangerPanel.xaml
     /// </summary>
+    /// 
+    enum TS_Actions : int
+    {
+        NoAction,
+        ToolMeasurment,
+        Calibration
+    }
+
     public partial class ToolChangerPanel : UserControl
     {
         #region Global Variables
@@ -61,6 +69,9 @@ namespace KFLOP_Test3
 
         static ToolChanger xToolChanger;
         static ToolSetter xToolSetter;
+
+        private TS_Actions SetterAction;
+        private double GaugeLength;
         
 
         #endregion
@@ -85,11 +96,13 @@ namespace KFLOP_Test3
             xToolChanger.ProcessError += TC_ProcessError;
             xToolChanger.StepUpdate += TC_StepChanged;
             xToolChanger.StepError += TC_StepError;
+            xToolChanger.ProcessCompleted += TC_ProcessFinished; // need something to call here!
 
             xToolChanger.UpdateCarousel += TC_CarouselUpdate;
 
             xToolSetter.ProcessUpdate += TC_ProcessChanged;
             xToolSetter.ProcessError += TC_ProcessError;
+            xToolSetter.ProcessCompleted += TS_ProcessFinished; // this is a bit different from the TC Process Finished callback.
 
             //
 
@@ -112,6 +125,8 @@ namespace KFLOP_Test3
             // TTable = new ToolTable();
             CarouselList = xToolChanger.GetCarousel();
             TTable = xToolChanger.GetToolTable();
+
+            SetterAction = TS_Actions.NoAction;
 
         }
 
@@ -165,10 +180,6 @@ namespace KFLOP_Test3
         #region Tool Changer Action Test Buttons
         private void btnGetTool_Click(object sender, RoutedEventArgs e)
         {
-            // get a tool from the carousel
-            // 
-            // ensure that the TLAUX ARM is IN
-
             // get the tool number
             int ToolNumber;
             if (int.TryParse(tbPocketNumber.Text, out ToolNumber) == false)
@@ -188,6 +199,7 @@ namespace KFLOP_Test3
                 if (rslt == MessageBoxResult.Yes)
                 {
                     // xToolChanger.ToolChangerDeluxe(ToolInSpindle, ToolNumber);
+                    TC_DisableButtons();
                     xToolChanger.ToolChangerSimple(ToolChanger.ToolInSpindle, ToolNumber);
                 }
                 xToolChanger.SetCurrentTool(ToolNumber); // update the interpreter slot number
@@ -206,7 +218,7 @@ namespace KFLOP_Test3
             {
                 string toolmsg = string.Format("Manualy insert Tool number {0} now", ToolNumber);
                 MessageBox.Show(toolmsg);
-               // ToolInSpindle = ToolNumber;
+                // ToolInSpindle = ToolNumber;
                 xToolChanger.SetCurrentTool(ToolNumber); // update the interpreter slot number
                 return;
             }
@@ -220,7 +232,7 @@ namespace KFLOP_Test3
             }
 
             // update the Tool change parameters
-
+            TC_DisableButtons();
             xToolChanger.ToolChangerSimple(0, ToolNumber); // this should get "ToolNumber" from the carousel from an empty spindle
         }
 
@@ -242,6 +254,8 @@ namespace KFLOP_Test3
             {
                 return;
             }
+
+            TC_DisableButtons();
             // xToolChanger.ToolChangerDeluxe(ToolNumber, 0);    // this should put the tool into the carousel, 
             xToolChanger.ToolChangerSimple(ToolNumber, 0);    // this should put the tool into the carousel, 
                                                  // or prompt for a manual tool removal if the 
@@ -265,9 +279,11 @@ namespace KFLOP_Test3
                 return;
             }
             // unload the tool
+            TC_DisableButtons();
             xToolChanger.UnloadTool(PocketNumber);
 
         }
+
         private void btnLoadTool_Click(object sender, RoutedEventArgs e)
         {
             int PocketNumber;
@@ -289,6 +305,7 @@ namespace KFLOP_Test3
             // check if tool is in the tool list
             if(xToolChanger.ToolInTable(ToolNumber))
             {
+                TC_DisableButtons();
                 xToolChanger.LoadTool(ToolNumber, PocketNumber);
             }
             else
@@ -297,7 +314,39 @@ namespace KFLOP_Test3
             }
         }
 
+        private void TC_DisableButtons()
+        {
+            // Disable the Tool Changer buttons because a tool change action was started
+            btnGetTool.IsEnabled = false;
+            btnPutTool.IsEnabled = false;
+            btnLoadTool.IsEnabled = false;
+            btnUnloadTool.IsEnabled = false;
 
+            btnTC_H1.IsEnabled = false;
+            btnTC_H2.IsEnabled = false;
+            btnToolRel.IsEnabled = false;
+            btnSpindle.IsEnabled = false;
+            btnSP_PID.IsEnabled = false;
+            btnArm_In.IsEnabled = false;
+            btnToolSel.IsEnabled = false;
+        }
+
+        private void TC_EnableButtons()
+        {
+            // re-enable the Tool Changer buttons now that the action is over.
+            btnGetTool.IsEnabled = true;
+            btnPutTool.IsEnabled = true;
+            btnLoadTool.IsEnabled = true;
+            btnUnloadTool.IsEnabled = true;
+
+            btnTC_H1.IsEnabled = true; 
+            btnTC_H2.IsEnabled = true;
+            btnToolRel.IsEnabled = true;
+            btnSpindle.IsEnabled = true;
+            btnSP_PID.IsEnabled = true;
+            btnArm_In.IsEnabled = true;
+            btnToolSel.IsEnabled = true;
+        }
 
         #endregion
 
@@ -768,6 +817,24 @@ namespace KFLOP_Test3
             lblStepP2.Content = s;
         }
 
+        private void TC_ProcessFinished()
+        {
+            Dispatcher.BeginInvoke(new System.Threading.ThreadStart(() => TC_ProcessFinished1()));
+        }
+        private void TC_ProcessFinished1()
+        {
+            // this is what gets called whenever any of the tool Changer processes finish
+            // What to do here?
+            // check for an error
+            // maybe enable some buttons that were disabled?
+            // note that this will also get called when a tool change is caused by G-Code execution so make sure it
+            // handles all the cases.
+//            MessageBox.Show("TC Process Finished");
+            TC_EnableButtons();
+        }
+
+
+
         #endregion
 
         #region Abort button
@@ -790,23 +857,169 @@ namespace KFLOP_Test3
         #region Tool Setter
         private void btnToolSetter_Click(object sender, RoutedEventArgs e)
         {
-            // make sure that the tool setter is present
-            // get the tool number to measure
-            // get the tool from the carousel or manual insert
-
             // Actual tool measurment
             // get the arguments
+            if (ToolSetter.TSProbeState != ProbeResult.Idle)
+            {
+                MessageBox.Show("Tool Setter is not ready!");
+                return;
+            }
             ToolSetterArguments TSx = new ToolSetterArguments();
             // load the arguments from the Tool change parameters
             TSx.X_Offset = 0;
             TSx.Y_Offset = 0;
-            TSx.Z_Offset = 2.0;
+            TSx.Z_Offset = MachineMotion.xTCP.TS_Z - MachineMotion.xTCP.TS_RefZ; 
+            // TSx.Z_Offset = 2.0; // calculate the proper length here!
 
-            xToolSetter.Start_ToolSetter(TSx);
+            TSx.UseExpectedZ = false;   // use the full length of the probe routine
+            SetterAction = TS_Actions.ToolMeasurment;
+            ToolSetter_Action(TSx);
+        }
+
+        private void ToolSetter_Action(ToolSetterArguments xTSArg)
+        {
+            // make sure that the tool setter is present
+            // get the tool number to measure
+            // get the tool from the carousel or manual insert
+
+
+            Disable_TS_Buttons();
+            xToolSetter.Start_ToolSetter(xTSArg);
+
+            // instead of waiting here, should there be a callback delegate instead?
+            // definately yes!
+            // show in tool setter.
+            tbTS_Status.Text = "In Tool Setter";
+            //bool TS_Timeout = false;
+            //int stuckCount = 0;
+            //do
+            //{
+            //    if (stuckCount++ > 300) // 30 second timeout
+            //    {
+            //        TS_Timeout = true;
+            //        break;
+            //    }
+            //    Thread.Sleep(100);
+            //} while (ToolSetter.TSActionInProgress == true); // waiting for Tool Setter to finish
+            //if(TS_Timeout)
+            //{
+            //    // something went wrong and we timed out
+            //    MessageBox.Show("Tool Setter Timeout!!!\nNeed to reset");
+            //    return;
+            //}
+            //if(ToolSetter.TSProbeState == ProbeResult.Detected)
+            //{
+            //    MessageBox.Show($"Tool Setter Success\nZ = {ToolSetter.TSCoord.Z}");
+            //    ToolSetter.TSProbeState = ProbeResult.Idle;
+            //}
+            //else
+            //{
+            //    MessageBox.Show($"Tool Setter Error {ToolSetter.TSProbeState}");
+            //}
 
             // record the detect position or if timed out report a no detect
             // 
         }
+
+
+        private void btnTS_Cal_Click(object sender, RoutedEventArgs e)
+        {
+            // get the gauge block length.
+            TS_Calibrate ts_Cal = new TS_Calibrate();
+            if (ts_Cal.ShowDialog() == true)
+            {
+                // do a tool setter operation
+                // TS Z coordinate = Detect position - gauge block length
+                
+
+                if (ToolSetter.TSProbeState != ProbeResult.Idle)
+                {
+                    MessageBox.Show("Tool Setter is not ready!");
+                    return;
+                }
+
+                GaugeLength = ts_Cal.Value;
+                ToolSetterArguments TSx = new ToolSetterArguments();
+                // load the arguments from the Tool change parameters
+                TSx.X_Offset = 0;
+                TSx.Y_Offset = 0;
+                TSx.Z_Offset = MachineMotion.xTCP.TS_Z - MachineMotion.xTCP.TS_RefZ - GaugeLength + 0.125; // full length - gauge length + a little bit
+                SetterAction = TS_Actions.Calibration;
+
+                ToolSetter_Action(TSx);
+
+            }
+
+        }
+
+        private void btnTS_Reset_Click(object sender, RoutedEventArgs e)
+        {
+            ToolSetter.TSProbeState = ProbeResult.Idle;
+        }
+
+        // event that gets called when the Tool Setter is done.
+        // call back functions for the Tool Setter
+        private void TS_ProcessFinished()
+        {
+            Dispatcher.BeginInvoke(new System.Threading.ThreadStart(() => TS_ProcessFinished1()));
+        }
+        private void TS_ProcessFinished1()
+        {
+            // this is what gets called whenever any of the tool Changer processes finish
+            // What to do here?
+            // check for an error
+            // maybe enable some buttons that were disabled?
+            // note that this will also get called when a tool change is caused by G-Code execution so make sure it
+            // handles all the cases.
+//            MessageBox.Show("TS Process Finished!");
+            Enable_TS_Buttons();
+            // was the TS action a calibration, or a tool measurment
+            if(SetterAction == TS_Actions.ToolMeasurment)
+            {
+                if(ToolSetter.TSProbeState == ProbeResult.Detected)
+                {
+                    // valid Tool Setter detection
+                    MessageBox.Show($"Detected!\nX = {ToolSetter.TSCoord.X}\nY = {ToolSetter.TSCoord.Y}\nZ = {ToolSetter.TSCoord.Z}");
+                    // what are the coordinates?
+
+                }
+                else
+                {
+                    // tool setter timout or other error
+                    MessageBox.Show("Setter Timeout");
+                }
+
+            } else if (SetterAction == TS_Actions.Calibration)
+            {
+                if (ToolSetter.TSProbeState == ProbeResult.Detected)
+                {
+                    MessageBox.Show("Good Calibration");
+                }
+                else
+                {
+                    MessageBox.Show("Calibration Timeout");
+                }
+            }
+
+            // set the process back to idle
+            ToolSetter.TSProbeState = ProbeResult.Idle;
+
+        }
+
+        private void Enable_TS_Buttons()
+        {
+            btnToolSetter.IsEnabled = true;
+            btnTS_Cal.IsEnabled = true;
+            btnTS_Reset.IsEnabled = true;
+        }
+
+        private void Disable_TS_Buttons()
+        {
+            btnToolSetter.IsEnabled = false;
+            btnTS_Cal.IsEnabled = false;
+            btnTS_Reset.IsEnabled = false;
+        }
+
 
         #endregion
 
@@ -844,6 +1057,11 @@ namespace KFLOP_Test3
             {
                 // dialog was canceled do nothing.
             }
+        }
+
+        private void btnCfgUpdate_Click(object sender, RoutedEventArgs e)
+        {
+            UpdateCfg();
         }
 
 

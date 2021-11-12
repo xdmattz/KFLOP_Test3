@@ -73,6 +73,7 @@ namespace KFLOP_Test3
         public event dStatusMsg ProcessUpdate;
         public event dStatusMsg ProcessError;
         public event dUpdateToolInfo UpdateCarousel;
+        public event dStageDone ProcessCompleted;
 
         public ToolChanger(ref ToolInfo toolInfo)   // class construtor
         {
@@ -703,6 +704,7 @@ namespace KFLOP_Test3
             // can I somehow make a red blinking warning on this? maybe a custom message box?
             ToolInSpindle = ToolSlot;
             TCActionProgress = false;
+            OnProcessComplete();    
         }
         #endregion
 
@@ -955,6 +957,7 @@ namespace KFLOP_Test3
             MessageBox.Show(toolmsg, "WARNING - DO NOT IGNORE!");
             ToolInSpindle = 0;
             TCActionProgress = false;
+            OnProcessComplete();
         }
         #endregion
 
@@ -1282,6 +1285,7 @@ namespace KFLOP_Test3
                 OnUpdateCarousel(0, (int)CarouselUpdateStates.Error);
             }
             TCActionProgress = false; // the action is done
+            OnProcessComplete();
         }
 
         private void BWProgressUpdate(BWResults br, int cnt)
@@ -1339,6 +1343,7 @@ namespace KFLOP_Test3
             }
             return false;   // Problem
         }
+
         public bool CarouselDeleteTool(int Pocket)
         {
             foreach(CarouselItem CI in CarouselList1.Items)
@@ -1397,6 +1402,7 @@ namespace KFLOP_Test3
             }
             return false;   // should never get here... assuming a valid pocket is given
         }
+
         private bool CheckPocketEmpty(int Pocket)
         {
             // check for an empty space in the tool carousel
@@ -1463,6 +1469,11 @@ namespace KFLOP_Test3
             UpdateCarousel?.Invoke(pocket, state); // if the UpdateCarousel delegate has been defined then call that delegate.
         }
 
+        protected virtual void OnProcessComplete()
+        {
+            ProcessCompleted?.Invoke(); // need to figure out what should be passed here.
+            // this should call the GUI delegate 
+        }
         #endregion
     }
 
@@ -1478,18 +1489,20 @@ namespace KFLOP_Test3
         // these static variable flags indicate tool change progress
         static bool TSChangeStatus; 
         static bool TSProgress; // true indicates a process step is in progress, false indicates the process has finished. 
-        static bool TSActionProgress;
+        public static bool TSActionInProgress;
 
-        static ProbeResult TSProbeState;
+        public static ProbeResult TSProbeState;
 
         public event dStatusMsg ProcessUpdate;
         public event dStatusMsg ProcessError;
+        public event dStageDone ProcessCompleted;
 
         static private ToolChangeParams TSP;
 
         public ToolSetter(ref ToolInfo toolInfo)
         {
             TSProbeState = new ProbeResult();
+            TSProbeState = ProbeResult.Idle;
 
             _bw3 = new BackgroundWorker();
             _bwts = new BackgroundWorker();
@@ -1501,11 +1514,13 @@ namespace KFLOP_Test3
 
         public bool Start_ToolSetter(ToolSetterArguments TSArgs)
         {
+
             // check that the background process isn't already running.
             if (_bw3.IsBusy)
             { return false; } // don't run if the background worker is busy
+            TSProbeState = ProbeResult.Probing;
 
-            TSActionProgress = true; // process action is happening...
+            TSActionInProgress = true; // process action is happening...
             // need a class to hold the tool setter arguments?
             _bw3.WorkerReportsProgress = true;
         
@@ -1522,12 +1537,12 @@ namespace KFLOP_Test3
         {
             ToolSetterArguments tTSArg;
             tTSArg = (ToolSetterArguments)e.Argument;    // get the arguments
-            bool ProcessError = false;
 
 //            MessageBox.Show("Move to Safe Z");
 
             TSProgress = true;
             TSChangeStatus = true;
+            TCProgress = true;     // Forgot to do this! Have to do this so the step processes will start correctly
 
             BW3Res.Result = true; // start out with this set.
             BW3Res.Comment = "Move to Safe Z";
@@ -1544,11 +1559,9 @@ namespace KFLOP_Test3
                 BW3Res.Comment = "Safe Z Move Error";
                 BW3Res.Result = false;
                 e.Result = BW3Res;
-                ProcessError = true;
+                return;
             }
 
-            if (ProcessError == false)
-            {
 //                MessageBox.Show("Move to X Y");
                 BW3Res.Comment = "Move to X Y";
                 _bw3.ReportProgress(0);
@@ -1564,18 +1577,45 @@ namespace KFLOP_Test3
                     BW3Res.Comment = "X Y Move Error";
                     BW3Res.Result = false;
                     e.Result = BW3Res;
-                    ProcessError = true;
+                return;
                 }
+
+            // index the spindle here!
+
+
+            BW3Res.Comment = "Spindle Indexing";
+            _bw3.ReportProgress(0);
+
+            // Index the spindle
+            tSAx.Pos = xTCP.TS_S;    // Spindle position and feedrate 
+            tSAx.Rate = xTCP.TC_S_FR;   // use the same feedrate as a tool change.
+            Start_Spindle_Process(tSAx);
+            if (WaitForTSProgress() == false)
+            {
+                // There was an error of some kind!
+                BW3Res.Comment = "TC Index Error";
+                BW3Res.Result = false;
+                e.Result = BW3Res;
+                return;
             }
 
-            if (ProcessError == false)
+            // disable the spindle? maybe move this to the end?
+
+            if (SpindleDisable() == false)
             {
-                // MessageBox.Show("Move to Tool Z");
-                BW3Res.Comment = "Move to Tool Z";
+                // There was an error of some kind!
+                BW3Res.Comment = "Spindle Disable Error";
+                BW3Res.Result = false;
+                e.Result = BW3Res;
+                return;
+            }
+
+            // MessageBox.Show("Move to Tool Z");
+            BW3Res.Comment = "Move to Tool Z";
                 _bw3.ReportProgress(0);
 
                 // move to Tool Setter Z (somewhere above the tool setter TBD inches)
-                tSAx.Pos = xTCP.TS_Z;  // subtract the Z Offset because all Z is negative...
+                tSAx.Pos = xTCP.TS_Z;  
                 tSAx.Rate = 0;
                 Start_MoveZ_Process(tSAx);
                 if (WaitForTSProgress() == false)
@@ -1584,26 +1624,39 @@ namespace KFLOP_Test3
                     BW3Res.Comment = "Tool Z Move Error";
                     BW3Res.Result = false;
                     e.Result = BW3Res;
-                    ProcessError = true;
+                return;
                 }
-            }
 
             // - estimated tool or default tool length
 
-            if (ProcessError == false)
-            {
+
                 //MessageBox.Show("Probing");
                 BW3Res.Comment = "Probing";
                 _bw3.ReportProgress(0);
-                // move while waiting for the tool setter to detect
-                // the probing command
-                Start_ToolSetterZProbe((tTSArg.Z_Offset + 0.25));    // this should be a little more than the current offset
+            // move while waiting for the tool setter to detect
+            // the probing command
+            // Check whether to use the full length of the probe cycle or to limit it to slightly more than the e
+            // expected tool length
+            double ProbeDistance = 0;
+
+            if(tTSArg.UseExpectedZ)
+            {
+                ProbeDistance = tTSArg.Z_Offset + 0.25;
+            }
+            else
+            {
+                ProbeDistance = xTCP.TS_Z - xTCP.TS_RefZ - 1.5; // this is a 1.5 inch buffer...  because the spindle can't go all the way down to the tool setter.
+            }
+                Start_ToolSetterZProbe(ProbeDistance);    // this should be a little more than the current offset
                 if (WaitForTSProgress() == false)
                 {
-                    // There was an error
-                    ProcessError = true;
+                // There was an error
+                BW3Res.Comment = "Probing Error";
+                BW3Res.Result = false;
+                e.Result = BW3Res;
+                return;
                 }
-            }
+
             // save the length / offset
 
             // move back to Safe Z
@@ -1622,17 +1675,12 @@ namespace KFLOP_Test3
                 // There was an error of some kind!
                 BW3Res.Comment = "Safe Z Move Error";
                 BW3Res.Result = false;
-                ProcessError = true;
+                e.Result = BW3Res;
+                return;
             }
 
-            if (ProcessError == false)
-            {
-
-                BW3Res.Comment = "Tool Setter Success";
-                BW3Res.Result = true;
-
-            }
-
+            BW3Res.Comment = "Tool Setter Success";
+            BW3Res.Result = true;
             e.Result = BW3Res;
 
         }
@@ -1644,11 +1692,13 @@ namespace KFLOP_Test3
 
         private void ToolSetterCompleted(object sender, RunWorkerCompletedEventArgs e)
         {
+            // check the ProcessError!
             // remove the process from background worker 2
             _bw3.DoWork -= ToolSetter_Worker;
             _bw3.ProgressChanged -= ToolSetterProgressChanged;
             _bw3.RunWorkerCompleted -= ToolSetterCompleted;
             CompleteActionStatus((BWResults)e.Result);
+            OnProcessComplete();
         }
 
         private bool WaitForTSProgress()
@@ -1660,9 +1710,9 @@ namespace KFLOP_Test3
             do
             {
                 Thread.Sleep(100);
-                if(stuckCount++ > 200) // 10 seconds seems like long enough
+                if(stuckCount++ > 300) // 30 seconds seems like long enough
                 {
-                    TCProgress = false;
+                    // TCProgress = false;
                     TSChangeStatus = false;
                     break; // return TSChangeStatus;
                 }
@@ -1677,13 +1727,14 @@ namespace KFLOP_Test3
             if (res.Result == true)
             {
                 // Action completed successfully!
+
             }
             else
             {
                 // Action had an error somewhere.
                 MessageBox.Show(res.Comment);
             }
-            TSActionProgress = false; // the action is done
+            TSActionInProgress = false; // the action is done
         }
 
 
@@ -1779,6 +1830,7 @@ namespace KFLOP_Test3
             MessageBox.Show(Pmsg);
             e.Result = BWtsRes;
         }
+        #endregion
 
         private void TSProbe_ProgressChanged(object sender, ProgressChangedEventArgs e)
         { }
@@ -1837,10 +1889,16 @@ namespace KFLOP_Test3
         {
             ProcessError?.Invoke(x); // if the ProcessError delegate has been defined then call that delegate
         }
+
+        protected virtual void OnProcessComplete()
+        {
+            ProcessCompleted?.Invoke(); // need to figure out what should be passed here.
+            // this should call the GUI delegate 
+        }
         #endregion
 
     }
-    #endregion
+    
 
     public class Probe : MachineMotion
     {
@@ -2753,12 +2811,13 @@ namespace KFLOP_Test3
 
         // delegates - 
         public delegate void dStatusMsg(string s);
-        public delegate void dTCDone();
+        public delegate void dStageDone();
         public delegate void dUpdateToolInfo(int pocket, int state);
 
 
         public event dStatusMsg StepUpdate;
         public event dStatusMsg StepError;
+        public event dStageDone StepDone;
 
         protected virtual void OnStepUpdate(string x)
         {
@@ -2839,5 +2898,6 @@ namespace KFLOP_Test3
         public double X_Offset { get; set; }
         public double Y_Offset { get; set; }
         public double Z_Offset { get; set; }
+        public bool UseExpectedZ { get; set; }
     }
 }
