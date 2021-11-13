@@ -570,7 +570,7 @@ namespace KFLOP_Test3
                 tbTSX.Text = MachineMotion.xTCP.TS_X.ToString();
                 tbTSY.Text = MachineMotion.xTCP.TS_Y.ToString();
                 tbTSZ.Text = MachineMotion.xTCP.TS_Z.ToString();
-                tbTSZSafe.Text = MachineMotion.xTCP.TS_SAFE_Z.ToString();
+                tbTSSafeZ.Text = MachineMotion.xTCP.TS_SAFE_Z.ToString();
                 tbTSIndex.Text = MachineMotion.xTCP.TS_S.ToString();
                 tbRefZ.Text = MachineMotion.xTCP.TS_RefZ.ToString();
 
@@ -606,12 +606,12 @@ namespace KFLOP_Test3
             { MachineMotion.xTCP.TS_Y = temp; }
             if (double.TryParse(tbTSZ.Text, out temp))
             { MachineMotion.xTCP.TS_Z = temp; }
-            if(double.TryParse(tbTSZSafe.Text, out temp))
+            if(double.TryParse(tbTSSafeZ.Text, out temp))
             { MachineMotion.xTCP.TS_SAFE_Z = temp; }
             if (double.TryParse(tbTSIndex.Text, out temp))
-            { MachineMotion.xTCP.TS_RefZ = temp; }
-            if (double.TryParse(tbRefZ.Text, out temp))
             { MachineMotion.xTCP.TS_S = temp; }
+            if (double.TryParse(tbRefZ.Text, out temp))
+            { MachineMotion.xTCP.TS_RefZ = temp; }
             if (double.TryParse(tbTSRate1.Text, out temp))
             { MachineMotion.xTCP.TS_FR1 = temp; }
             if (double.TryParse(tbTSRate2.Text, out temp))

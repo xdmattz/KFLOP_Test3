@@ -50,7 +50,7 @@
             </StackPanel>
             <StackPanel Grid.Row="1" Grid.Column="3" Orientation="Horizontal">
                 <Label Content="Z Safe:"/>
-                <TextBox x:Name="tbTSZSafe" Text="0.000" HorizontalAlignment="Stretch"/>
+                <TextBox x:Name="tbTSSafeZ" Text="0.000" HorizontalAlignment="Stretch"/>
             </StackPanel>
             <!-- Row of coordinates-->
             <StackPanel Grid.Row="2" Grid.Column="0" Orientation="Horizontal">

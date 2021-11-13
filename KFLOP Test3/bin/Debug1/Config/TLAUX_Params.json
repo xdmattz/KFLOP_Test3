@@ -9,9 +9,9 @@
   "TS_Y": 0.825,
   "TS_Z": -8.0,
   "TS_SAFE_Z": 1.0,
-  "TS_S": -16.77,
+  "TS_S": 1408.0,
   "TS_FR1": 0.8,
   "TS_FR2": 0.1,
-  "TS_RefZ": 1408.0,
+  "TS_RefZ": -16.77,
   "CarouselSize": 8
 }

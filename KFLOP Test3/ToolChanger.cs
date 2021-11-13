@@ -1790,6 +1790,9 @@ namespace KFLOP_Test3
                 {
                     TSProbeState = ProbeResult.SoftTimeOut;
                     MessageBox.Show("Probe Timeout");
+                    BWtsRes.Comment = "Probe Timeout";
+                    BWtsRes.Result = false; // must set the BWRes and e.Result before returning!
+                    e.Result = BWtsRes;
                     return;
                 }
             } while (CheckForTSProbeComplete() != true);
