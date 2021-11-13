@@ -1647,15 +1647,17 @@ namespace KFLOP_Test3
             {
                 ProbeDistance = xTCP.TS_Z - xTCP.TS_RefZ - 1.5; // this is a 1.5 inch buffer...  because the spindle can't go all the way down to the tool setter.
             }
-                Start_ToolSetterZProbe(ProbeDistance);    // this should be a little more than the current offset
-                if (WaitForTSProgress() == false)
-                {
-                // There was an error
-                BW3Res.Comment = "Probing Error";
-                BW3Res.Result = false;
-                e.Result = BW3Res;
-                return;
-                }
+            double ProbeRate;
+            ProbeRate = xTCP.TS_FR1;    // the hunting rate
+            Start_ToolSetterZProbe(ProbeDistance, ProbeRate);    // this should be a little more than the current offset
+            if (WaitForTSProgress() == false)
+            {
+            // There was an error
+            BW3Res.Comment = "Probing Error";
+            BW3Res.Result = false;
+            e.Result = BW3Res;
+            return;
+            }
 
             // save the length / offset
 
@@ -1741,19 +1743,23 @@ namespace KFLOP_Test3
 
         #region Tool Setter Probing
 
-        private void Start_ToolSetterZProbe(double dist)
+        private void Start_ToolSetterZProbe(double dist, double rate)
         {
-            double MotionRate = -15.0;    // inch per min
+            // double MotionRate = -15.0;    // inch per min
             double mrZ;
             double ProbeDistance = dist; // probe distance  in inches - this should take about 
-            mrZ = (MotionRate * KMx.CoordMotion.MotionParams.CountsPerInchZ) / 60.0; // motion rate(in/min) * (counts/inch) / (60sec/ min)
+//            mrZ = (MotionRate * KMx.CoordMotion.MotionParams.CountsPerInchZ) / 60.0; // motion rate(in/min) * (counts/inch) / (60sec/ min)
+            mrZ = (-rate * KMx.CoordMotion.MotionParams.CountsPerInchZ) / 60.0; // motion rate(in/min) * (counts/inch) / (60sec/ min)
+
 
             double PTimeout;
             // timeout is (distance/rate) * (ms/min)
-            PTimeout = (ProbeDistance / Math.Abs(MotionRate)) * 60.0;    // convert to seconds for timeout  -
-                                                                         // this is a simplification because it doesn't account for acceleration and deceleration times, but it is a start.
-                                                                         //            MessageBox.Show("In Tool Setter Probe");
-                                                                         // set the Persist Variables
+            PTimeout = (ProbeDistance / Math.Abs(rate)) * 60.0;
+//            PTimeout = (ProbeDistance / Math.Abs(MotionRate)) * 60.0;
+            // convert to seconds for timeout  -
+            // this is a simplification because it doesn't account for acceleration and deceleration times, but it is a start.
+            //            MessageBox.Show("In Tool Setter Probe");
+            // set the Persist Variables
             KMx.SetUserDataFloat(PVConst.P_NOTIFY_ARGUMENT1, (float)mrZ);
             KMx.SetUserDataFloat(PVConst.P_NOTIFY_ARGUMENT2, (float)0.0);
             KMx.SetUserDataFloat(PVConst.P_NOTIFY_ARGUMENT3, (float)0.0);
