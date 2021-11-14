@@ -1029,7 +1029,7 @@ namespace KFLOP_Test3
 
                 if (ToolSetter.TSProbeState == ProbeResult.Detected)
                 {
-                    string pmsg = string.Format("Probe Measurements at\nX = {0:F6}\nY = {{1:F6}\nZ:\n",MachineMotion.TSCoord.X, MachineMotion.TSCoord.Y);
+                    string pmsg = string.Format("Probe Measurements at\nX = {0:F6}\nY = {1:F6}\nZ:\n",MachineMotion.TSCoord.X, MachineMotion.TSCoord.Y);
                     double average = 0;
                     int count = 0;
                     foreach(double zc in CalList)

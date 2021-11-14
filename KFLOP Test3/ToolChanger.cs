@@ -1704,7 +1704,7 @@ namespace KFLOP_Test3
                 BW3Res.Comment = "Averaging Probing";
                 _bw3.ReportProgress(0);
                 // probe again to previous probe position - backoff Z + just a little bit.
-                ProbeDistance = xTCP.TS_AveBackoff + 0.05; // backoff plus 0.05 inch - if it is off by more than this there is big trouble!
+                ProbeDistance = xTCP.TS_AveBackoff + 0.125; // backoff plus 0.125 inch - if it is off by more than this there is big trouble!
                 ProbeRate = xTCP.TS_FR1;    // the hunting rate
 
                 Start_ToolSetterZProbe(ProbeDistance, ProbeRate);    // this should be a little more than the current offset
@@ -1849,7 +1849,8 @@ namespace KFLOP_Test3
             // very similar to the probe worker in the probe panel
 
             double TimeOut = (double)e.Argument; // the delay time for the probing operation
-            int Tdone = (int)(TimeOut * 10.0 * 1.1);  // convert the time to sleep counts with 10% extra time over machine delay
+            int Tdone = (int)(TimeOut * 10.0 * 1.05) + 25;  // convert the time to sleep counts (5% overhead for starting and stopping) plus 2.5 seconds to double touch
+            // note that the timeout is only for error detection. motion timeout is controled by the call to T2_TOOL_SET
             int SleepCnt = 0;
 
             TSProbeState = ProbeResult.Probing;
