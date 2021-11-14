@@ -282,6 +282,7 @@ namespace KFLOP_Test3
             // Work offset functions
             WorkOffsets = new Fixtures(ref KM);
 
+            #region TAB Controls
             // the tab controls
             // Add the usere controls to the Tab control area
             // The Jog Panel
@@ -352,6 +353,7 @@ namespace KFLOP_Test3
             // hide the fwd and rev buttons
             HideFR();
 
+            #endregion
 
             // Feedrate Sliderbars
             slSpindleOverride.SliderClickedCallback += SpindleFeedrate;
@@ -2136,7 +2138,34 @@ namespace KFLOP_Test3
             MessageBox.Show(Tlist);
             // now what? 
             // compare with the master tool table?
+            // check if each tool is in the tool list
+            string ToolsNotInToolTable = "The following tools are not listed in the tool table\n";
+            string ToolsNotInCarousel = "The following tools are not in the carousel\n";
+            int tcount = 0;
+            int ccount = 0;
+            foreach(int tool in ToolList)
+            {
+                if(toolChanger.ToolInTable(tool) == false)
+                {
+                    ToolsNotInToolTable += "Tool " + tool + "\n";
+                    tcount++;
+                } 
+                if(toolChanger.ToolInCarousel(tool) == false)
+                {
+                    ToolsNotInCarousel += "Tool " + tool + "\n";
+                    ccount++;
+                }
+            }
+            if(tcount != 0)
+            {
+                MessageBox.Show(ToolsNotInToolTable);
+            }
+            if(ccount != 0)
+            {
+                MessageBox.Show(ToolsNotInCarousel);
+            }
             // load the carousel with these tools?
+            
             // 
 
 

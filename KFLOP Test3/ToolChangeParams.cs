@@ -25,6 +25,8 @@ namespace KFLOP_Test3
         public double TS_FR1 { get; set; }    // tool height setter FeedRate 1 - hunt
         public double TS_FR2 { get; set; }    // tool height setter FeedRate 2 - touch
         public double TS_RefZ { get; set; }   // The tool setter absolute Z coordinate
+        public double TS_AveBackoff { get; set; } // the distance to back off for averaging repeat
+        // public int    TS_AveCount { get; set; } // the current average counter
         // max tool length is TS_Z - TS_RefZ 
          // this is the maximum length that the tool changer can take 
         // the tool setter will rapid to the TS_RefZ - TS_MaxToolLen position then continue at the TS_FR1 (hunt) rate until it detects or times out

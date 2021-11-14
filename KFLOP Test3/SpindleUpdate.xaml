@@ -5,11 +5,11 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:KFLOP_Test3"
         mc:Ignorable="d"
-        Title="SpindleUpdate" Height="180" Width="300" ContentRendered="Window_ContentRendered">
+        Title="SpindleUpdate" Height="200" Width="300" ContentRendered="Window_ContentRendered">
     <Grid>
         <StackPanel>
-            <Label Width="220" Height="60" >
-                <TextBlock TextWrapping="Wrap" Text="Enter the new tool number or click Remove to set the tool number to '0'"/>
+            <Label Width="220" Height="75" >
+                <TextBlock TextWrapping="Wrap" Text="Enter the new tool number or click Remove to set the tool number to '0'. Manually add or remove the tool to match this change!"/>
             </Label>
             <TextBox x:Name="tbNewToolNumber" Width="50" Height="27" />
             <StackPanel Margin="20" Orientation="Horizontal" HorizontalAlignment="Center">

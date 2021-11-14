@@ -8,15 +8,24 @@
         Title="TS_Calibrate" Height="300" Width="300" ContentRendered="Window_ContentRendered">
     <Grid>
         <StackPanel>
-            <TextBlock HorizontalAlignment="Left"  Width="226" TextWrapping="WrapWithOverflow" VerticalAlignment="Top" Margin="37,0,0,0" >
-            <Run Text="Tool Setter Calibration." />
-            <LineBreak />
-            <LineBreak />
-            <Run Text="Enter the Gauge Block Height (inches)" />
+            <TextBlock HorizontalAlignment="Left"  Width="226" TextWrapping="WrapWithOverflow" VerticalAlignment="Top" Margin="37,10,0,10" >
+
+            <Run Text="Tool Setter Calibration." FontSize="20" FontWeight="Bold" />
+            <LineBreak/>
+
             </TextBlock>
-            <StackPanel Orientation="Horizontal" Height="31" Margin="10" HorizontalAlignment="Center">
+            <TextBlock HorizontalAlignment="Left"  Width="226" TextWrapping="WrapWithOverflow" VerticalAlignment="Top" Margin="37,0,0,0" >
+                <Run Text="Enter the Gauge Block Height (inches)" />
+            </TextBlock>
+                
+            
+            <StackPanel Orientation="Horizontal" Height="31" Margin="10,10,10,0" HorizontalAlignment="Center">
                 <Label Content="Gauge Block Height:"/>
-                <TextBox x:Name="tbGaugeLen" Text="0.00" HorizontalAlignment="Left" Height="23" TextWrapping="Wrap" VerticalAlignment="Top" Width="40"/>
+                <TextBox x:Name="tbGaugeLen" Text="0.0000" HorizontalAlignment="Left" Height="23" TextWrapping="Wrap" VerticalAlignment="Top" Width="60"/>
+            </StackPanel>
+            <StackPanel Orientation="Horizontal" Height="31" Margin="10" HorizontalAlignment="Center">
+                <Label Content="Number of cycles to average"/>
+                <TextBox x:Name="tbIterations" Text="1" HorizontalAlignment="Left" Height="23" TextWrapping="Wrap" VerticalAlignment="Top" Width="40"/>
 
             </StackPanel>
             <StackPanel Orientation="Vertical"  HorizontalAlignment="Center">

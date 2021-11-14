@@ -36,11 +36,8 @@ namespace KFLOP_Test3
         Put,
         Get
     }
-    // Trying to orgainze this code a little better.
-    // Thinking that the actual methods that run the tool changer would be better contained in its own class
-    // and then it could be used from where ever, and not just from the toolCangerPanel
 
-    // trying to keep the scope of this to only the basic machine level control
+    // try to keep the scope of this to only the basic machine level control
 
     public class ToolChanger : MachineMotion
     {
@@ -68,7 +65,7 @@ namespace KFLOP_Test3
 
         public static int ToolInSpindle { get; set; }  // the number of the tool in the spindle, 0 = spindle empty, 1 - 999, Tool Number from the tool table
         public static double ToolInSpinLen { get; set; }
-        // this is the variable that the UI looks at to display the tool number and offset.
+        // these are the variables that the UI looks at to display the tool number and offset.
 
         public event dStatusMsg ProcessUpdate;
         public event dStatusMsg ProcessError;
@@ -93,7 +90,7 @@ namespace KFLOP_Test3
             return (TTable);
         }
 
-        #region Carousel Configuration
+        #region Load and Save Carousel Configuration File
         public ToolCarousel GetCarousel()
         {
             return (CarouselList1);
@@ -111,8 +108,6 @@ namespace KFLOP_Test3
                 CarouselList1.Items.Add(CI);
             }
         }
-
-
 
         // load carousel from the standard file
         public bool LoadCarouselCfg()
@@ -183,7 +178,6 @@ namespace KFLOP_Test3
         }
 
         // save the carousel file
-
         // save the carousel under another filename
         public void SaveCarouselCfg(string CFileName)
         {
@@ -227,14 +221,13 @@ namespace KFLOP_Test3
         }
         #endregion
 
-        public void TCMessage(string str)
-        {
-            MessageBox.Show(str);
-        }
-
+        // update the Interpreter current tool with the ToolSlot tool number
         public void SetCurrentTool(int ToolSlot)
         {
             KMx.CoordMotion.Interpreter.SetupParams.CurrentToolSlot = ToolSlot; // update the interpreter slot position
+            // also update the global variable ToolInSpindle
+            ToolInSpindle = ToolSlot;
+            ToolInSpinLen = GetToolLength(ToolSlot);
         }
 
         public bool bwBusy()
@@ -312,6 +305,7 @@ namespace KFLOP_Test3
             CarouselDeleteTool(PocketNumber);  // remove the tool from the carousel list
             MessageBox.Show("Remove the Tool from the Spindle!", "ATTENTION!"); // prompt the user to manually remove the tool from the spindle
             ToolInSpindle = 0;  // clear the tool in spindle
+            ToolInSpinLen = 0;
 
 
         }
@@ -388,8 +382,6 @@ namespace KFLOP_Test3
                     // check for tool not in use here???
 
                     Start_GetTool(sPocket);    // automatically get a tool from the carousel
-                    // if there was no error then update the current tool
-                    SetToolInUse(sPocket);
                 }
             }
             else if (cPocket == -1) // current tool requires a manual removal
@@ -398,6 +390,7 @@ namespace KFLOP_Test3
                 if (SelectedTool == 0)
                 {
                     ToolInSpindle = 0; // don't need to do anything here - spindle was just unloaded manually
+                    ToolInSpinLen = 0;
                     return;
                 }
                 if (sPocket == -1)
@@ -407,7 +400,6 @@ namespace KFLOP_Test3
                 else
                 {
                     Start_GetTool(sPocket);    // automatically get a tool from the carousel
-                    SetToolInUse(sPocket);
                 }
             }
             else
@@ -417,6 +409,7 @@ namespace KFLOP_Test3
                 {
                     Start_PutTool(cPocket); // just put away the current tool
                     ToolInSpindle = 0;
+                    ToolInSpinLen = 0;
                     ClearToolInUse(cPocket);
                     return;
                 }
@@ -424,12 +417,14 @@ namespace KFLOP_Test3
                 {
                     Start_PutTool(cPocket); // put away the current tool
                     ToolInSpindle = 0;
+                    ToolInSpinLen = 0;
                     ClearToolInUse(cPocket);
                     Manual_GetTool(SelectedTool); // get the selected tool manually - not in the carousel
                 }
                 else
                 {
                     Start_ExchangeTool(cPocket, sPocket);  // if none of the other conditions apply then do a tool exchange!
+                    
                 }
             }
         }
@@ -501,6 +496,9 @@ namespace KFLOP_Test3
             _bw2.ReportProgress(progress_cnt++);
 
             SingleAxis tSAx = new SingleAxis();
+
+            tSAx.ToolPocket = (int)e.Argument;
+
             // start a new background worker
             if (MotionBusy()) // if the BW worker is busy
             {
@@ -543,8 +541,6 @@ namespace KFLOP_Test3
             }
 
             // rotate carousel to tool number
-            tSAx.ToolNumber = (int)e.Argument;  // this contains the Carousel Pocket Numbr - ie. carousel position
-            tSAx.ToolPocket = (int)e.Argument;
 
             BW2Res.Comment = $"Carousel Indexing to {tSAx.ToolPocket}";
             _bw2.ReportProgress(progress_cnt++);
@@ -661,6 +657,8 @@ namespace KFLOP_Test3
                 return;
             }
 
+            SetToolInUse(tSAx.ToolPocket);
+
             BW2Res.Comment = "Get Tool Success";
             BW2Res.Result = true;
             e.Result = BW2Res;
@@ -703,6 +701,7 @@ namespace KFLOP_Test3
             MessageBox.Show(toolmsg, "WARNING - DO NOT IGNORE!");
             // can I somehow make a red blinking warning on this? maybe a custom message box?
             ToolInSpindle = ToolSlot;
+            ToolInSpinLen = GetToolLength(ToolSlot);
             TCActionProgress = false;
             OnProcessComplete();    
         }
@@ -838,6 +837,7 @@ namespace KFLOP_Test3
             // at this point the tool clamp has been released and has let go of the tool
 
             ToolInSpindle = 0;
+            ToolInSpinLen = 0;
 
             BW2Res.Comment = $"Move to Z1";
             _bw2.ReportProgress(progress_cnt++);
@@ -956,6 +956,7 @@ namespace KFLOP_Test3
             string toolmsg = string.Format("Remove Tool number {0} from the spindle", ToolSlot);
             MessageBox.Show(toolmsg, "WARNING - DO NOT IGNORE!");
             ToolInSpindle = 0;
+            ToolInSpinLen = 0;
             TCActionProgress = false;
             OnProcessComplete();
         }
@@ -1100,7 +1101,8 @@ namespace KFLOP_Test3
             _bw2.ReportProgress(cMsgOffset + cMsgOffset + PutPocket);
             // at this point the tool clamp has been released and has let go of the tool
      //       ClearToolInUse(PutPocket); // clear the tool in use flag for that carousel pocket
-            ToolInSpindle = 0;
+            ToolInSpindle = 0;  // if we do this here, then need to call setToolInUse once the selected tool is in the spindle
+            ToolInSpinLen = 0;
 
             // move to H1
             BW2Res.Comment = "Move to Z1";
@@ -1212,6 +1214,8 @@ namespace KFLOP_Test3
                 e.Result = BW2Res;
                 return;
             }
+
+            SetToolInUse(GetPocket);  
 
             BW2Res.Comment = "Get Tool Success";
             BW2Res.Result = true;
@@ -1368,6 +1372,7 @@ namespace KFLOP_Test3
                 {
                     CI.ToolInUse = true;
                     ToolInSpindle = CI.ToolIndex;   // update the tool in spindle
+                    ToolInSpinLen = GetToolLength(ToolInSpindle);
                     toolExists = true;
                 }
                 else  // can only have one tool in use at a time... so make everything else false.
@@ -1449,6 +1454,18 @@ namespace KFLOP_Test3
             return false;
         }
 
+        public double GetToolLength(int ToolNumber)
+        {
+            foreach (Tool tool in TTable.Tools)
+            {
+                if((tool.ID == ToolNumber) || (tool.slot == ToolNumber))
+                {
+                    return tool.Length;
+                }
+            }
+            return 0;
+        }
+
 
         #endregion
 
@@ -1496,6 +1513,7 @@ namespace KFLOP_Test3
         public event dStatusMsg ProcessUpdate;
         public event dStatusMsg ProcessError;
         public event dStageDone ProcessCompleted;
+        public event dStageDone ProbingCompleted;
 
         static private ToolChangeParams TSP;
 
@@ -1638,16 +1656,18 @@ namespace KFLOP_Test3
             // Check whether to use the full length of the probe cycle or to limit it to slightly more than the e
             // expected tool length
             double ProbeDistance = 0;
+            double ProbeRate;
 
-            if(tTSArg.UseExpectedZ)
+            if (tTSArg.UseExpectedZ)
             {
                 ProbeDistance = tTSArg.Z_Offset + 0.25;
             }
             else
             {
+                // double check this math!
                 ProbeDistance = xTCP.TS_Z - xTCP.TS_RefZ - 1.5; // this is a 1.5 inch buffer...  because the spindle can't go all the way down to the tool setter.
             }
-            double ProbeRate;
+            
             ProbeRate = xTCP.TS_FR1;    // the hunting rate
             Start_ToolSetterZProbe(ProbeDistance, ProbeRate);    // this should be a little more than the current offset
             if (WaitForTSProgress() == false)
@@ -1658,8 +1678,48 @@ namespace KFLOP_Test3
             e.Result = BW3Res;
             return;
             }
+            // save the length / offset - the probe complete call back should take care of this
 
-            // save the length / offset
+            tTSArg.AverageCount--;  // decrement the average counter
+            while (tTSArg.AverageCount > 0)  // if it is still greater than 0 then 
+            {
+                BW3Res.Comment = "Averaging Backoff";
+                _bw3.ReportProgress(0);
+                // repeat cycle times for the averaging
+                // move to back off Z
+                tSAx.Pos = TSCoord.Z + xTCP.TS_AveBackoff; // get the current z position and add the backoff distance
+                tSAx.Rate = 0;  // rapid move
+
+                // move back to this position - rapid move 
+                Start_MoveZ_Process(tSAx);
+                if (WaitForTSProgress() == false)
+                {
+                    // There was an error of some kind!
+                    BW3Res.Comment = "Average Move Error";
+                    BW3Res.Result = false;
+                    e.Result = BW3Res;
+                    return;
+                }
+
+                BW3Res.Comment = "Averaging Probing";
+                _bw3.ReportProgress(0);
+                // probe again to previous probe position - backoff Z + just a little bit.
+                ProbeDistance = xTCP.TS_AveBackoff + 0.05; // backoff plus 0.05 inch - if it is off by more than this there is big trouble!
+                ProbeRate = xTCP.TS_FR1;    // the hunting rate
+
+                Start_ToolSetterZProbe(ProbeDistance, ProbeRate);    // this should be a little more than the current offset
+
+                if (WaitForTSProgress() == false)
+                {
+                    // There was an error
+                    BW3Res.Comment = "Probing Error";
+                    BW3Res.Result = false;
+                    e.Result = BW3Res;
+                    return;
+                }
+
+                tTSArg.AverageCount--; // decrement AveCount and try again!
+            }
 
             // move back to Safe Z
             // MessageBox.Show("Back to Safe Z");
@@ -1739,13 +1799,18 @@ namespace KFLOP_Test3
             TSActionInProgress = false; // the action is done
         }
 
-
-
         #region Tool Setter Probing
+
+        // this probing routine will probe in the negative Z direction for "dist" distance in inches 
+        // at "rate" inches per min 
+        // it calls the T2_TOOL_SET command running on thread 2 on the KFLOP board
+        // it waits for detection, or timeout. 
+        // it always updates the TSCoord variable (MachineMotion static variable) with the resulting position
+        // detection or not. It also updates the TSProbeState variable (ToolSetter static variable) with the probe result. 
 
         private void Start_ToolSetterZProbe(double dist, double rate)
         {
-            // double MotionRate = -15.0;    // inch per min
+            // double MotionRate = -15.0;    // inch per min - initial testing value
             double mrZ;
             double ProbeDistance = dist; // probe distance  in inches - this should take about 
 //            mrZ = (MotionRate * KMx.CoordMotion.MotionParams.CountsPerInchZ) / 60.0; // motion rate(in/min) * (counts/inch) / (60sec/ min)
@@ -1836,10 +1901,9 @@ namespace KFLOP_Test3
                     }
             }
             Pmsg += String.Format("\nProbe State = {0}", TSProbeState);
-            MessageBox.Show(Pmsg);
+            // MessageBox.Show(Pmsg);
             e.Result = BWtsRes;
         }
-        #endregion
 
         private void TSProbe_ProgressChanged(object sender, ProgressChangedEventArgs e)
         { }
@@ -1851,6 +1915,7 @@ namespace KFLOP_Test3
             _bwts.ProgressChanged -= TSProbe_ProgressChanged;
             _bwts.RunWorkerCompleted -= TSProbe_Completed;
             CompleteStatus((BWResults)e.Result);
+            OnProbeComplete(); // the callback.
         }
 
         private bool CheckForTSProbeComplete()
@@ -1873,7 +1938,7 @@ namespace KFLOP_Test3
             }
             return false;
         }
-
+        #endregion
         private void TSProgressUpdate(BWResults br)
         {
             string ps = br.Comment;
@@ -1903,6 +1968,11 @@ namespace KFLOP_Test3
         {
             ProcessCompleted?.Invoke(); // need to figure out what should be passed here.
             // this should call the GUI delegate 
+        }
+
+        protected virtual void OnProbeComplete()
+        {
+            ProbingCompleted?.Invoke(); // callback for probing completed.
         }
         #endregion
 
@@ -2908,5 +2978,6 @@ namespace KFLOP_Test3
         public double Y_Offset { get; set; }
         public double Z_Offset { get; set; }
         public bool UseExpectedZ { get; set; }
+        public int AverageCount { get; set; }
     }
 }

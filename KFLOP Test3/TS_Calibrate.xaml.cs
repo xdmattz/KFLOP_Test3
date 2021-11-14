@@ -20,19 +20,24 @@ namespace KFLOP_Test3
     public partial class TS_Calibrate : Window
     {
         public double Value { get; set; }
+        public int Cycles { get; set; }
 
         public TS_Calibrate()
         {
             InitializeComponent();
             Value = 0;
+            Cycles = 1;
             tbGaugeLen.Text = String.Format("{0:F4}", Value);
+            tbIterations.Text = $"{Cycles}";
         }
 
-        public TS_Calibrate(int initialValue)
+        public TS_Calibrate(double gauge, int tries )
         {
             InitializeComponent();
-            Value = initialValue;
+            Value = gauge;
+            Cycles = tries;
             tbGaugeLen.Text = String.Format("{0:F4}", Value);
+            tbIterations.Text = $"{Cycles}";
         }
 
         private void btnOK_Click(object sender, RoutedEventArgs e)
@@ -40,6 +45,7 @@ namespace KFLOP_Test3
             // check value. Must be a positive number less than 10
 
             double x;
+            int i;
             if (double.TryParse(tbGaugeLen.Text, out x))
             {
                 if((x > 10.0) || (x < 0.1))
@@ -48,7 +54,19 @@ namespace KFLOP_Test3
                     return;
                 }
                 Value = x;
-                this.DialogResult = true;
+                if(int.TryParse(tbIterations.Text, out i))
+                {
+                    if ((i > 0) && (i < 101)) // 1 to 100 cycles 
+                    {
+                        Cycles = i;
+                        this.DialogResult = true;
+                    }
+                    else
+                    {
+                        MessageBox.Show("Number of cycles is out of range 1 - 100");
+                    }
+                }
+                
             } else
             {
                 MessageBox.Show("Gauge Height Not a Number!\nRange is 0.1 - 10.0\nCorrect it or Cancel");
