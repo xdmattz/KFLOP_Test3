@@ -313,8 +313,23 @@ namespace KFLOP_Test3
             // check if tool is in the tool list
             if(xToolChanger.ToolInTable(ToolNumber))
             {
-                TC_DisableButtons();
-                xToolChanger.LoadTool(ToolNumber, PocketNumber);
+                // Assuming that the calling function already checked that the ToolNumber and Pocket are valid
+                MessageBoxResult MRB = MessageBox.Show($"Put Tool Number {ToolNumber} into the spindle", "Load Carousel", MessageBoxButton.OKCancel);
+                if (MRB == MessageBoxResult.OK)
+                {
+                    if (xToolChanger.CheckPocketEmpty(PocketNumber) == false) // check for empty pocket number
+                    {
+                        MRB = MessageBox.Show($"Is Carousel Pocket {PocketNumber} Empty?", "*WARNING* Pocket Not Empty", MessageBoxButton.YesNoCancel);
+                        if ((MRB == MessageBoxResult.Cancel) || (MRB == MessageBoxResult.No))
+                        {
+                            MessageBox.Show("You Must Remove the tool from Carousel Pocket {PocketNumber} before loading", "*WARNING* Pocket Not Empty");
+                            return;
+                        }
+                    }
+
+                    TC_DisableButtons();
+                    xToolChanger.LoadTool(ToolNumber, PocketNumber);
+                }
             }
             else
             {
@@ -867,6 +882,8 @@ namespace KFLOP_Test3
         #region Tool Setter
         private void btnToolSetter_Click(object sender, RoutedEventArgs e)
         {
+            // need to know the tool number and estimated length.
+
             // Actual tool measurment
             // get the arguments
             if (ToolSetter.TSProbeState != ProbeResult.Idle)
@@ -887,6 +904,26 @@ namespace KFLOP_Test3
             ToolSetter_Action(TSx);
         }
 
+        public void ToolSetter_Tool(int ToolNumber, int AveN)
+        {
+            // get the tool length from the table
+            if (ToolSetter.TSProbeState != ProbeResult.Idle)
+            {
+                MessageBox.Show("Tool Setter is not ready!");
+                return;
+            }
+            // Tool tool = GetToolInfo()
+            ToolSetterArguments TSx = new ToolSetterArguments();
+            //TSx.X_Offset = ToolOffset
+            // TSx.Y_Offset = ToolOffset
+            //TSx.Z_Offset = MachineMotion.xTCP.TS_Z - MachineMotion.xTCP.TS_RefZ - Toollength plus a little bit.
+            TSx.AverageCount = 1; // for now
+            TSx.UseExpectedZ = false;
+            SetterAction = TS_Actions.ToolMeasurment;
+            // set a callback to record the proper length for the tool.
+            ToolSetter_Action(TSx);
+        }
+
         private void ToolSetter_Action(ToolSetterArguments xTSArg)
         {
             // make sure that the tool setter is present
@@ -897,39 +934,9 @@ namespace KFLOP_Test3
             Disable_TS_Buttons();
             xToolSetter.Start_ToolSetter(xTSArg);
 
-            // instead of waiting here, should there be a callback delegate instead?
-            // definately yes!
-            // show in tool setter.
+            // call back delegate is TS_ProcessFinished()
             tbTS_Status.Text = "In Tool Setter";
-            //bool TS_Timeout = false;
-            //int stuckCount = 0;
-            //do
-            //{
-            //    if (stuckCount++ > 300) // 30 second timeout
-            //    {
-            //        TS_Timeout = true;
-            //        break;
-            //    }
-            //    Thread.Sleep(100);
-            //} while (ToolSetter.TSActionInProgress == true); // waiting for Tool Setter to finish
-            //if(TS_Timeout)
-            //{
-            //    // something went wrong and we timed out
-            //    MessageBox.Show("Tool Setter Timeout!!!\nNeed to reset");
-            //    return;
-            //}
-            //if(ToolSetter.TSProbeState == ProbeResult.Detected)
-            //{
-            //    MessageBox.Show($"Tool Setter Success\nZ = {ToolSetter.TSCoord.Z}");
-            //    ToolSetter.TSProbeState = ProbeResult.Idle;
-            //}
-            //else
-            //{
-            //    MessageBox.Show($"Tool Setter Error {ToolSetter.TSProbeState}");
-            //}
 
-            // record the detect position or if timed out report a no detect
-            // 
         }
 
 
@@ -1012,7 +1019,7 @@ namespace KFLOP_Test3
                 if (ToolSetter.TSProbeState == ProbeResult.Detected)
                 {
                     // valid Tool Setter detection
-                    MessageBox.Show($"Detected!\nX = {ToolSetter.TSCoord.X}\nY = {ToolSetter.TSCoord.Y}\nZ = {ToolSetter.TSCoord.Z}");
+                    MessageBox.Show($"Detected!\nX = {MachineMotion.TSCoord.X}\nY = {MachineMotion.TSCoord.Y}\nZ = {MachineMotion.TSCoord.Z}");
                     // what are the coordinates?
 
                 }
@@ -1053,9 +1060,10 @@ namespace KFLOP_Test3
                             File.WriteAllText(saveFile.FileName, pmsg);
                         }    
                     }
-                    MessageBox.Show($"Calibration!\nX = {MachineMotion.TSCoord.X}\nY = {MachineMotion.TSCoord.Y}\nZ = {MachineMotion.TSCoord.Z}");
-
+                    // MessageBox.Show($"Calibration!\nX = {MachineMotion.TSCoord.X}\nY = {MachineMotion.TSCoord.Y}\nZ = {MachineMotion.TSCoord.Z}");
                     // record the Z coordinate
+                    MachineMotion.xTCP.TS_RefZ = average - GaugeLength;
+                    UpdateCfgUI();  
                  }
                 else
                 {

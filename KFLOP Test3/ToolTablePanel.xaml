@@ -55,6 +55,7 @@
                         <MenuItem Header="Add" Click="ToolTableMenu_Add" />
                         <MenuItem Header="Edit" Click="ToolTableMenu_Edit" />
                         <MenuItem Header="Delete" Click="ToolTableMenu_Delete" />
+                        <MenuItem Header="Measure" Click="ToolTableMenu_Measure" />
                         <MenuItem Header="Load" Click="ToolTableMenu_Load" />
                         <MenuItem Header="Save" Click="ToolTableMenu_Save" />
                         <MenuItem Header="Cancel" Click="ToolTableMenu_Cancel" />
@@ -73,8 +74,8 @@
             
         </Grid>
         <StackPanel Grid.Row="3" Grid.Column="1" Orientation="Horizontal" >
-            <Label Content="Load Tool Changer on Drag and Drop" VerticalAlignment="Center"  />
-            <CheckBox x:Name="cbToolLoad" VerticalAlignment="Center" />
+            <Label Content="Measure Tool on Drag and Drop" VerticalAlignment="Center"  />
+            <CheckBox x:Name="cbToolLoadMeasure" VerticalAlignment="Center" />
         </StackPanel>
         
     </Grid>

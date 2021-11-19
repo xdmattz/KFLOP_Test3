@@ -157,9 +157,27 @@ namespace KFLOP_Test3
                 return; // tool is already in the carousel don't put it in again
             }
             MessageBox.Show($"putting tool {newToolNumber} into pocket {SelectedItem.Pocket}");
-            TCx.LoadTool(newToolNumber, SelectedItem.Pocket);
+            // prompt to load the tool into the spindle
+            // check auto measure check box
+            bool measureTool = cbToolLoadMeasure.IsChecked ?? false;    // https://stackoverflow.com/questions/6075726/convert-nullable-bool-to-bool
 
-            dgCarousel.Items.Refresh(); // refresh the data grid.
+            // Assuming that the calling function already checked that the ToolNumber and Pocket are valid
+            MessageBoxResult MRB = MessageBox.Show($"Put Tool Number {newToolNumber} into the spindle", "Load Carousel", MessageBoxButton.OKCancel);
+            if (MRB == MessageBoxResult.OK)
+            {
+                if (TCx.CheckPocketEmpty(SelectedItem.Pocket) == false) // check for empty pocket number
+                {
+                    MRB = MessageBox.Show($"Is Carousel Pocket {SelectedItem.Pocket} Empty?", "*WARNING* Pocket Not Empty", MessageBoxButton.YesNoCancel);
+                    if ((MRB == MessageBoxResult.Cancel) || (MRB == MessageBoxResult.No))
+                    {
+                        MessageBox.Show("You Must Remove the tool from Carousel Pocket {PocketNumber} before loading", "*WARNING* Pocket Not Empty");
+                        return;
+                    }
+                }
+
+                TCx.LoadTool(newToolNumber, SelectedItem.Pocket);
+                dgCarousel.Items.Refresh(); // refresh the data grid.
+            }
 
         }
 
@@ -308,6 +326,34 @@ namespace KFLOP_Test3
         private void ToolTableMenu_Cancel(object sender, RoutedEventArgs e)
         {
             MessageBox.Show($"Cancel the current opperation, Current row = {rowIndexRtBtn}");
+        }
+
+        private void ToolTableMenu_Measure(object sender, RoutedEventArgs e)
+        {
+            // get the tool number
+
+            Tool SelectedTool = new KFLOP_Test3.Tool();
+            SelectedTool = dgToolList.Items[rowIndexRtBtn] as Tool;
+            // check if it is the carousel
+            MessageBox.Show($"Selected Tool ID is {SelectedTool.slot}");
+            if (TCx.ToolInCarousel(SelectedTool.slot))
+            {
+                int pocket = TCx.ToolInCarouselPocket(SelectedTool.slot);
+                MessageBox.Show($"Tool {SelectedTool.slot} is in the Carousel at pocket {pocket}");
+                // prompt to make sure the spindle is empty cancel if necessary
+                MessageBoxResult MBR = MessageBox.Show("Make Sure the Spindle is Empty!", "Spindle Check", MessageBoxButton.OKCancel);
+                if (MBR == MessageBoxResult.Cancel)
+                { return; }
+                else
+                {
+                    // get the tool from the carousel
+
+                }
+            }
+
+            // get the tool. 
+            // tool setter cycle
+            // update the table and the current tool 
         }
         #endregion
 

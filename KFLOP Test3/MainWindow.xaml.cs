@@ -1134,6 +1134,7 @@ namespace KFLOP_Test3
 
         }
 
+        // these UI items get updated every third time the timer ticks
         private void UpdateUI_Slow(ref KM_MainStatus Kstat)
         {
             #region check boxes
@@ -1186,6 +1187,9 @@ namespace KFLOP_Test3
             // set the tool in spindle number and length
             CurrTool.SetTool(ToolChanger.ToolInSpindle);
             CurrTool.SetLen(ToolChanger.ToolInSpinLen); // put the proper length value here!
+
+            // testing!
+            tbCurrentTool.Text = KM.CoordMotion.Interpreter.SetupParams.CurrentToolSlot.ToString();
         }
         #endregion
 
@@ -1656,6 +1660,7 @@ namespace KFLOP_Test3
 
                 KM.CoordMotion.Interpreter.InitializeInterpreter();
                 InterpreterInitialized = true;
+                KM.CoordMotion.Interpreter.SetupParams.CurrentToolSlot = 0; // initialize the tool number to 0
 
                 GetG28G30(EMCVarsFileName);
 

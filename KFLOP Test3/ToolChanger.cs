@@ -280,22 +280,14 @@ namespace KFLOP_Test3
        // 
        public void LoadTool(int ToolNumber, int PocketNumber)
         {
-            // Assuming that the calling function already checked that the ToolNumber and Pocket are valid
-            MessageBoxResult MRB = MessageBox.Show($"Put Tool Number {ToolNumber} int the spindle", "Load Carousel", MessageBoxButton.OKCancel);
-            if(MRB == MessageBoxResult.OK)
-            {
-                if (CheckPocketEmpty(PocketNumber) == false) // check for empty pocket number
-                {
-                    MRB = MessageBox.Show($"Is Carousel Pocket {PocketNumber} Empty?", "*WARNING* Pocket Not Empty", MessageBoxButton.YesNoCancel);
-                    if((MRB == MessageBoxResult.Cancel) || (MRB == MessageBoxResult.No))
-                    {
-                        MessageBox.Show("You Must Remove the tool from Carousel Pocket {PocketNumber} before loading", "*WARNING* Pocket Not Empty");
-                        return;
-                    }
-                }
+//               if (MeasureTool == true)
+//                {
+                    // do a tool measurement here...
+                    // can we make this a call back to something that will measure the tool? 
+//                }
                 ToolChangerSimple(PocketNumber, 0); // put the tool into the pocket
                 CarouselAddTool(ToolNumber, PocketNumber);
-            }
+            
         }
 
         // this function is called when unloading a tool from the carousel.
@@ -342,6 +334,7 @@ namespace KFLOP_Test3
 
             if(BW2Res.Result == false)  // something went wrong with the tool change
             {
+                MessageBox.Show("Got to here!");
                 // take care of anything that needs to be cleaned up.
                 return false;
             }
@@ -366,10 +359,15 @@ namespace KFLOP_Test3
             int sPocket = getPocket(SelectedTool);  // selected pocket
             int cPocket = getPocket(CurrentTool);   // current pocket
 
+            TCActionProgress = true;   // initialize the TCActionProgress to true - means in progress
+
+
             if (CurrentTool == 0) // there is no tool in the spindle - just get the selected tool
             {
                 if (SelectedTool == 0)
                 {
+                    TCActionProgress = false; // action done.
+                    BW2Res.Result = true; // completed successfully
                     return; // the do nothing case - no tool change
                 }
 
@@ -703,7 +701,8 @@ namespace KFLOP_Test3
             ToolInSpindle = ToolSlot;
             ToolInSpinLen = GetToolLength(ToolSlot);
             TCActionProgress = false;
-            OnProcessComplete();    
+            OnProcessComplete();
+            BW2Res.Result = true; // completed successfully 
         }
         #endregion
 
@@ -958,6 +957,7 @@ namespace KFLOP_Test3
             ToolInSpindle = 0;
             ToolInSpinLen = 0;
             TCActionProgress = false;
+            BW2Res.Result = true; // completed successfully
             OnProcessComplete();
         }
         #endregion
@@ -1313,7 +1313,7 @@ namespace KFLOP_Test3
         // get the carousel pocket number given the tool index (SLOT in the tool table)
         // can also be used to determine if the tool is in the carousel. a -1 means that the tool is not in the carousel
         // a non negative number is the carousel pocket where the tool is.
-        private int getPocket(int Index)
+        public int getPocket(int Index)
         {
             int slot = getSlot(Index);
             foreach (CarouselItem CI in CarouselList1.Items)
@@ -1323,6 +1323,8 @@ namespace KFLOP_Test3
             }
             return -1;
         }
+
+
 
         private int getSlot(int index)
         {
@@ -1408,7 +1410,7 @@ namespace KFLOP_Test3
             return false;   // should never get here... assuming a valid pocket is given
         }
 
-        private bool CheckPocketEmpty(int Pocket)
+        public bool CheckPocketEmpty(int Pocket)
         {
             // check for an empty space in the tool carousel
             // the criteria for emtpy carousel are either the tool number is 0 or the tool in use is checked. 
@@ -1436,6 +1438,8 @@ namespace KFLOP_Test3
         // check for a tool already in the carousel
         public bool ToolInCarousel(int ToolNumber)
         {
+            if (ToolNumber == 0) // no tool 
+                return false;
             foreach(CarouselItem CI in CarouselList1.Items)
             {
                 if (CI.ToolIndex == ToolNumber)
@@ -1444,8 +1448,22 @@ namespace KFLOP_Test3
             return false;
         }
 
+        public int ToolInCarouselPocket(int ToolNumber)
+        {
+            foreach(CarouselItem CI in CarouselList1.Items)
+            {
+                if (CI.ToolIndex == ToolNumber)
+                    return CI.Pocket;
+            }
+            return -1;
+        }
+
         public bool ToolInTable(int ToolNumber)
         {
+            if(ToolNumber == 0)
+            {
+                return true;    // this tool number is always in the table....
+            }
             foreach (Tool tl in TTable.Tools)
             {
                 if (tl.ID == ToolNumber) return true;
