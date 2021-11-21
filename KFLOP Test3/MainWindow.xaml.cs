@@ -327,7 +327,7 @@ namespace KFLOP_Test3
 
 
             // Tool Table Panel
-            ToolTablePanel1 = new ToolTablePanel(ref KM, ref CFiles, ref toolInfo, ref toolChanger);
+            ToolTablePanel1 = new ToolTablePanel(ref KM, ref CFiles, ref toolInfo, ref toolChanger, ref toolSetter);
             var Tab5 = new TabItem();
             Tab5.Name = "tabItemContent5";
             Tab5.Header = "Tool Table";

@@ -1,5 +1,5 @@
 ﻿// Must put this in every file that will look for it!
-// #define TESTBENCH  // defining this will allow operation on the testbench
+#define TESTBENCH  // defining this will allow operation on the testbench
 // The other TESTBENCH is in ToolChangerPanel.xaml.cs
 
 using System;
@@ -1326,7 +1326,7 @@ namespace KFLOP_Test3
 
 
 
-        private int getSlot(int index)
+        public int getSlot(int index)
         {
             int s, i;
             s = i = 0;
@@ -1334,6 +1334,11 @@ namespace KFLOP_Test3
             l = d = x = y = 0.00;
             KMx.CoordMotion.Interpreter.SetupParams.GetTool(index, ref s, ref i, ref l, ref d, ref x, ref y);
             return s;
+        }
+
+        private int getIndex(int Slot)
+        {
+            return 0;
         }
 
         public bool CarouselAddTool(int toolNumber, int Pocket)
@@ -1522,7 +1527,7 @@ namespace KFLOP_Test3
         static BWResults BWtsRes;
 
         // these static variable flags indicate tool change progress
-        static bool TSChangeStatus; 
+        static bool TSChangeStatus;
         static bool TSProgress; // true indicates a process step is in progress, false indicates the process has finished. 
         public static bool TSActionInProgress;
 
@@ -1535,6 +1540,8 @@ namespace KFLOP_Test3
 
         static private ToolChangeParams TSP;
 
+        public static TS_Actions SetterAction;
+
         public ToolSetter(ref ToolInfo toolInfo)
         {
             TSProbeState = new ProbeResult();
@@ -1545,6 +1552,8 @@ namespace KFLOP_Test3
             BW3Res = new BWResults();
             BWtsRes = new BWResults();
             TSP = new ToolChangeParams();
+
+            SetterAction = (int)TS_Actions.NoAction; // initialize to NoAction
 
         }
 
@@ -1559,7 +1568,7 @@ namespace KFLOP_Test3
             TSActionInProgress = true; // process action is happening...
             // need a class to hold the tool setter arguments?
             _bw3.WorkerReportsProgress = true;
-        
+
 
             _bw3.DoWork += ToolSetter_Worker;
             _bw3.ProgressChanged += ToolSetterProgressChanged;
@@ -1574,7 +1583,7 @@ namespace KFLOP_Test3
             ToolSetterArguments tTSArg;
             tTSArg = (ToolSetterArguments)e.Argument;    // get the arguments
 
-//            MessageBox.Show("Move to Safe Z");
+            //            MessageBox.Show("Move to Safe Z");
 
             TSProgress = true;
             TSChangeStatus = true;
@@ -1598,23 +1607,23 @@ namespace KFLOP_Test3
                 return;
             }
 
-//                MessageBox.Show("Move to X Y");
-                BW3Res.Comment = "Move to X Y";
-                _bw3.ReportProgress(0);
-                // move to Tool Setter X, Y
-                PlaneAxis tPAx = new PlaneAxis();
-                tPAx.PosX = xTCP.TS_X + tTSArg.X_Offset;    // tool setter X + tool X offset
-                tPAx.PosY = xTCP.TS_Y + tTSArg.Y_Offset;    // tool setter Y + tool Y offset
-                tPAx.Rate = 0;  // move at traverse rate
-                Start_MoveXY_Process(tPAx);
-                if (WaitForTSProgress() == false)
-                {
-                    // There was an error of some kind!
-                    BW3Res.Comment = "X Y Move Error";
-                    BW3Res.Result = false;
-                    e.Result = BW3Res;
+            //                MessageBox.Show("Move to X Y");
+            BW3Res.Comment = "Move to X Y";
+            _bw3.ReportProgress(0);
+            // move to Tool Setter X, Y
+            PlaneAxis tPAx = new PlaneAxis();
+            tPAx.PosX = xTCP.TS_X + tTSArg.X_Offset;    // tool setter X + tool X offset
+            tPAx.PosY = xTCP.TS_Y + tTSArg.Y_Offset;    // tool setter Y + tool Y offset
+            tPAx.Rate = 0;  // move at traverse rate
+            Start_MoveXY_Process(tPAx);
+            if (WaitForTSProgress() == false)
+            {
+                // There was an error of some kind!
+                BW3Res.Comment = "X Y Move Error";
+                BW3Res.Result = false;
+                e.Result = BW3Res;
                 return;
-                }
+            }
 
             // index the spindle here!
 
@@ -1648,27 +1657,27 @@ namespace KFLOP_Test3
 
             // MessageBox.Show("Move to Tool Z");
             BW3Res.Comment = "Move to Tool Z";
-                _bw3.ReportProgress(0);
+            _bw3.ReportProgress(0);
 
-                // move to Tool Setter Z (somewhere above the tool setter TBD inches)
-                tSAx.Pos = xTCP.TS_Z;  
-                tSAx.Rate = 0;
-                Start_MoveZ_Process(tSAx);
-                if (WaitForTSProgress() == false)
-                {
-                    // There was an error of some kind!
-                    BW3Res.Comment = "Tool Z Move Error";
-                    BW3Res.Result = false;
-                    e.Result = BW3Res;
+            // move to Tool Setter Z (somewhere above the tool setter TBD inches)
+            tSAx.Pos = xTCP.TS_Z;
+            tSAx.Rate = 0;
+            Start_MoveZ_Process(tSAx);
+            if (WaitForTSProgress() == false)
+            {
+                // There was an error of some kind!
+                BW3Res.Comment = "Tool Z Move Error";
+                BW3Res.Result = false;
+                e.Result = BW3Res;
                 return;
-                }
+            }
 
             // - estimated tool or default tool length
 
 
-                //MessageBox.Show("Probing");
-                BW3Res.Comment = "Probing";
-                _bw3.ReportProgress(0);
+            //MessageBox.Show("Probing");
+            BW3Res.Comment = "Probing";
+            _bw3.ReportProgress(0);
             // move while waiting for the tool setter to detect
             // the probing command
             // Check whether to use the full length of the probe cycle or to limit it to slightly more than the e
@@ -1685,16 +1694,16 @@ namespace KFLOP_Test3
                 // double check this math!
                 ProbeDistance = xTCP.TS_Z - xTCP.TS_RefZ - 1.5; // this is a 1.5 inch buffer...  because the spindle can't go all the way down to the tool setter.
             }
-            
+
             ProbeRate = xTCP.TS_FR1;    // the hunting rate
             Start_ToolSetterZProbe(ProbeDistance, ProbeRate);    // this should be a little more than the current offset
             if (WaitForTSProgress() == false)
             {
-            // There was an error
-            BW3Res.Comment = "Probing Error";
-            BW3Res.Result = false;
-            e.Result = BW3Res;
-            return;
+                // There was an error
+                BW3Res.Comment = "Probing Error";
+                BW3Res.Result = false;
+                e.Result = BW3Res;
+                return;
             }
             // save the length / offset - the probe complete call back should take care of this
 
@@ -1790,7 +1799,7 @@ namespace KFLOP_Test3
             do
             {
                 Thread.Sleep(100);
-                if(stuckCount++ > 300) // 30 seconds seems like long enough
+                if (stuckCount++ > 300) // 30 seconds seems like long enough
                 {
                     // TCProgress = false;
                     TSChangeStatus = false;
@@ -1831,14 +1840,14 @@ namespace KFLOP_Test3
             // double MotionRate = -15.0;    // inch per min - initial testing value
             double mrZ;
             double ProbeDistance = dist; // probe distance  in inches - this should take about 
-//            mrZ = (MotionRate * KMx.CoordMotion.MotionParams.CountsPerInchZ) / 60.0; // motion rate(in/min) * (counts/inch) / (60sec/ min)
+                                         //            mrZ = (MotionRate * KMx.CoordMotion.MotionParams.CountsPerInchZ) / 60.0; // motion rate(in/min) * (counts/inch) / (60sec/ min)
             mrZ = (-rate * KMx.CoordMotion.MotionParams.CountsPerInchZ) / 60.0; // motion rate(in/min) * (counts/inch) / (60sec/ min)
 
 
             double PTimeout;
             // timeout is (distance/rate) * (ms/min)
             PTimeout = (ProbeDistance / Math.Abs(rate)) * 60.0;
-//            PTimeout = (ProbeDistance / Math.Abs(MotionRate)) * 60.0;
+            //            PTimeout = (ProbeDistance / Math.Abs(MotionRate)) * 60.0;
             // convert to seconds for timeout  -
             // this is a simplification because it doesn't account for acceleration and deceleration times, but it is a start.
             //            MessageBox.Show("In Tool Setter Probe");
@@ -1971,6 +1980,13 @@ namespace KFLOP_Test3
                 OnProcessUpdate(ps); // send the status message
             }
         }
+
+        #region Tool update
+        public void UpdateTool(Tool tool)
+        {
+            KMx.CoordMotion.Interpreter.SetupParams.SetTool(tool.index, tool.slot, tool.ID, tool.Length, tool.Diameter, tool.XOffset, tool.YOffset);
+        }
+        #endregion
 
         #region Events
         protected virtual void OnProcessUpdate(string x)

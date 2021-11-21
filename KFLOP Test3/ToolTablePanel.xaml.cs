@@ -23,6 +23,7 @@ using Newtonsoft.Json;
 
 // for file dialog libraries
 using Microsoft.Win32;
+using System.Threading;
 
 //
 
@@ -43,6 +44,10 @@ namespace KFLOP_Test3
         static ToolTable TTable;
         // tool changer
         static ToolChanger TCx;
+        static ToolSetter TSx;
+
+        int selectedPocket;
+        Tool selectedTool;
 
         // mouse event elements
         public delegate Point GetPosition(IInputElement element);
@@ -53,7 +58,7 @@ namespace KFLOP_Test3
         Tool DraggedObject; // maybe think of a different name for this?
 
 
-        public ToolTablePanel(ref KM_Controller X, ref ConfigFiles CfgFiles, ref ToolInfo toolInfo, ref ToolChanger toolChanger)
+        public ToolTablePanel(ref KM_Controller X, ref ConfigFiles CfgFiles, ref ToolInfo toolInfo, ref ToolChanger toolChanger, ref ToolSetter toolSetter)
         {
             InitializeComponent();
             KMx = X;    // point to the KM controller - this exposes all the KFLOP .net library functions
@@ -63,6 +68,10 @@ namespace KFLOP_Test3
 
             TTable = toolInfo.toolTable;            // point to the Tool Table
             TCx = toolChanger;  // point to the Tool Changer
+            TSx = toolSetter;
+
+            selectedPocket = 0;
+            selectedTool = new Tool();
 
             // add a handler to the preview left button down event on the tool table datagrid
             dgToolList.PreviewMouseLeftButtonDown += new MouseButtonEventHandler(ToolTable_PreviewMouseLeftButtonDown);
@@ -94,15 +103,15 @@ namespace KFLOP_Test3
 
  //           MessageBox.Show($"Selected Row {rowIndex}");
             dgToolList.SelectedIndex = rowIndex; // set the selectedIndex to the row that was left buttoned
-            Tool SelectedTool = dgToolList.Items[rowIndex] as Tool;
-            if(SelectedTool == null)
+            selectedTool = dgToolList.Items[rowIndex] as Tool;
+            if(selectedTool == null)
             { return; }
 
-            dgToolList.SelectedItem = SelectedTool;
+            dgToolList.SelectedItem = selectedTool;
             DraggedObject = dgToolList.Items[rowIndex] as Tool;
 
             DragDropEffects ddEffects = DragDropEffects.Copy;
-            if (DragDrop.DoDragDrop(dgToolList, SelectedTool, ddEffects) != DragDropEffects.None)
+            if (DragDrop.DoDragDrop(dgToolList, selectedTool, ddEffects) != DragDropEffects.None)
             {
                 // it seems like doing this here would select late...
                 //                dgToolList.SelectedItem = SelectedTool;
@@ -170,15 +179,26 @@ namespace KFLOP_Test3
                     MRB = MessageBox.Show($"Is Carousel Pocket {SelectedItem.Pocket} Empty?", "*WARNING* Pocket Not Empty", MessageBoxButton.YesNoCancel);
                     if ((MRB == MessageBoxResult.Cancel) || (MRB == MessageBoxResult.No))
                     {
-                        MessageBox.Show("You Must Remove the tool from Carousel Pocket {PocketNumber} before loading", "*WARNING* Pocket Not Empty");
+                        MessageBox.Show($"You Must Remove the tool from Carousel Pocket {SelectedItem.Pocket} before loading", "*WARNING* Pocket Not Empty");
                         return;
                     }
                 }
+                if(measureTool == true)
+                {
+                    // set the toolsetter callback 
+                    selectedPocket = SelectedItem.Pocket;
+                    TCx.Manual_GetTool(selectedTool.index);
+                    TSx.ProcessCompleted += MeasureStep3;
+                    ToolMeasure();
+                    TCx.CarouselAddTool(newToolNumber, SelectedItem.Pocket);
 
-                TCx.LoadTool(newToolNumber, SelectedItem.Pocket);
+                }
+                else
+                { 
+                    TCx.LoadTool(newToolNumber, SelectedItem.Pocket); 
+                }
                 dgCarousel.Items.Refresh(); // refresh the data grid.
             }
-
         }
 
         void Carousel_PreviewRightMouseButtonDown(object sender, MouseButtonEventArgs e)
@@ -332,14 +352,14 @@ namespace KFLOP_Test3
         {
             // get the tool number
 
-            Tool SelectedTool = new KFLOP_Test3.Tool();
-            SelectedTool = dgToolList.Items[rowIndexRtBtn] as Tool;
+            // Tool SelectedTool = new KFLOP_Test3.Tool();
+            selectedTool = dgToolList.Items[rowIndexRtBtn] as Tool;
             // check if it is the carousel
-            MessageBox.Show($"Selected Tool ID is {SelectedTool.slot}");
-            if (TCx.ToolInCarousel(SelectedTool.slot))
+            // MessageBox.Show($"Selected Tool ID is {selectedTool.slot}");
+            if (TCx.ToolInCarousel(selectedTool.slot))
             {
-                int pocket = TCx.ToolInCarouselPocket(SelectedTool.slot);
-                MessageBox.Show($"Tool {SelectedTool.slot} is in the Carousel at pocket {pocket}");
+                selectedPocket = TCx.ToolInCarouselPocket(selectedTool.slot);
+                MessageBox.Show($"Tool {selectedTool.slot} is in the Carousel at pocket {selectedPocket}");
                 // prompt to make sure the spindle is empty cancel if necessary
                 MessageBoxResult MBR = MessageBox.Show("Make Sure the Spindle is Empty!", "Spindle Check", MessageBoxButton.OKCancel);
                 if (MBR == MessageBoxResult.Cancel)
@@ -347,13 +367,122 @@ namespace KFLOP_Test3
                 else
                 {
                     // get the tool from the carousel
-
+                    if (TCx.bwBusy() == true)
+                    {
+                        MessageBox.Show("Something is busy - try again...");
+                    } else
+                    {
+                        // add something to the callback chain.
+                        TCx.ProcessCompleted += MeasureStep2;
+                        TCx.ToolChangerSimple(0, selectedPocket); // this should get "PocketNumber" from the carousel from an empty spindle
+                            
+                    }
                 }
             }
+            else
+            {
+                selectedPocket = -1;
+                TCx.Manual_GetTool(selectedTool.index);
 
-            // get the tool. 
+                TSx.ProcessCompleted += MeasureStep3;
+                ToolMeasure();
+                // MessageBoxResult MBR = MessageBox.Show($"Load tool number {SelectedTool.slot} into the Spindle is Empty!", "Tool Load", MessageBoxButton.OKCancel);
+                // if (MBR == MessageBoxResult.Cancel)
+                //     return;
+                // update the tool in use? 
+            }
+            // at this point there should be a tool in the spindle!     
+             
             // tool setter cycle
             // update the table and the current tool 
+        }
+
+        void MeasureStep2()
+        {
+            // remove step 2 from the callback list
+            TCx.ProcessCompleted -= MeasureStep2;
+            // add the next step to the callback list
+            TSx.ProcessCompleted += MeasureStep3;
+
+            // MessageBox.Show("in step 2");
+            // tool measure
+            ToolMeasure();
+            // need to know the tool number and estimated length. ??
+
+        }
+        void MeasureStep3()
+        {
+            // remove step 3 from the callback list
+            TSx.ProcessCompleted -= MeasureStep3;
+            // MessageBox.Show("Step 3 done");
+            // if the measurement did not error then record the number in the tool table
+            // check the result
+            switch (ToolSetter.TSProbeState)
+            {
+                case ProbeResult.Detected:
+                    // get the measured value and update the tooltable
+                    double toolLength = MachineMotion.TSCoord.Z - MachineMotion.xTCP.TS_RefZ;
+                    MessageBox.Show($"Tool length = {toolLength}");
+                    // update the tool length in the table and the interpreter.
+               
+                    selectedTool.Length = toolLength;
+                    KMx.CoordMotion.Interpreter.SetupParams.SetTool(selectedTool.index,
+                                                selectedTool.slot, selectedTool.ID,
+                                                selectedTool.Length, selectedTool.Diameter,
+                                                selectedTool.XOffset, selectedTool.YOffset);
+                    dgToolList.Items.Refresh();
+                    break;
+                case ProbeResult.MachineTimeOut: 
+                case ProbeResult.SoftTimeOut: 
+                case ProbeResult.T2_ProbeError:
+                default:
+                    MessageBox.Show($"Probing Error - Result:{ToolSetter.TSProbeState}");
+                    break;
+            }
+
+            if (selectedPocket != -1)
+            {
+                // return the tool to the carousel
+                TCx.ProcessCompleted += MeasureStep4;
+                TCx.ToolChangerSimple(selectedPocket, 0); // put the tool into the active pocket.
+            }
+            else
+            {
+                // MessageBox.Show("Remove the tool from the Spindle!");
+                TCx.Manual_PutTool(selectedTool.index);
+            }
+            ToolSetter.TSProbeState = ProbeResult.Idle; // all done.
+        }
+
+        void MeasureStep4()
+        {
+            // remove step 4 from the callback list
+            TCx.ProcessCompleted -= MeasureStep4;   
+            // 
+        }
+
+        void ToolMeasure()  // maybe pass in length and average 
+        {
+            // Actual tool measurment
+            // get the arguments
+            if (ToolSetter.TSProbeState != ProbeResult.Idle)
+            {
+                MessageBox.Show("Tool Setter is not ready!");
+                return;
+            }
+            ToolSetterArguments TSAx = new ToolSetterArguments();
+            // load the arguments from the Tool change parameters
+            TSAx.X_Offset = 0;
+            TSAx.Y_Offset = 0;
+            TSAx.Z_Offset = MachineMotion.xTCP.TS_Z - MachineMotion.xTCP.TS_RefZ;
+            TSAx.AverageCount = 1; // for now... maybe do something else here?
+            // TSAx.Z_Offset = 2.0; // calculate the proper length here!
+
+            TSAx.UseExpectedZ = false;   // use the full length of the probe routine
+            //SetterAction = TS_Actions.ToolMeasurment;
+            // ToolSetter_Action(TSAx);
+            ToolSetter.SetterAction = TS_Actions.ToolMeasurment;
+            TSx.Start_ToolSetter(TSAx);
         }
         #endregion
 
@@ -418,7 +547,9 @@ namespace KFLOP_Test3
                     // read a line
                     char[] delimiterChars = { ' ', '\t' };
                     string line;
-                    bool FirstLine = true; ;
+                    bool FirstLine = true;
+                    int indexCount = 0;
+
                     while ((line = infile.ReadLine()) != null)
                     {
                         // parse the line into the TTable class
@@ -430,9 +561,11 @@ namespace KFLOP_Test3
                         Tool Tx = new Tool();
                         int x;
                         double d;
+                        
 
                         if (words.Length >= 6)  // make sure that the line has sufficent elements
                         {
+                            Tx.index = indexCount++;
                             // get the parameters - skip the line if any of the entries don't work.
                             if (int.TryParse(words[0], out x))
                             {
@@ -500,7 +633,21 @@ namespace KFLOP_Test3
                     }
                     // close the file
                     infile.Close();
-                //    MessageBox.Show("tool file read!");
+                    //    MessageBox.Show("tool file read!");
+                    // verify the tooltable vs interpreter table
+
+                    // re-initialize the interpreter - should cause it to re-read the table.
+                    KMx.CoordMotion.Interpreter.InitializeInterpreter(); // will this do any other damage?
+
+                    foreach (Tool xtool in TTable.Tools)
+                    {
+                        // get the tool from the interpreter
+                        int toolslot = TCx.getSlot(xtool.index);
+                        if (toolslot != xtool.slot)
+                        {
+                            MessageBox.Show($"Tool Table Error!\nIndex:{xtool.index} Slot:{xtool.slot}");
+                        }
+                    }
                 }
                 catch (Exception e)
                 {
@@ -615,8 +762,8 @@ namespace KFLOP_Test3
                             int bwWaitCount = 0;
                             do
                             {
-                                System.Threading.Thread.Sleep(50);
-                                if(bwWaitCount++ > 80)  // wait up to 2 seconds.
+                                System.Threading.Thread.Sleep(100);
+                                if(bwWaitCount++ > 80)  // wait up to 8 seconds.
                                 {
                                     MessageBox.Show("Something is busy!\nAborting!");
                                     return;

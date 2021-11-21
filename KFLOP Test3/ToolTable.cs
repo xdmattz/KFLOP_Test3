@@ -40,6 +40,7 @@ namespace KFLOP_Test3
             Image = "";
         }
 
+        public int index { get; set; }
         public int slot { get; set; }
         public int ID { get; set; }
         public double Length { get; set; }  // Z Offset
