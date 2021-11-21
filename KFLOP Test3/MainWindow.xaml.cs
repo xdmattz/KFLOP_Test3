@@ -1183,6 +1183,12 @@ namespace KFLOP_Test3
             {
                 tbActiveGCodes.Text += str + " ";
             }
+            tbActiveMCodes.Text = "";
+            List<string> mcodelist = KM.CoordMotion.Interpreter.SetupParams.Active_MCodes;
+            foreach(string str in mcodelist)
+            {
+                tbActiveMCodes.Text += str + " ";
+            }
 
             // set the tool in spindle number and length
             CurrTool.SetTool(ToolChanger.ToolInSpindle);

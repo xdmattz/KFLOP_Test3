@@ -165,7 +165,7 @@ namespace KFLOP_Test3
             {
                 return; // tool is already in the carousel don't put it in again
             }
-            MessageBox.Show($"putting tool {newToolNumber} into pocket {SelectedItem.Pocket}");
+            // MessageBox.Show($"putting tool {newToolNumber} into pocket {SelectedItem.Pocket}");
             // prompt to load the tool into the spindle
             // check auto measure check box
             bool measureTool = cbToolLoadMeasure.IsChecked ?? false;    // https://stackoverflow.com/questions/6075726/convert-nullable-bool-to-bool
@@ -191,7 +191,6 @@ namespace KFLOP_Test3
                     TSx.ProcessCompleted += MeasureStep3;
                     ToolMeasure();
                     TCx.CarouselAddTool(newToolNumber, SelectedItem.Pocket);
-
                 }
                 else
                 { 
@@ -248,6 +247,8 @@ namespace KFLOP_Test3
         #region Tool Table Drop Down menu actions
         private void ToolTableMenu_Add(object sender, RoutedEventArgs e)
         {
+            // note: this will only update the tooltable, not the interpreter table. - have to think
+            // on how to implement that. maybe...
            // MessageBox.Show($"Add a tool, current row = {rowIndexRtBtn}, but make a new row.");
             Tool NewTool = new Tool();
             ToolEditWindow tEditWindow = new ToolEditWindow(NewTool);
@@ -290,10 +291,13 @@ namespace KFLOP_Test3
                         tEditWindow.GetWindow(dgToolList.Items[rowIndexRtBtn] as Tool);
                         // update tool list
                         dgToolList.Items.Refresh();
+                        //EditTool = dgToolList.Items[rowIndexRtBtn] as Tool; // this may be redundant...
+
                     }
                     else
                     {
-                        MessageBox.Show($"Tool Slot Number {tEditWindow.tSlot} is already in the table!");
+                        MessageBox.Show($"Tool Slot Number {tEditWindow.tSlot} is already in the table!\nChanges not saved!");
+                        return; // this will jump around the interperter tool update
                     }
                 }
                 else   // there is probably a more elegant way to do this...
@@ -302,13 +306,16 @@ namespace KFLOP_Test3
                     // update tool list
                     dgToolList.Items.Refresh();
                 }
+                // save the tool updates to the Interpreter.
+                KMx.CoordMotion.Interpreter.SetupParams.SetTool(EditTool.index, EditTool.slot,
+                        EditTool.ID, EditTool.Length, EditTool.Diameter, EditTool.XOffset, EditTool.YOffset);
             }
         }
 
         private void ToolTableMenu_Delete(object sender, RoutedEventArgs e)
         {
             // MessageBox.Show($"Delete the tool on row = {rowIndexRtBtn}");
-
+            // note, this does not remove the tool from the interpreter. save and reload to do that.
             // How to remove the correct row out of the TTable? do I need to search through the list until they agree?
             Tool itemToRemove = dgToolList.Items[rowIndexRtBtn] as Tool;
             for(int i = 0; i < TTable.Tools.Count; i++)
@@ -453,7 +460,6 @@ namespace KFLOP_Test3
             }
             ToolSetter.TSProbeState = ProbeResult.Idle; // all done.
         }
-
         void MeasureStep4()
         {
             // remove step 4 from the callback list

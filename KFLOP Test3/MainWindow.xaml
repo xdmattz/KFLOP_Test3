@@ -41,7 +41,7 @@
         <TextBox x:Name="tbLineNo" HorizontalAlignment="Left" Height="23" Margin="1258,327,0,0" TextWrapping="Wrap" Text="TextBox" VerticalAlignment="Top" Width="120"/>
         <TextBox x:Name="tbSeq" HorizontalAlignment="Left" Height="23" Margin="1258,355,0,0" TextWrapping="Wrap" Text="TextBox" VerticalAlignment="Top" Width="120"/>
         <TextBox x:Name="tbErr" HorizontalAlignment="Left" Height="23" Margin="1258,383,0,0" TextWrapping="Wrap" Text="TextBox" VerticalAlignment="Top" Width="120"/>
-        <CheckBox x:Name="cbSimulate" Content="Simulate" HorizontalAlignment="Left" Margin="882,268,0,0" VerticalAlignment="Top" RenderTransformOrigin="2.595,0.438"/>
+        <CheckBox x:Name="cbSimulate" Content="Simulate" HorizontalAlignment="Left" Margin="882,238,0,0" VerticalAlignment="Top" RenderTransformOrigin="2.595,0.438"/>
         <TextBlock x:Name="tbExTime" HorizontalAlignment="Left" Margin="1191,481,0,0" TextWrapping="Wrap" Text="TextBlock" VerticalAlignment="Top" RenderTransformOrigin="0.76,-0.844"/>
         <Button x:Name="btnConsole" Content="Console" HorizontalAlignment="Left" Margin="421,41,0,0" VerticalAlignment="Top" Width="75" Click="btnConsole_Click"/>
         <TabControl x:Name="tcMainTab" HorizontalAlignment="Left" Width="700" Height="420" Margin="63,417,0,0" VerticalAlignment="Top" >
@@ -127,9 +127,17 @@
         <Label x:Name="ZMotion" Content="Label" HorizontalAlignment="Left" Margin="1335,752,0,0" VerticalAlignment="Top"/>
         <Button x:Name="btnToolScan" Content="Scan Tools" HorizontalAlignment="Left" Margin="331,42,0,0" VerticalAlignment="Top" Width="75" Click="btnToolScan_Click"/>
 
-        <Grid Margin="882,317,479,517">
-            <Label Content="Active G Codes:" Margin="0,0,0,10" />
-            <TextBlock x:Name="tbActiveGCodes" HorizontalAlignment="Left" Margin="10,25,0,0" TextWrapping="Wrap" Text="TextBlock" VerticalAlignment="Top" Height="43" Width="167"/>
+        <Grid Margin="882,264,479,492">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="28" />
+                <RowDefinition Height="60" />
+                <RowDefinition Height="28" />
+                <RowDefinition Height="60" />
+            </Grid.RowDefinitions>
+            <Label Content="Active G Codes:" Grid.Row="0"  />
+            <TextBlock x:Name="tbActiveGCodes" Grid.Row="1" HorizontalAlignment="Left"  TextWrapping="Wrap" Text="TextBlock" VerticalAlignment="Top" />
+            <Label Content="Active M Codes:" Grid.Row="2"  />
+            <TextBlock x:Name="tbActiveMCodes" Grid.Row="3" HorizontalAlignment="Left"  TextWrapping="Wrap" Text="TextBlock" VerticalAlignment="Top" />
 
         </Grid>
         <Label x:Name="lblTestBench" Content="" HorizontalAlignment="Left" Margin="820,1,0,0" VerticalAlignment="Top" FontSize="24" FontWeight="Bold" Foreground="Red" Height="47"/>
