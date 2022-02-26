@@ -153,9 +153,12 @@ namespace KFLOP_Test3
 
 
         // more tab items here...
+        // 3D Tool Path window
+        static _3DToolPath ToolPath3D;
 
 
-
+        // temp stuff for debugging
+        Callback_Counters callback_count;
 
         #endregion
 
@@ -284,7 +287,7 @@ namespace KFLOP_Test3
 
             #region TAB Controls
             // the tab controls
-            // Add the usere controls to the Tab control area
+            // Add the user controls to the Tab control area
             // The Jog Panel
             JogPanel1 = new JogPanel(ref KM);
             var Tab1 = new TabItem();
@@ -348,6 +351,10 @@ namespace KFLOP_Test3
             Tab6.Content = ProbePanel1;
             tcMainTab.Items.Add(Tab6);
 
+            // Tool Path Window
+            ToolPath3D = new _3DToolPath(); // this should 
+
+
             // Tools tab panel etc.
             GCodeButtonsInit();
             // hide the fwd and rev buttons
@@ -369,6 +376,9 @@ namespace KFLOP_Test3
             // TESTING DRM
             Exe_LED.Set_Label("Execution");
             Exe_LED.Set_State(LED_State.Off);
+
+            // debug counters etc.
+            callback_count = new Callback_Counters();
 
             #endregion
         }
@@ -577,27 +587,36 @@ namespace KFLOP_Test3
                     m_M30 = true;    // set the end of program flag
                     break;
                 case 3: // M3 callback - Spindle CW
-                    KM.SetUserData(PVConst.P_NOTIFY, T2Const.T2_SPINDLE_CW);
-                    KM.ExecuteProgram(2);
+                    if (KM.CoordMotion.IsSimulation == false)
+                    {
+                        KM.SetUserData(PVConst.P_NOTIFY, T2Const.T2_SPINDLE_CW);
+                        KM.ExecuteProgram(2);
+                    }
                     break;
                 case 4: // M4 callback - Spindle CCW
-                    KM.SetUserData(PVConst.P_NOTIFY, T2Const.T2_SPINDLE_CCW);
-                    KM.ExecuteProgram(2);
+                    if (KM.CoordMotion.IsSimulation == false)
+                    {
+                        KM.SetUserData(PVConst.P_NOTIFY, T2Const.T2_SPINDLE_CCW);
+                        KM.ExecuteProgram(2);
+                    }
                     break;
                 case 5: // M5 Callback - Spindle Stop
                     KM.SetUserData(PVConst.P_NOTIFY, T2Const.T2_SPINDLE_STOP);
                     KM.ExecuteProgram(2);
                     break;
                 case 6: // M6 Callback - Tool Change
-                    m_M6 = true;    // in a tool change
-                     // call the tool change method. - found in Tool Change Panel.
-                    if(toolChanger.ToolChangeM6() == false)
+                    if (KM.CoordMotion.IsSimulation == false)   // no tool changes if we are simulating!
                     {
-                        MessageBox.Show("Tool Change Error - now what?");
+                        m_M6 = true;    // in a tool change
+                                        // call the tool change method. - found in Tool Change Panel.
+                        if (toolChanger.ToolChangeM6() == false)
+                        {
+                            MessageBox.Show("Tool Change Error - now what?");
+                        }
+                        m_M6 = false;    // tool change done
+                                         // if it returns successfully then continue
+                                         // check ToolChangerPanel.Status
                     }
-                    m_M6 = false;    // tool change done
-                    // if it returns successfully then continue
-                    // check ToolChangerPanel.Status
                     break;
                 case 7: // M7 Callback - Mist Coolant On?
                 case 8: // M8 Callback - Coolant On
@@ -640,6 +659,7 @@ namespace KFLOP_Test3
 
         public void Interpreter_InterpreterCompleted(int status, int lineno, int sequence_number, string err)
         {
+            callback_count.InterpDone++;
             Dispatcher.BeginInvoke(new System.Threading.ThreadStart(() => InterpCompleted2(status, lineno, sequence_number, err)));
         }
 
@@ -661,7 +681,6 @@ namespace KFLOP_Test3
                 // if there is no GCode file then this will happen!
                 // MessageBox.Show(err); // status 1005 = successful halt
                 // restart
-                btnMDI.IsEnabled = true;
                 btnGCode.IsEnabled = true;
                 SingleStepping = false;
                 GCodeButtonsInit();
@@ -704,7 +723,7 @@ namespace KFLOP_Test3
 
             ExecutionInProgress = false; // not running anymore.
             m_MDI = false;  // any manual commands are done.
-
+            btnMDI.IsEnabled = true;
             JogPanel1.EnableJog();  // reenable the Jog Buttons
             btnSingleStep.IsEnabled = true;
             btnCycleStart.IsEnabled = true;
@@ -715,6 +734,7 @@ namespace KFLOP_Test3
 
         void InterpStatus(int lineno, string msg)
         {
+            callback_count.InterpStat++;
             Dispatcher.BeginInvoke(new System.Threading.ThreadStart(() => InterpStatus2(lineno, msg)));
 
             // So why didn't this work?!!!
@@ -739,17 +759,26 @@ namespace KFLOP_Test3
 
         #region Motion Callback Handlers
         // these will be used for the tool path visualization
-        private void TraverseCompleted(object callback)
-        { }
+        private void AsyncTraverseCompleteHandler(object callback)
+        {
+            callback_count.AsyncTrav++; // increment the callback count
+        }
 
         public void ArcFeedHandler(bool ZeroLenAsFullCircles, double DesiredFeedRate_in_per_sec, int plane, double first_end, double second_end, double first_axis, double second_axis, int rotation, double axis_end_point, double first_start, double second_start, double axis_start_point, int sequence_number, int ID)
-        { }
+        {
+            ToolPath3D.ArcCallback(ZeroLenAsFullCircles, DesiredFeedRate_in_per_sec, plane, first_end, second_end, first_axis, second_axis, rotation, axis_end_point, first_start, second_start, axis_start_point, sequence_number);
+            callback_count.ArcFeed++;
+        }
 
         public void ArcFeed6AxisHandler(bool ZeroLenAsFullCircles, double DesiredFeedRate_in_per_sec, int plane, double first_end, double second_end, double first_axis, double second_axis, int rotation, double axis_end_point, double a, double b, double c, double first_start, double second_start, double axis_start_point, int sequence_number, int ID)
-        { }
+        {
+            callback_count.ArcFeed6++;
+        }
 
         private void StraightMotionHandler(double FR, double x, double y, double z, int seq, int ID)
         {
+            ToolPath3D.StraightCallback(FR, x, y, z, seq);
+            callback_count.StraightFeed++;
             Dispatcher.BeginInvoke(new System.Threading.ThreadStart(() => StraightMotionHandler2(FR, x, y, z, seq, ID)));
 
             // do I need the pinvoke here?
@@ -761,13 +790,20 @@ namespace KFLOP_Test3
         }
 
         private void StraightFeedSixAxis(double DesiredFeedRate_in_per_sec, double x, double y, double z, double a, double b, double c, int sequence_number, int ID)
-        { }
+        {
+            callback_count.StraightFeed6++;
+        }
 
         private void StraightTraverse(double x, double y, double z, int sequence_number)
-        { }
+        {
+            ToolPath3D.StraightTraverseCallback(x, y, z, sequence_number);
+            callback_count.StraightTrav++;
+        }
 
         private void StraightTraversSixAxis(double x, double y, double z, double a, double b, double c, int sequence_number)
-        { }
+        {
+            callback_count.StraightTrav6++;
+        }
         #endregion
 
         private void AddHandlers()
@@ -794,13 +830,13 @@ namespace KFLOP_Test3
 
             // Call backs for motion
             // add the motion callbacks here for 3D plotting of paths
-            KM.CoordMotion.AsyncTraverseCompleted += new TraverseCompletedHandler(TraverseCompleted);
+            KM.CoordMotion.AsyncTraverseCompleted += new TraverseCompletedHandler(AsyncTraverseCompleteHandler);
             KM.CoordMotion.CoordMotionArcFeed += new KM_CoordMotionArcFeedHandler(ArcFeedHandler);
-            KM.CoordMotion.CoordMotionArcFeedSixAxis += new KM_CoordMotionArcFeedSixAxisHandler(ArcFeed6AxisHandler);
+            // KM.CoordMotion.CoordMotionArcFeedSixAxis += new KM_CoordMotionArcFeedSixAxisHandler(ArcFeed6AxisHandler);
             KM.CoordMotion.CoordMotionStraightFeed += new KM_CoordMotionStraightFeedHandler(StraightMotionHandler);
-            KM.CoordMotion.CoordMotionStraightFeedSixAxis += new KM_CoordMotionStraightFeedSixAxisHandler(StraightFeedSixAxis);
+            // KM.CoordMotion.CoordMotionStraightFeedSixAxis += new KM_CoordMotionStraightFeedSixAxisHandler(StraightFeedSixAxis);
             KM.CoordMotion.CoordMotionStraightTraverse += new KM_CoordMotionStraightTraverseHandler(StraightTraverse);
-            KM.CoordMotion.CoordMotionStraightTraverseSixAxis += new KM_CoordMotionStraightTraverseSixAxisHandler(StraightTraversSixAxis);
+            // KM.CoordMotion.CoordMotionStraightTraverseSixAxis += new KM_CoordMotionStraightTraverseSixAxisHandler(StraightTraversSixAxis);
 
 
 
@@ -1041,12 +1077,14 @@ namespace KFLOP_Test3
             double x = 0, y = 0, z = 0, a = 0, b = 0, c = 0;
             KM.CoordMotion.UpdateCurrentPositionsABS(ref x, ref y, ref z, ref a, ref b, ref c, true); // don't know whether true or false on snap is prefered
 
+            ToolPath3D.SetMarker(x, y, z);  // move the marker to the absolute position
 
-            // Machine Coordinates
+            // Machine Coordinates 
             double Mx = 0, My = 0, Mz = 0, Ma = 0, Mb = 0, Mc = 0;
             // Interpreter Coordinates
             double Ix = 0, Iy = 0, Iz = 0, Ia = 0, Ib = 0, Ic = 0;
 
+            // get both machine and interpreter coordinates.
             KM.CoordMotion.Interpreter.ConvertAbsoluteToMachine(x, y, z, a, b, c, ref Mx, ref My, ref Mz, ref Ma, ref Mb, ref Mc);
             KM.CoordMotion.Interpreter.ConvertAbsoluteToInterpreterCoord(x, y, z, a, b, c, ref Ix, ref Iy, ref Iz, ref Ia, ref Ib, ref Ic);
             // 
@@ -1568,8 +1606,8 @@ namespace KFLOP_Test3
             if (CheckStatus())  // check the machine status ie. estop, limit switches, not initialized etc
             {
 
-                btnGCode.IsEnabled = false; // disable the load GCode button
-                btnMDI.IsEnabled = false;
+                btnGCode.IsEnabled = false; // disable the load GCode button - shouldn't be doing this while running 
+                btnMDI.IsEnabled = false; // no manual input while running either!
                 btnCycleStart.IsEnabled = false;    // disable the buttons
                 btnReStart.IsEnabled = false;
                 btnSingleStep.IsEnabled = false;
@@ -1600,14 +1638,7 @@ namespace KFLOP_Test3
                 else
                 {
                     // see if it should be simulated
-                    if (cbSimulate.IsChecked == true)
-                    {
-                        KM.CoordMotion.IsSimulation = true;
-                    }
-                    else
-                    {
-                        KM.CoordMotion.IsSimulation = false;    // don't forget clear when not checked!
-                    }
+                    CheckSimulation();
 
                     KM.CoordMotion.ClearAbort(); // do I need these two calls here?
                     KM.CoordMotion.ClearHalt(); // 
@@ -1802,6 +1833,9 @@ namespace KFLOP_Test3
         {
             if (CheckStatus())
             {
+                // how do I check for simulation mode here and how to proceed?
+                CheckSimulation();
+                
                 if (Halted1)
                 {
                     if (CheckforResumeCircumstances() != true)  // check if we should move back to where we stopped
@@ -1880,6 +1914,7 @@ namespace KFLOP_Test3
         {
             if (CheckStatus())
             {
+                CheckSimulation();
                 SendGCodeLine(tbManualGcode.Text);
             }
         }
@@ -2083,6 +2118,18 @@ namespace KFLOP_Test3
             return val;
          }
 
+        private void CheckSimulation()
+        {
+            if(cbSimulate.IsChecked == true)
+            {
+                KM.CoordMotion.IsSimulation = true;
+            }
+            else
+            {
+                KM.CoordMotion.IsSimulation = false;
+            }
+        }
+
         #endregion
         #region GCode Tools
         private void btnToolScan_Click(object sender, RoutedEventArgs e)
@@ -2195,6 +2242,19 @@ namespace KFLOP_Test3
                 ConWin.Show();
             }
             
+        }
+
+        private void btnToolPath_Click(object sender, RoutedEventArgs e)
+        {
+            if(ToolPath3D.IsLoaded)
+            {
+                ToolPath3D.Show();
+            }
+            else
+            {
+                ToolPath3D = new _3DToolPath();
+                ToolPath3D.Show();
+            }
         }
 
         private void ConWin_SendButtonClickedCallback(string msg)
@@ -2330,17 +2390,18 @@ namespace KFLOP_Test3
         // this is the call back for setting the axis offset from the DROs
         private void ZeroSetCallback(int axis, double value)
         {
-            int currfixture;
-            currfixture = KM.CoordMotion.Interpreter.SetupParams.OriginIndex;
+            int currfixture;    
+            currfixture = KM.CoordMotion.Interpreter.SetupParams.OriginIndex;   // get the current fixture number G92, G54 etc.
             double ax, ay, az, aa, ab, ac;  // absolute coordinates
             ax = ay = az = aa = ab = ac = 0;
             double fx, fy, fz, fa, fb, fc;  // fixture coordinates
             fx = fy = fz = fa = fb = fc = 0;
             double tx, ty, tz;
             tx = ty = tz = 0;
-//            tz = KM.CoordMotion.Interpreter.SetupParams.ToolLengthOffset;
-//            tx = KM.CoordMotion.Interpreter.SetupParams.ToolXOffset;
-//            ty = KM.CoordMotion.Interpreter.SetupParams.ToolYOffset;
+            // get the tool length offsets
+            tz = KM.CoordMotion.Interpreter.SetupParams.ToolLengthOffset;
+            tx = KM.CoordMotion.Interpreter.SetupParams.ToolXOffset;
+            ty = KM.CoordMotion.Interpreter.SetupParams.ToolYOffset;
 
             KM.CoordMotion.Interpreter.GetOrigin(currfixture, ref fx, ref fy, ref fz, ref fa, ref fb, ref fc);
             KM.CoordMotion.ReadAndSyncCurPositions(ref ax, ref ay, ref az, ref aa, ref ab, ref ac);
@@ -2356,7 +2417,9 @@ namespace KFLOP_Test3
                 default : break;
             }
             KM.CoordMotion.Interpreter.SetOrigin(currfixture, fx, fy, fz, fa, fb, fc);
-            // what does this do?
+
+            ToolPath3D.SetGRef(currfixture, fx, fy, fz);    // move the toolpath display orgin gnomon to the new position
+           
             KM.CoordMotion.Interpreter.SetupParams.OriginIndex = -1; // force update from GCode Vars
             KM.CoordMotion.Interpreter.ChangeFixtureNumber(currfixture); // reload the fixture
 
@@ -2413,6 +2476,50 @@ namespace KFLOP_Test3
         private void RigidTappingTest()
         {
             MessageBox.Show("In Rigid Tapping");
+        }
+
+
+        // debug stuff
+        #region DEBUG STUFF
+        private void btnClrCnt_Click(object sender, RoutedEventArgs e)
+        {
+            callback_count.ClearCount();
+        }
+
+        private void btnBreak_Click(object sender, RoutedEventArgs e)
+        {
+            // this is only here so I can actually break in this thread!
+        }
+        #endregion
+    }
+
+    class Callback_Counters
+    {
+        public Callback_Counters()
+        {
+            ClearCount();
+        }
+        public int AsyncTrav { get; set; }
+        public int ArcFeed { get; set; }
+        public int ArcFeed6 { get; set; }
+        public int StraightFeed { get; set; }
+        public int StraightFeed6 { get; set; }
+        public int StraightTrav { get; set; }
+        public int StraightTrav6 { get; set; }
+        public int InterpStat { get; set; }
+        public int InterpDone { get; set; }
+
+        public void ClearCount()
+        {
+            AsyncTrav = 0;
+            ArcFeed = 0;
+            ArcFeed6 = 0;
+            StraightFeed = 0;
+            StraightFeed6 = 0;
+            StraightTrav = 0;
+            StraightTrav6 = 0;
+            InterpStat = 0;
+            InterpDone = 0;
         }
 
     }

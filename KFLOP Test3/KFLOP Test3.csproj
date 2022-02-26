@@ -70,16 +70,63 @@
     <Prefer32Bit>true</Prefer32Bit>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="Cyotek.Drawing.BitmapFont">
+      <HintPath>..\..\..\..\PC VCS Examples\ExtendedLoggingKflop\packages\Cyotek.Drawing.BitmapFont.2.0.0\lib\net452\Cyotek.Drawing.BitmapFont.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="HelixToolkit">
+      <HintPath>..\..\..\..\PC VCS Examples\ExtendedLoggingKflop\packages\HelixToolkit.2.20.2\lib\netstandard1.1\HelixToolkit.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="HelixToolkit.Wpf">
+      <HintPath>..\..\..\..\PC VCS Examples\ExtendedLoggingKflop\packages\HelixToolkit.Wpf.2.20.2\lib\net45\HelixToolkit.Wpf.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="HelixToolkit.Wpf.Input">
+      <HintPath>..\..\..\..\PC VCS Examples\ExtendedLoggingKflop\packages\HelixToolkit.Wpf.Input.2.20.2\lib\net45\HelixToolkit.Wpf.Input.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="HelixToolkit.Wpf.SharpDX">
+      <HintPath>..\..\..\..\PC VCS Examples\ExtendedLoggingKflop\packages\HelixToolkit.Wpf.SharpDX.2.20.2\lib\net45\HelixToolkit.Wpf.SharpDX.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
     <Reference Include="ICSharpCode.AvalonEdit">
-      <HintPath>..\..\..\..\PC VCS Examples\ExtendedLoggingKflop\packages\AvalonEdit.6.0.1\lib\net45\ICSharpCode.AvalonEdit.dll</HintPath>
+      <HintPath>..\..\..\PC VCS Examples\ExtendedLoggingKflop\packages\AvalonEdit.6.1.3.50\lib\net45\ICSharpCode.AvalonEdit.dll</HintPath>
       <Private>True</Private>
     </Reference>
     <Reference Include="KMotion_dotNet">
       <HintPath>..\..\..\..\KMotion_dotNet\obj\x86\Debug\KMotion_dotNet.dll</HintPath>
     </Reference>
-    <Reference Include="Newtonsoft.Json, Version=12.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\..\..\PC VCS Examples\ExtendedLoggingKflop\packages\Newtonsoft.Json.12.0.3\lib\net45\Newtonsoft.Json.dll</HintPath>
+    <Reference Include="Newtonsoft.Json">
+      <HintPath>..\..\..\PC VCS Examples\ExtendedLoggingKflop\packages\Newtonsoft.Json.13.0.1\lib\net45\Newtonsoft.Json.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="SharpDX">
+      <HintPath>..\..\..\..\PC VCS Examples\ExtendedLoggingKflop\packages\SharpDX.4.2.0\lib\net45\SharpDX.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="SharpDX.D3DCompiler">
+      <HintPath>..\..\..\..\PC VCS Examples\ExtendedLoggingKflop\packages\SharpDX.D3DCompiler.4.2.0\lib\net45\SharpDX.D3DCompiler.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="SharpDX.Direct2D1">
+      <HintPath>..\..\..\..\PC VCS Examples\ExtendedLoggingKflop\packages\SharpDX.Direct2D1.4.2.0\lib\net45\SharpDX.Direct2D1.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="SharpDX.Direct3D11">
+      <HintPath>..\..\..\..\PC VCS Examples\ExtendedLoggingKflop\packages\SharpDX.Direct3D11.4.2.0\lib\net45\SharpDX.Direct3D11.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="SharpDX.Direct3D9">
+      <HintPath>..\..\..\..\PC VCS Examples\ExtendedLoggingKflop\packages\SharpDX.Direct3D9.4.2.0\lib\net45\SharpDX.Direct3D9.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="SharpDX.DXGI">
+      <HintPath>..\..\..\..\PC VCS Examples\ExtendedLoggingKflop\packages\SharpDX.DXGI.4.2.0\lib\net45\SharpDX.DXGI.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="SharpDX.Mathematics">
+      <HintPath>..\..\..\..\PC VCS Examples\ExtendedLoggingKflop\packages\SharpDX.Mathematics.4.2.0\lib\net45\SharpDX.Mathematics.dll</HintPath>
       <Private>True</Private>
     </Reference>
     <Reference Include="System" />
@@ -94,6 +141,12 @@
     <Reference Include="System.Xaml">
       <RequiredTargetFramework>4.0</RequiredTargetFramework>
     </Reference>
+    <Reference Include="TDx.TDxInput, Version=1.1.0.0, Culture=neutral, PublicKeyToken=3bbf7d14b78dc9f5, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <EmbedInteropTypes>True</EmbedInteropTypes>
+      <HintPath>..\..\..\..\PC VCS Examples\ExtendedLoggingKflop\packages\HelixToolkit.Wpf.Input.2.20.2\lib\net45\TDx.TDxInput.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
     <Reference Include="WindowsBase" />
     <Reference Include="PresentationCore" />
     <Reference Include="PresentationFramework" />
@@ -103,6 +156,9 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </ApplicationDefinition>
+    <Compile Include="3DToolPath.xaml.cs">
+      <DependentUpon>3DToolPath.xaml</DependentUpon>
+    </Compile>
     <Compile Include="ButtonGrid.xaml.cs">
       <DependentUpon>ButtonGrid.xaml</DependentUpon>
     </Compile>
@@ -119,6 +175,7 @@
     </Compile>
     <Compile Include="Fixtuers.cs" />
     <Compile Include="FusionTools.cs" />
+    <Compile Include="HelixPlot_Plus.cs" />
     <Compile Include="HiLight_Lines.cs" />
     <Compile Include="LED_Indicator.xaml.cs">
       <DependentUpon>LED_Indicator.xaml</DependentUpon>
@@ -170,6 +227,10 @@
     <Compile Include="TS_Calibrate.xaml.cs">
       <DependentUpon>TS_Calibrate.xaml</DependentUpon>
     </Compile>
+    <Page Include="3DToolPath.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
     <Page Include="ButtonGrid.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>

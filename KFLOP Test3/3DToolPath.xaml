@@ -1,0 +1,17 @@
+﻿<Window x:Class="KFLOP_Test3._3DToolPath"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:KFLOP_Test3"
+        mc:Ignorable="d"
+        Title="_3DToolPath" Height="600" Width="800">
+    
+    <Grid>
+        <local:HelixPlot_Plus x:Name="Plot_D" ShowViewCube="True">
+          
+        </local:HelixPlot_Plus> 
+        <Button x:Name="btnClear" Width="60" Height="32" HorizontalAlignment="Left" VerticalAlignment="Top" Content="Clear" Click="btnClear_Click"/>
+
+    </Grid>
+</Window>

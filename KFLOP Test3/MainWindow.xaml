@@ -44,6 +44,8 @@
         <CheckBox x:Name="cbSimulate" Content="Simulate" HorizontalAlignment="Left" Margin="882,238,0,0" VerticalAlignment="Top" RenderTransformOrigin="2.595,0.438"/>
         <TextBlock x:Name="tbExTime" HorizontalAlignment="Left" Margin="1191,481,0,0" TextWrapping="Wrap" Text="TextBlock" VerticalAlignment="Top" RenderTransformOrigin="0.76,-0.844"/>
         <Button x:Name="btnConsole" Content="Console" HorizontalAlignment="Left" Margin="421,41,0,0" VerticalAlignment="Top" Width="75" Click="btnConsole_Click"/>
+        <Button x:Name="btnToolPath" Content="Tool Path" HorizontalAlignment="Left" Margin="517,41,0,0" VerticalAlignment="Top" Width="75" Click="btnToolPath_Click" RenderTransformOrigin="1.893,0.35"/>
+
         <TabControl x:Name="tcMainTab" HorizontalAlignment="Left" Width="700" Height="420" Margin="63,417,0,0" VerticalAlignment="Top" >
             <!-- fill the tabs in from the "Code Behind" -->
         </TabControl>
@@ -72,11 +74,11 @@
         <TextBox x:Name="tbSpindleSpeedRPM" HorizontalAlignment="Left" Height="24" Margin="1284,611,0,0" TextWrapping="Wrap" Text="1000" VerticalAlignment="Top" Width="68" RenderTransformOrigin="1.21,0.083"/>
         <TextBox x:Name="tbManualGcode" HorizontalAlignment="Left" Margin="90,869,0,0" TextWrapping="Wrap" Text="G28" VerticalAlignment="Top" Width="248"/>
         <Button x:Name="btnMDI" Content="MDI" HorizontalAlignment="Left" Margin="360,869,0,0" VerticalAlignment="Top" Width="46" Click="btnMDI_Click"/>
-        
+
         <!-- DRO Placement -->
         <Grid Margin="1091,16,0,646">
             <StackPanel Orientation="Vertical">
-            <local:DROBox x:Name="XDRO" Width="420" Height="70" Margin="5,5,5,5" />
+                <local:DROBox x:Name="XDRO" Width="420" Height="70" Margin="5,5,5,5" />
                 <local:DROBox x:Name="YDRO" Width="420" Height="70" Margin="5,5,5,5"  />
                 <local:DROBox x:Name="ZDRO" Width="420" Height="70" Margin="5,5,5,5"  />
             </StackPanel>
@@ -142,6 +144,8 @@
         </Grid>
         <Label x:Name="lblTestBench" Content="" HorizontalAlignment="Left" Margin="820,1,0,0" VerticalAlignment="Top" FontSize="24" FontWeight="Bold" Foreground="Red" Height="47"/>
         <TextBlock x:Name="tbCurrentTool" HorizontalAlignment="Left" Margin="882,206,0,0" TextWrapping="Wrap" Text="TextBlock" VerticalAlignment="Top" FontWeight="Bold" FontSize="20"/>
+        <Button x:Name="btnClrCnt" Content="Clear Cnt" HorizontalAlignment="Left" Margin="987,235,0,0" VerticalAlignment="Top" Width="75" Click="btnClrCnt_Click"/>
+        <Button x:Name="btnBreak" Content="Break" HorizontalAlignment="Left" Margin="987,206,0,0" VerticalAlignment="Top" Width="75" Click="btnBreak_Click"/>
     </Grid>
 </Window>
 

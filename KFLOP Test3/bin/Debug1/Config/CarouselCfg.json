@@ -2,13 +2,13 @@
   "Items": [
     {
       "Pocket": 1,
-      "ToolIndex": 1,
+      "ToolIndex": 14,
       "ToolInUse": false,
       "Description": "Empty"
     },
     {
       "Pocket": 2,
-      "ToolIndex": 20,
+      "ToolIndex": 15,
       "ToolInUse": false,
       "Description": "Empty"
     },
@@ -32,13 +32,13 @@
     },
     {
       "Pocket": 6,
-      "ToolIndex": 0,
+      "ToolIndex": 2,
       "ToolInUse": false,
       "Description": "Empty"
     },
     {
       "Pocket": 7,
-      "ToolIndex": 0,
+      "ToolIndex": 501,
       "ToolInUse": false,
       "Description": "Empty"
     },

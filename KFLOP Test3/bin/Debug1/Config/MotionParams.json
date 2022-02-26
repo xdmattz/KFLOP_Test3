@@ -27,7 +27,7 @@
   "CountsPerInchC": 100.0,
   "MaxLinearLength": 1E+30,
   "UseOnlyLinearSegments": false,
-  "ArcsToSegs": true,
+  "ArcsToSegs": false,
   "DegreesA": false,
   "DegreesB": false,
   "DegreesC": false
