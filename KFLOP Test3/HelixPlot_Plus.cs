@@ -26,7 +26,8 @@ namespace KFLOP_Test3
         private TruncatedConeVisual3D marker; // an cone used as a marker
 
         private TruncatedConeVisual3D tool; // part of the marker group
-        private BillboardTextVisual3D toolLen;  // tool lenght display
+        private BillboardTextVisual3D toolLenDisplay;  // tool length display
+        private double toolLength;
         
 
         // private SphereVisual3D marker;   // stuff I was playing with...
@@ -51,6 +52,7 @@ namespace KFLOP_Test3
         private string GRef_Format; // GRef coordinate format string
         private Transform3DGroup GRef_group; // 
         private TranslateTransform3D GRef_xyz; // transform for the GRef gnomon
+        private int GrefOffset;
 
         public HelixPlot_Plus() : base() // the constructor for the instance of HelixPlot_x
         {
@@ -229,9 +231,9 @@ namespace KFLOP_Test3
 
                 // what can I do with the marker?
                 marker = new TruncatedConeVisual3D();
-                marker.Height = 0.8;
+                marker.Height = MarkerConst.height;
                 marker.BaseRadius = 0.0;
-                marker.TopRadius = 0.4;
+                marker.TopRadius = MarkerConst.radius;
                 marker.TopCap = true;
                 marker.Origin = new Point3D(0.0, 0.0, 0.0);
                 marker.Normal = new Vector3D(0.0, 0.0, 1.0);    // this should point upwards...
@@ -250,11 +252,11 @@ namespace KFLOP_Test3
                 if (Elements.HasFlag(EElements.Tool))
                 {
                     tool = new TruncatedConeVisual3D();
-                    tool.Height = 0.5;
-                    tool.BaseRadius = 0.25;
-                    tool.TopRadius = 0.25;
+                    tool.Height = ToolConst.height;
+                    tool.BaseRadius = ToolConst.radius;
+                    tool.TopRadius = ToolConst.radius;
                     tool.TopCap = true;
-                    tool.Origin = new Point3D(0, 0, 0.8); // top of the cone
+                    tool.Origin = new Point3D(0, 0, MarkerConst.height); // top of the cone
                     tool.Normal = new Vector3D(0, 0, 1);
                     tool.Fill = MarkerBrush;
                     tool.Transform = mtgroup; // same transform as the marker - should ride on top?
@@ -347,10 +349,15 @@ namespace KFLOP_Test3
 
         }
 
+        public void ClearTrace()
+        {
+            trace.Clear();  // clear the trace array
+        }
+
 
         public void SetGref(int Gref, double x, double y, double z)
         {
-
+            GrefOffset = Gref;
             if(GRef_gnomon != null)
             {
                 GRef_xyz.OffsetX = x;
@@ -374,6 +381,14 @@ namespace KFLOP_Test3
                 GRef_coords.Text = string.Format(GRef_Format, xRef, x, y, z);
                 GRef_coords.Position = new Point3D(x - labelOffset, y - labelOffset, z + labelOffset);
             }
+        }
+
+        public void GetGref(ref int Gref, ref double x, ref double y, ref double z)
+        {
+            Gref = GrefOffset;
+            x = GRef_xyz.OffsetX;
+            y = GRef_xyz.OffsetY;
+            z = GRef_xyz.OffsetZ;
         }
 
         // two ways to add a trace 
@@ -499,11 +514,25 @@ namespace KFLOP_Test3
             coords.Text = string.Format(coordinateFormat, point.X, point.Y, point.Z);
         }
 
-        public void MoveMarker(double x, double y, double z)
+        public void MoveMarker(double x, double y, double z, double toolLen)
         {
+            
+            if(toolLength != toolLen)
+            {
+                toolLength = toolLen;   // update the new tool length
+                // change the tool length cylinder
+                if(tool != null)
+                {
+                    if (toolLen < (ToolConst.height + MarkerConst.height))
+                    { tool.Height = ToolConst.height; } // minimum tool height
+                    else
+                    { tool.Height = (toolLength - MarkerConst.height); }
+                }
+            }
+
             if(marker != null)
             {
-                MarkerPosition(new Point3D(x, y, z));
+                MarkerPosition(new Point3D(x, y, z - toolLen));
 
                 MarkerTransparent();
 
@@ -512,13 +541,29 @@ namespace KFLOP_Test3
 
         public void MarkerTransparent()
         {
+            // this functions makes sure that the last items in the children list are the marker, tool and marker coordinates
+            // that way they are transparent to everything else. ie. you can see everything else through them.
             Children.Remove(marker);
             Children.Remove(tool);
             Children.Add(marker);
             Children.Add(tool);
             Children.Remove(coords);
             Children.Add(coords);
+            Children.Remove(GRef_coords);
+            Children.Add(GRef_coords);
         }
+    }
+
+    class ToolConst
+    {
+        public const double height = 0.25;
+        public const double radius = 0.25;
+    }
+
+    class MarkerConst
+    {
+        public const double height = 0.8;
+        public const double radius = 0.4;
     }
 }
 

@@ -57,51 +57,111 @@ namespace KFLOP_Test3
         #region Motion Callback Functions
         // the motion callbacks
         // arc callback
-        public void ArcCallback(bool ZeroAsFull, double FR, int plane, double x2, double y2, double ax, double ay, int rotation, double z2, double x1, double y1, double z1, int sequence)
+        public void ArcCallback(bool ZeroAsFull, double FR, int plane, double x2, double y2, double ax, double ay, int rotation, double z2, double x1, double y1, double z1, int sequence, double toolLen)
         {
-            double x, y, z;
-            x = y = z = 0.0;
-            // check the plane
-            if ((CANON_PLANE)plane == CANON_PLANE.CANON_PLANE_XY)
+
+
+
+            // make an arc from point x1,y1 to point x2, y2 on the ax, ay axis. heigth z1 to z2. 
+            // if rotation is 0 then CW, 1 is CCW
+
+            
+            Point3D nextPoint;                  // The point to calculate
+            int steps;                          // number of steps in the arc
+            double Scale;                       // scale is equal to the vector magnitude
+            double angleStepSize, zStepSize;    // step sizes for the angle and height
+            double Xc, Yc, Zc, AngC;            // coordinates of the new point   
+            double AngStart, AngEnd;            
+
+            double vx1, vy1, vx2, vy2;  // vectors from the axis of rotation
+
+            // subtract the axis from the start and stop positions
+            vx1 = x1 - ax;
+            vy1 = y1 - ay;
+            vx2 = x2 - ax;
+            vy2 = y2 - ay;
+            // and calculate the relative angles of the two vectors
+            AngStart = VectAngle_rad(vx1, vy1);
+            AngEnd = VectAngle_rad(vx2, vy2);
+            // extend the angles depending on their rotation and position
+
+            if(rotation == 0) // Clockwise rotation
             {
-                x = x2; // regular Y Y plane
-                y = y2;
-                z = z2;
+                if (Math.Abs(AngStart - AngEnd) < 0.001) // Zero angle = full rotation
+                { AngEnd -= Math.PI * 2; } // clockwise rotation
+                else if (AngStart < 0.0) // start angle is negative 
+                {
+                    if(AngEnd > 0)
+                    { AngEnd -= Math.PI * 2; }  // subtract 2pi to make it more negative than the start 
+                    else if (AngStart < AngEnd)
+                    { AngStart += Math.PI * 2; }
+                } else // AngStart > 0
+                {
+                    if(AngStart < AngEnd)
+                    { AngEnd -= Math.PI * 2; }
+                }
             }
-            else if((CANON_PLANE)plane == CANON_PLANE.CANON_PLANE_YZ)
+            else     // Counter Clockwise rotation
             {
-                x = z2;
-                y = x2;
-                z = y2;
-            }
-            else if((CANON_PLANE)plane == CANON_PLANE.CANON_PLANE_XZ)   // have not checked this one yet!
-            {
-                x = x2;
-                y = z2;
-                z = y2;
-            }
-            else // no valid plane for the operation!
-            {
-                return;
+                if(Math.Abs(AngStart - AngEnd) < 0.001) // Zero angle = full rotation
+                { AngEnd += Math.PI * 2;  } // CCW rotation
+                else if (AngStart < 0)
+                {
+                    if(AngEnd < AngStart)
+                    { AngEnd += Math.PI * 2; }
+                } 
+                else  // AngleStart > 0
+                {
+                    if(AngEnd < 0)
+                    { AngEnd += Math.PI * 2; }
+                    else if(AngEnd < AngStart)
+                    { AngEnd += Math.PI * 2; }
+                }
             }
 
-            var point = new Point3DPlus(new Point3D(x, y, z), Colors.Red, 1.5);  // new arc with color red
+            // Scale of the arc
+            Scale = Mag2D(vx1, vy1);
+            // determine the number of steps
+            // this is a function of the swept angle (AngEnd - AngStart) and the Scale
+            steps = (int)(Math.Abs(AngEnd - AngStart) * 15);    //  15 is an arbitrary value that I picked to make things look about right...
+            if(Scale > 1.0)
+            {
+                steps = steps * (int)(Scale * 0.75);
+            }
+            // steps = 20;
+            zStepSize = (z2 - z1) / (double)(steps);
+            angleStepSize = (AngEnd - AngStart) / (double)(steps);
+            
+                
+            Zc = z1;
+            AngC = AngStart;
+            for(int i = 0;i < steps; i++)   // sweep through the angles
+            {
+                Zc += zStepSize;    // any Z changes - for a helix.
+                AngC += angleStepSize;  
+                Xc = (Scale * Math.Cos(AngC)) + ax; // scale by the magnitude and add offset
+                Yc = (Scale * Math.Sin(AngC)) + ay;
 
-            bool allow_invoke = false; // just copying this straight from the example - don't know what it really does...
-            lock (points)
-            {
-                points.Add(point);
-                allow_invoke = (points.Count == 1);
+                switch((CANON_PLANE)plane)
+                {
+                    case CANON_PLANE.CANON_PLANE_XY: nextPoint = new Point3D(Xc, Yc, Zc - toolLen); break;
+                    case CANON_PLANE.CANON_PLANE_YZ: nextPoint = new Point3D(Zc, Xc, Yc - toolLen); break;
+                    case CANON_PLANE.CANON_PLANE_XZ: nextPoint = new Point3D(Yc, Zc, Xc - toolLen); break;
+                    default: nextPoint = new Point3D(0, 0, 0); break;
+                }
+                lock (points)
+                {
+                    points.Add(new Point3DPlus(nextPoint, Colors.Red, 1.5));
+                }
             }
-            if (allow_invoke)
-            {
-                Dispatcher.BeginInvoke(DispatcherPriority.Background, (Action)PlotData);
-            }
+            Dispatcher.BeginInvoke(DispatcherPriority.Background, (Action)PlotData);
+  
         }
+
         // straight callback
-        public void StraightCallback(double FR, double x1, double y1, double z1, int sequence)
+        public void StraightCallback(double FR, double x1, double y1, double z1, int sequence, double toolLen)
         {
-            var point = new Point3DPlus(new Point3D(x1, y1, z1), Colors.Green, 1.5);  // new line with color Green
+            var point = new Point3DPlus(new Point3D(x1, y1, z1 - toolLen), Colors.Green, 1.5);  // new line with color Green
             bool allow_invoke = false; // just copying this straight from the example - don't know what it really does...
             lock (points)
             {
@@ -114,9 +174,9 @@ namespace KFLOP_Test3
             }
         }
         // straight traverse callback
-        public void StraightTraverseCallback(double x1, double y1, double z1, int sequence)
+        public void StraightTraverseCallback(double x1, double y1, double z1, int sequence, double toolLen)
         {
-            var point = new Point3DPlus(new Point3D(x1, y1, z1), Colors.Blue, 1.5);  // new line with color Blue
+            var point = new Point3DPlus(new Point3D(x1, y1, z1 - toolLen), Colors.Blue, 1.5);  // new line with color Blue
             bool allow_invoke = false; // just copying this straight from the example - don't know what it really does...
             lock (points)
             {
@@ -129,6 +189,41 @@ namespace KFLOP_Test3
 
             }
         }
+
+        #region Math For Arc plotting
+        // dot product of two vectors
+        public double DotProduct2D(double x1, double y1, double x2, double y2)
+        {
+            return (x1 * x2 + y1 * y2);
+        }
+
+        // magnitude of a 2D vector
+        public double Mag2D(double x, double y)
+        {
+            return (Math.Sqrt(x * x + y * y));
+        }
+
+        // angle between two vectors
+        public double Vect2Angle_rad(double x1, double y1, double x2, double y2)
+        {
+            return (Math.Acos(DotProduct2D(x1, y1, x2, y2) / (Mag2D(x1, y1) * Mag2D(x2, y2))));
+        }
+
+        // angle of a vector relative to the X axis
+        public double VectAngle_rad(double x, double y) 
+        {
+            if (y < 0.0) // 3rd or 4th quadrant - angle is negative
+            {
+                return (-Math.Acos(x / (Math.Sqrt(x * x + y * y))));
+            }
+            else // 1st or 2nd quadrant - angle is positive
+            {
+                return (Math.Acos(x / (Math.Sqrt(x * x + y * y))));
+            }
+        }
+
+        #endregion
+
         #endregion
 
         public void SetGRef(int xref, double x, double y, double z)
@@ -136,9 +231,9 @@ namespace KFLOP_Test3
             Plot_D.SetGref(xref, x, y, z);
         }
 
-        public void SetMarker(double x, double y, double z)
+        public void SetMarker(double x, double y, double z, double toolLen)
         {
-            Plot_D.MoveMarker(x, y, z); // does this need an invoke???
+            Plot_D.MoveMarker(x, y, z, toolLen); // does this need an invoke???
         }
 
         #region Plot Data Method
@@ -172,7 +267,18 @@ namespace KFLOP_Test3
 
         private void btnClear_Click(object sender, RoutedEventArgs e)
         {
+            // get the reference coordinates
+            double gx, gy, gz;
+            int xref;
+            gx = gy = gz = 0;
+            xref = 0;
+
+            Plot_D.GetGref(ref xref, ref gx, ref gy, ref gz);
             Plot_D.Clear();
+            // Plot_D.ClearTrace();
+            Plot_D.SetGref(xref, gx, gy, gz);
         }
     }
+
+
 }

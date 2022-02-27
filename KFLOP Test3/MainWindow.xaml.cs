@@ -323,6 +323,8 @@ namespace KFLOP_Test3
             Tab4.Header = "Tool Changer";
             Tab4.Content = ToolChangerPanel1;
             tcMainTab.Items.Add(Tab4);
+
+            ToolChangerPanel1.UpdateToolCallback += SendGCodeLine;
             // ToolChangerPanel1.LoadCarouselCfg();    // load the carousel state
             
  //           toolInfo.toolCarousel = ToolChangerPanel1.GetCarousel();
@@ -617,6 +619,8 @@ namespace KFLOP_Test3
                                          // if it returns successfully then continue
                                          // check ToolChangerPanel.Status
                     }
+                    // check if the tool length should be updated
+
                     break;
                 case 7: // M7 Callback - Mist Coolant On?
                 case 8: // M8 Callback - Coolant On
@@ -766,7 +770,8 @@ namespace KFLOP_Test3
 
         public void ArcFeedHandler(bool ZeroLenAsFullCircles, double DesiredFeedRate_in_per_sec, int plane, double first_end, double second_end, double first_axis, double second_axis, int rotation, double axis_end_point, double first_start, double second_start, double axis_start_point, int sequence_number, int ID)
         {
-            ToolPath3D.ArcCallback(ZeroLenAsFullCircles, DesiredFeedRate_in_per_sec, plane, first_end, second_end, first_axis, second_axis, rotation, axis_end_point, first_start, second_start, axis_start_point, sequence_number);
+            double ToolLen = KM.CoordMotion.Interpreter.SetupParams.ToolLengthOffset;
+            ToolPath3D.ArcCallback(ZeroLenAsFullCircles, DesiredFeedRate_in_per_sec, plane, first_end, second_end, first_axis, second_axis, rotation, axis_end_point, first_start, second_start, axis_start_point, sequence_number, ToolLen);
             callback_count.ArcFeed++;
         }
 
@@ -777,7 +782,8 @@ namespace KFLOP_Test3
 
         private void StraightMotionHandler(double FR, double x, double y, double z, int seq, int ID)
         {
-            ToolPath3D.StraightCallback(FR, x, y, z, seq);
+            double ToolLen = KM.CoordMotion.Interpreter.SetupParams.ToolLengthOffset;
+            ToolPath3D.StraightCallback(FR, x, y, z, seq, ToolLen);
             callback_count.StraightFeed++;
             Dispatcher.BeginInvoke(new System.Threading.ThreadStart(() => StraightMotionHandler2(FR, x, y, z, seq, ID)));
 
@@ -796,7 +802,8 @@ namespace KFLOP_Test3
 
         private void StraightTraverse(double x, double y, double z, int sequence_number)
         {
-            ToolPath3D.StraightTraverseCallback(x, y, z, sequence_number);
+            double ToolLen = KM.CoordMotion.Interpreter.SetupParams.ToolLengthOffset;
+            ToolPath3D.StraightTraverseCallback(x, y, z, sequence_number, ToolLen);
             callback_count.StraightTrav++;
         }
 
@@ -1076,8 +1083,8 @@ namespace KFLOP_Test3
             // Get Ablosule Machine Coordinates
             double x = 0, y = 0, z = 0, a = 0, b = 0, c = 0;
             KM.CoordMotion.UpdateCurrentPositionsABS(ref x, ref y, ref z, ref a, ref b, ref c, true); // don't know whether true or false on snap is prefered
-
-            ToolPath3D.SetMarker(x, y, z);  // move the marker to the absolute position
+            double ToolLen = KM.CoordMotion.Interpreter.SetupParams.ToolLengthOffset;
+            ToolPath3D.SetMarker(x, y, z, ToolLen);  // move the marker to the absolute position
 
             // Machine Coordinates 
             double Mx = 0, My = 0, Mz = 0, Ma = 0, Mb = 0, Mc = 0;
@@ -1158,17 +1165,17 @@ namespace KFLOP_Test3
             if (ExecutionInProgress)
             {
                 Exe_LED.Set_State(LED_State.On_Blue);
+                // also disable MDI button
+                btnMDI.IsEnabled = false;
+
             } else
             {
                 Exe_LED.Set_State(LED_State.Off);
+                btnMDI.IsEnabled = true;
             }
+
             if(m_M6)
             { ToolChangerPanel1.SetTC_Led(); } else { ToolChangerPanel1.ClearTC_Led(); }
-
-            // get a list of the active G Codes and display them
-            // only do this every third time through
-
-            
 
         }
 
@@ -1269,7 +1276,7 @@ namespace KFLOP_Test3
         private void GCodeView_GotoLine(int LineNo)
         {
             GCodeView.ScrollTo(LineNo, 0);  // this moves the active line to the middle of the view
-            GCodeView.TextArea.Caret.Line = LineNo; // this highlights the line
+            GCodeView.TextArea.Caret.Line = (LineNo + 1); // this highlights the line
         }
 
         #endregion
@@ -1922,6 +1929,10 @@ namespace KFLOP_Test3
         // send a single command line to the Interpreter
         private void SendGCodeLine(string GCodeLine)
         {
+            if(ExecutionInProgress)
+            {
+                return; // just skip this for now!
+            }
             // manual GCode line.
             // write the line to a file
             // then execute the file. - should be pretty simple...

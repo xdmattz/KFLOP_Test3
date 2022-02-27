@@ -8,7 +8,7 @@
              d:DesignHeight="390" d:DesignWidth="700">
     <!-- allow 30 height for tab-->
     <Grid>
-        <StackPanel Margin="90,42,509,254">
+        <StackPanel Margin="90,42,509,263">
             <Button x:Name="btnGetTool" Content="Get Tool" HorizontalAlignment="Left"   Width="90" Click="btnGetTool_Click"/>
             <Button x:Name="btnPutTool" Content="Put Tool" HorizontalAlignment="Left"   Width="90" Click="btnPutTool_Click"/>
             <Button x:Name="btnLoadTool" Content="Load Tool" HorizontalAlignment="Left" Width="90" Click="btnLoadTool_Click"/>
@@ -124,7 +124,9 @@
 
         <Button x:Name="btnAbort" Content="Abort" HorizontalAlignment="Left" Margin="496,169,0,0" VerticalAlignment="Top" Width="64" Click="btnAbort_Click" Height="36"/>
         <Label x:Name="lblTCProgress" Content="Progress:" HorizontalAlignment="Left" Margin="196,64,0,0" VerticalAlignment="Top" Height="25"/>
-        <Label x:Name="lblTCP2" Content="" HorizontalAlignment="Left" Margin="205,96,0,0" VerticalAlignment="Top"   />
+        <Label x:Name="lblTCP2" HorizontalAlignment="Left" Margin="205,96,0,0" VerticalAlignment="Top"   >
+            
+        </Label>
         <Label x:Name="lblStepProgress" Content="Progress:" HorizontalAlignment="Left" Margin="363,64,0,0" VerticalAlignment="Top" Height="25"/>
         <Label x:Name="lblStepP2" Content="" HorizontalAlignment="Left" Margin="376,94,0,0" VerticalAlignment="Top"  />
 
@@ -158,5 +160,6 @@
         <Button x:Name="btn_CfgLoad" Content="Load" Click="btnCfgLoad_Click" HorizontalAlignment="Left" Margin="20,343,0,0" VerticalAlignment="Top" Width="75" RenderTransformOrigin="-0.027,-0.591"/>
         <Button x:Name="btn_CfgSave" Content="Save" Click="btnCfgSave_Click" HorizontalAlignment="Left" Margin="115,343,0,0" VerticalAlignment="Top" Width="75" RenderTransformOrigin="-0.027,-0.591"/>
 
+        <CheckBox x:Name="cbToolLenOnChange" Content="Auto Update Tool Length" Margin="91,127,446,244" Checked="cbToolLenOnChange_Checked" Unchecked="cbToolLenOnChange_Unchecked" />
     </Grid>
 </UserControl>

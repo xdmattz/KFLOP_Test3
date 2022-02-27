@@ -76,6 +76,11 @@ namespace KFLOP_Test3
         private int CalCount;
 
         private List<double> CalList;
+
+        public bool UpdateTool { get; set; }
+
+        public delegate void UpdateToolDelegate(string msg);
+        public event UpdateToolDelegate UpdateToolCallback;
         
 
         #endregion
@@ -134,6 +139,9 @@ namespace KFLOP_Test3
 
             CalList = new List<double>();
             CalList.Clear();    // start with the CalList cleared.
+
+            cbToolLenOnChange.IsChecked = true;   // default to checked
+            UpdateTool = true;
 
         }
 
@@ -194,6 +202,7 @@ namespace KFLOP_Test3
                 tbPocketNumber.Text = "0";
                 MessageBox.Show("Invalid Tool Number - Reset");
                 xToolChanger.SetCurrentTool(0);
+
                 return;
             }
 
@@ -210,6 +219,7 @@ namespace KFLOP_Test3
                     xToolChanger.ToolChangerSimple(ToolChanger.ToolInSpindle, PocketNumber);
                 }
                 xToolChanger.SetCurrentTool(PocketNumber); // update the interpreter slot number
+
                 return;
             }
 
@@ -228,6 +238,7 @@ namespace KFLOP_Test3
                 MessageBox.Show(toolmsg);
                 // ToolInSpindle = ToolNumber;
                 xToolChanger.SetCurrentTool(PocketNumber); // update the interpreter slot number
+
                 return;
             }
 
@@ -242,6 +253,17 @@ namespace KFLOP_Test3
             // update the Tool change parameters
             TC_DisableButtons();
             xToolChanger.ToolChangerSimple(0, PocketNumber); // this should get "PocketNumber" from the carousel from an empty spindle
+        }
+
+        private void UpdateToolLength(int ToolNumber)
+        {
+                 
+            if (UpdateTool == true)
+            {
+                string mdi_msg = string.Format($"G43 H{ToolNumber}");
+               //  MessageBox.Show(mdi_msg);
+                UpdateToolCallback?.Invoke(mdi_msg);    // send the message
+            }
         }
 
         private void btnPutTool_Click(object sender, RoutedEventArgs e)
@@ -856,6 +878,9 @@ namespace KFLOP_Test3
             // handles all the cases.
 //            MessageBox.Show("TC Process Finished");
             TC_EnableButtons();
+            // update the tool lenght?
+            UpdateToolLength(ToolChanger.ToolInSpindle);
+
         }
 
 
@@ -1117,6 +1142,7 @@ namespace KFLOP_Test3
                 {
                     // Remove the current tool from the spindle and clear its carousel pocket
                     xToolChanger.SetCurrentTool(0);
+                    UpdateToolLength(0);
                 }
                 else
                 {
@@ -1124,6 +1150,8 @@ namespace KFLOP_Test3
                     if (xToolChanger.ToolInTable(SPUpdate.value))
                     {
                         xToolChanger.SetCurrentTool(SPUpdate.value);
+                        UpdateToolLength(SPUpdate.value);
+                        
                         
                     }
                     else
@@ -1142,7 +1170,15 @@ namespace KFLOP_Test3
             UpdateCfg();
         }
 
+        private void cbToolLenOnChange_Checked(object sender, RoutedEventArgs e)
+        {
+                UpdateTool = true;
+        }
 
+        private void cbToolLenOnChange_Unchecked(object sender, RoutedEventArgs e)
+        {
+            UpdateTool = false;
+        }
     }
 
  
