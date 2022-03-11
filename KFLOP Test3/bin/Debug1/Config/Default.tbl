@@ -5,7 +5,7 @@ SLOT    ID        LENGTH         DIAMETER        XOFFSET        YOFFSET   COMMEN
   40    2040    1.300000    0.000000    0.000000    0.000000   ""    ""
   30    2030    1.400000    0.250000    0.000000    0.000000   "adding a comment"    "EndMill-z 1in .125.wrl"
   20    2020    1.500000    0.500000    0.000000    0.000000   "Adding a comment!"    ""
-  1    1    0.000000    0.500000    0.000000    0.000000   ""    "EndMill-z.wrl"
+  1    1    3.540247    0.500000    0.000000    0.000000   ""    "EndMill-z.wrl"
   98    98    1.500000    0.000000    0.000000    0.000000   "Drewtronics Touch Probe"    ""
   99    99    3.000000    0.000000    0.000000    0.000000   "Tschorn 3D Taster"    ""
   2000    2000    1.234000    0.500000    0.000000    0.000000   "Just another Tool"    ""

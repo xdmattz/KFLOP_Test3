@@ -238,7 +238,6 @@ namespace KFLOP_Test3
             toolChanger = new ToolChanger(ref toolInfo);
             toolSetter = new ToolSetter(ref toolInfo);
 
-
             // Initialize the GCode Interpreter
             GetInterpVars();    // load the emcvars and tool files
             // copy of the motion parameters that the JSON reader can use.
@@ -248,10 +247,9 @@ namespace KFLOP_Test3
             ConWin = new ConsolWindow();
             // GCode Viewer - Avalon Edit window for viewing GCode
             GCodeView_Init();
-            // add the callbacks
-            AddHandlers();
+
             // Initialize the buttons
-            
+
 
             // ******* // so I need to wait for the KFLOP to connect before I can do this? - Nope.
 
@@ -354,13 +352,17 @@ namespace KFLOP_Test3
             tcMainTab.Items.Add(Tab6);
 
             // Tool Path Window
-            ToolPath3D = new _3DToolPath(); // this should 
+            ToolPath3D = new _3DToolPath(ref KM); // this should do something
 
 
             // Tools tab panel etc.
             GCodeButtonsInit();
             // hide the fwd and rev buttons
             HideFR();
+
+
+            // add the callbacks
+            AddHandlers();
 
             #endregion
 
@@ -770,8 +772,7 @@ namespace KFLOP_Test3
 
         public void ArcFeedHandler(bool ZeroLenAsFullCircles, double DesiredFeedRate_in_per_sec, int plane, double first_end, double second_end, double first_axis, double second_axis, int rotation, double axis_end_point, double first_start, double second_start, double axis_start_point, int sequence_number, int ID)
         {
-            double ToolLen = KM.CoordMotion.Interpreter.SetupParams.ToolLengthOffset;
-            ToolPath3D.ArcCallback(ZeroLenAsFullCircles, DesiredFeedRate_in_per_sec, plane, first_end, second_end, first_axis, second_axis, rotation, axis_end_point, first_start, second_start, axis_start_point, sequence_number, ToolLen);
+            ToolPath3D.ArcCallback(ZeroLenAsFullCircles, DesiredFeedRate_in_per_sec, plane, first_end, second_end, first_axis, second_axis, rotation, axis_end_point, first_start, second_start, axis_start_point, sequence_number, ID);
             callback_count.ArcFeed++;
         }
 
@@ -782,10 +783,10 @@ namespace KFLOP_Test3
 
         private void StraightMotionHandler(double FR, double x, double y, double z, int seq, int ID)
         {
-            double ToolLen = KM.CoordMotion.Interpreter.SetupParams.ToolLengthOffset;
-            ToolPath3D.StraightCallback(FR, x, y, z, seq, ToolLen);
+          
+            ToolPath3D.StraightCallback(FR, x, y, z, seq, ID);
             callback_count.StraightFeed++;
-            Dispatcher.BeginInvoke(new System.Threading.ThreadStart(() => StraightMotionHandler2(FR, x, y, z, seq, ID)));
+            // Dispatcher.BeginInvoke(new System.Threading.ThreadStart(() => StraightMotionHandler2(FR, x, y, z, seq, ID)));
 
             // do I need the pinvoke here?
         }
@@ -802,8 +803,8 @@ namespace KFLOP_Test3
 
         private void StraightTraverse(double x, double y, double z, int sequence_number)
         {
-            double ToolLen = KM.CoordMotion.Interpreter.SetupParams.ToolLengthOffset;
-            ToolPath3D.StraightTraverseCallback(x, y, z, sequence_number, ToolLen);
+        
+            ToolPath3D.StraightTraverseCallback(x, y, z, sequence_number);
             callback_count.StraightTrav++;
         }
 
@@ -840,7 +841,10 @@ namespace KFLOP_Test3
             KM.CoordMotion.AsyncTraverseCompleted += new TraverseCompletedHandler(AsyncTraverseCompleteHandler);
             KM.CoordMotion.CoordMotionArcFeed += new KM_CoordMotionArcFeedHandler(ArcFeedHandler);
             // KM.CoordMotion.CoordMotionArcFeedSixAxis += new KM_CoordMotionArcFeedSixAxisHandler(ArcFeed6AxisHandler);
+
+            //KM.CoordMotion.CoordMotionStraightFeed += new KM_CoordMotionStraightFeedHandler(StraightMotionHandler);
             KM.CoordMotion.CoordMotionStraightFeed += new KM_CoordMotionStraightFeedHandler(StraightMotionHandler);
+
             // KM.CoordMotion.CoordMotionStraightFeedSixAxis += new KM_CoordMotionStraightFeedSixAxisHandler(StraightFeedSixAxis);
             KM.CoordMotion.CoordMotionStraightTraverse += new KM_CoordMotionStraightTraverseHandler(StraightTraverse);
             // KM.CoordMotion.CoordMotionStraightTraverseSixAxis += new KM_CoordMotionStraightTraverseSixAxisHandler(StraightTraversSixAxis);
@@ -2263,7 +2267,7 @@ namespace KFLOP_Test3
             }
             else
             {
-                ToolPath3D = new _3DToolPath();
+                ToolPath3D = new _3DToolPath(ref KM);
                 ToolPath3D.Show();
             }
         }

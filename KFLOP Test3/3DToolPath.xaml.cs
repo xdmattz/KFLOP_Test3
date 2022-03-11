@@ -28,6 +28,9 @@ namespace KFLOP_Test3
     /// </summary>
     public partial class _3DToolPath : Window
     {
+        // global class variables
+        private KM_Controller KMx;
+
 
         private struct Point3DPlus // Point3dPlus is a structure that contains the point, Color and Thickness
         {
@@ -45,9 +48,10 @@ namespace KFLOP_Test3
 
         private List<Point3DPlus> points = new List<Point3DPlus>();
 
-        public _3DToolPath()
+        public _3DToolPath(ref KM_Controller X)
         {
             InitializeComponent();
+            KMx = X;
 
             // after the component is initialized, then what?
             // in the HelixPlot example, a background worker is used here to gather the data(see GatherData in the example) 
@@ -57,15 +61,13 @@ namespace KFLOP_Test3
         #region Motion Callback Functions
         // the motion callbacks
         // arc callback
-        public void ArcCallback(bool ZeroAsFull, double FR, int plane, double x2, double y2, double ax, double ay, int rotation, double z2, double x1, double y1, double z1, int sequence, double toolLen)
+        public void ArcCallback(bool ZeroAsFull, double FR, int plane, double x2, double y2, double ax, double ay, int rotation, double z2, double x1, double y1, double z1, int sequence, int ID)
         {
-
-
-
+            double toolLen = KMx.CoordMotion.Interpreter.SetupParams.ToolLengthOffset;
             // make an arc from point x1,y1 to point x2, y2 on the ax, ay axis. heigth z1 to z2. 
             // if rotation is 0 then CW, 1 is CCW
 
-            
+
             Point3D nextPoint;                  // The point to calculate
             int steps;                          // number of steps in the arc
             double Scale;                       // scale is equal to the vector magnitude
@@ -159,8 +161,9 @@ namespace KFLOP_Test3
         }
 
         // straight callback
-        public void StraightCallback(double FR, double x1, double y1, double z1, int sequence, double toolLen)
+        public void StraightCallback(double FR, double x1, double y1, double z1, int sequence, int ID)
         {
+            double toolLen = KMx.CoordMotion.Interpreter.SetupParams.ToolLengthOffset;
             var point = new Point3DPlus(new Point3D(x1, y1, z1 - toolLen), Colors.Green, 1.5);  // new line with color Green
             bool allow_invoke = false; // just copying this straight from the example - don't know what it really does...
             lock (points)
@@ -174,8 +177,9 @@ namespace KFLOP_Test3
             }
         }
         // straight traverse callback
-        public void StraightTraverseCallback(double x1, double y1, double z1, int sequence, double toolLen)
+        public void StraightTraverseCallback(double x1, double y1, double z1, int sequence)
         {
+            double toolLen = KMx.CoordMotion.Interpreter.SetupParams.ToolLengthOffset;
             var point = new Point3DPlus(new Point3D(x1, y1, z1 - toolLen), Colors.Blue, 1.5);  // new line with color Blue
             bool allow_invoke = false; // just copying this straight from the example - don't know what it really does...
             lock (points)
@@ -188,6 +192,13 @@ namespace KFLOP_Test3
                 Dispatcher.BeginInvoke(DispatcherPriority.Background, (Action)PlotData);
 
             }
+        }
+
+        public void TestCallback(double DFR, double x, double y, double z, int seq, int ID)
+        {
+            double mag;
+            mag = Math.Sqrt(x * x + y * y + z * z);
+
         }
 
         #region Math For Arc plotting

@@ -577,18 +577,18 @@ namespace KFLOP_Test3
             { return; } // don't run if the _bw worker is busy
 
             // get the tool number from the text box
-            int ToolNumber;
-            if (int.TryParse(tbPocketNumber.Text, out ToolNumber) == false)
+            int CarouselPocket;
+            if (int.TryParse(tbPocketNumber.Text, out CarouselPocket) == false)
             {
                 tbPocketNumber.Text = "1";
-                MessageBox.Show("Invalid tool number - Reset");
+                MessageBox.Show("Invalid tool pocket number - Reset");
                 return;
             }
             // send the command to KFLOP
-            if ((ToolNumber > 0) && (ToolNumber <= MachineMotion.xTCP.CarouselSize))
+            if ((CarouselPocket > 0) && (CarouselPocket <= MachineMotion.xTCP.CarouselSize))
             {
                 SingleAxis xSA = new SingleAxis();
-                xSA.ToolNumber = ToolNumber;
+                xSA.ToolPocket = CarouselPocket;
                 xToolChanger.Start_Carousel_Process(xSA);
             }
         }

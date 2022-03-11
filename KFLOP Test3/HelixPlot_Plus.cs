@@ -533,9 +533,7 @@ namespace KFLOP_Test3
             if(marker != null)
             {
                 MarkerPosition(new Point3D(x, y, z - toolLen));
-
                 MarkerTransparent();
-
             }
         }
 
