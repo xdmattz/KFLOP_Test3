@@ -625,8 +625,22 @@ namespace KFLOP_Test3
 
                     break;
                 case 7: // M7 Callback - Mist Coolant On?
+                    break;
                 case 8: // M8 Callback - Coolant On
+                    if (KM.CoordMotion.IsSimulation == false)   // no coolant if we are simulating!
+                    {
+                        // set the FLOOD_MOTOR bit in the IO
+                        KM_IO CtrlBit = KM.GetIO(IOConst.FLOOD_MOTOR, IO_TYPE.DIGITAL_OUT, "Flood Coolant");
+                        CtrlBit.SetDigitalValue(true);
+                    }
+                    break;
                 case 9: // M9 Callback -Coolant Off
+                    if (KM.CoordMotion.IsSimulation == false)   // no coolant if we are simulating!
+                    {
+                        // set the FLOOD_MOTOR bit in the IO
+                        KM_IO CtrlBit = KM.GetIO(IOConst.FLOOD_MOTOR, IO_TYPE.DIGITAL_OUT, "Flood Coolant");
+                        CtrlBit.SetDigitalValue(false);
+                    }
                     break;
                 case 24:    // M30 End Program
                     m_M30 = true;    // set the end of program flag
@@ -1184,8 +1198,13 @@ namespace KFLOP_Test3
         }
 
         // these UI items get updated every third time the timer ticks
+
+        // static variable for the WCS
+        private static int oldWCS = 0;
+
         private void UpdateUI_Slow(ref KM_MainStatus Kstat)
         {
+            
             #region check boxes
             // update the check boxes
             if (cbT1.IsEnabled)
@@ -1245,6 +1264,19 @@ namespace KFLOP_Test3
 
             // testing!
             tbCurrentTool.Text = KM.CoordMotion.Interpreter.SetupParams.CurrentToolSlot.ToString();
+
+            // has the coordinate system changed?
+            int WCS = KM.CoordMotion.Interpreter.SetupParams.OriginIndex;
+            if (WCS != oldWCS)
+            {
+                oldWCS = WCS;   // update the OLD WCS.
+
+                double fx, fy, fz, fa, fb, fc;  // fixture coordinates
+                fx = fy = fz = fa = fb = fc = 0;
+                KM.CoordMotion.Interpreter.GetOrigin(WCS, ref fx, ref fy, ref fz, ref fa, ref fb, ref fc);
+                ToolPath3D.SetGRef(WCS, fx, fy, fz);    // move the toolpath display orgin gnomon to the new position
+            }
+            
         }
         #endregion
 

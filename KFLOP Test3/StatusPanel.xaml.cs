@@ -64,6 +64,7 @@ namespace KFLOP_Test3
             FloodMotor_LED.Set_Label("Flood Motor");
             Probe_LED.Set_Label("Probe");
             ToolSetter_LED.Set_Label("Tool Setter");
+            Mist_LED.Set_Label("Mist Coolant");
 
 
             ESRelay_LED.Set_State(LED_State.Off);
@@ -83,6 +84,7 @@ namespace KFLOP_Test3
             AirPres_LED.Set_State(LED_State.Off);
             DoorFan_LED.Set_State(LED_State.Off);
             FloodMotor_LED.Set_State(LED_State.Off);
+            Mist_LED.Set_State(LED_State.Off);
 
             Probe_LED.Set_State(LED_State.Off);
             ToolSetter_LED.Set_State(LED_State.Off);
@@ -165,9 +167,11 @@ namespace KFLOP_Test3
 
             string tempS = "";
             BinaryString(MStat.KanalogBitsStateInputs, ref tempS);
-            tbKanIn.Text = "   Kan In: " + tempS;
+            tbKanIn.Text = "Kan In:      " + tempS;
             BinaryString(MStat.KanalogBitsStateOutputs, ref tempS);
-            tbKanOut.Text = "Kan Out: " + tempS;
+            tbKanOut.Text = "Kan Out:   " + tempS;
+            BinaryString8((MStat.KanalogBitsStateOutputs) >> 16, ref tempS);
+            tbKanOutGPIO.Text = "Kan GPIO: " + tempS;
             BinaryString(MStat.VirtualBitsEx0, ref tempS);
             tbKonnIO.Text = "Konn IO1: " + tempS;
             BinaryString((MStat.VirtualBitsEx0) >> 16, ref tempS);
@@ -259,6 +263,10 @@ namespace KFLOP_Test3
                 if ((Prev_KanalogOutputs & IOConst.FLOOD_MOTOR_MASK) == IOConst.FLOOD_MOTOR_MASK)
                 { FloodMotor_LED.Set_State(LED_State.On_Green); }
                 else { FloodMotor_LED.Set_State(LED_State.Off); }
+                // Mist Coolant Relay
+                if ((Prev_KanalogOutputs & IOConst.MIST_COOLANT_MASK) == IOConst.MIST_COOLANT_MASK)
+                { Mist_LED.Set_State(LED_State.On_Green); }
+                else { Mist_LED.Set_State(LED_State.Off); }
 
 
             }
@@ -408,10 +416,34 @@ namespace KFLOP_Test3
                 + Convert.ToString(x0, 2).PadLeft(4, '0');
         }
 
+        private void BinaryString8(int X, ref string BString)
+        {
+            int x0, x1;
+            x0 = X & 0x0f;
+            x1 = (X >> 4) & 0x0f;
+
+            BString = Convert.ToString(x1, 2).PadLeft(4, '0') + " "
+                + Convert.ToString(x0, 2).PadLeft(4, '0');
+        }
+
         private void btnOiler_Click(object sender, RoutedEventArgs e)
         {
             // toggle the Oiler 
             KM_IO CtrlBit = KMx.GetIO(IOConst.OIL_LUBE, IO_TYPE.DIGITAL_OUT, "Oiler");
+            CtrlBit.Toggle();
+        }
+
+        private void btnFlood_Click(object sender, RoutedEventArgs e)
+        {
+            // toggle the Oiler 
+            KM_IO CtrlBit = KMx.GetIO(IOConst.FLOOD_MOTOR, IO_TYPE.DIGITAL_OUT, "Flood Coolant");
+            CtrlBit.Toggle();
+        }
+
+        private void btnMist_Click(object sender, RoutedEventArgs e)
+        {
+            // toggle the Oiler 
+            KM_IO CtrlBit = KMx.GetIO(IOConst.MIST_SOLENOID, IO_TYPE.DIGITAL_OUT, "Mist Coolant");
             CtrlBit.Toggle();
         }
 

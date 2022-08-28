@@ -59,6 +59,20 @@ namespace KFLOP_Test3
             ProbeState = new ProbeResult();
             ProbeState = ProbeResult.Idle;
 
+           // make a new button
+            ProbeButton singlesurfaceBtn = new ProbeButton(new BitmapImage(new Uri("SingleSurface.png", UriKind.Relative)), "Single Surface");
+            // Add an image to the button
+            // singlesurfaceBtn.ButtonImage = new BitmapImage(new Uri("SingleSurface.png"));
+            // add text to the button
+            // singlesurfaceBtn.ButtonText = "Single Surface";
+            // add the Button to the Probe Panel
+            ProbeButtonPanel.Children.Add(singlesurfaceBtn);
+
+            ProbeButton Btn2 = new ProbeButton(null, "Second Button");
+            //Btn2.ButtonText = "Second Button";
+            ProbeButtonPanel.Children.Add(Btn2);
+
+
         }
 
         public MachineCoordinates GetCoordinates()
@@ -303,5 +317,68 @@ namespace KFLOP_Test3
         }
 
 
+    }
+
+    // all the possible probing M Codes
+    public enum ProbeCycleNumber : int
+    {
+        // from Renishaw chapter 2 - cycle summary
+        M1 = 1, // Single Surface
+        M2 = 2, // Bore
+        M3 = 3, // Boss
+        M4 = 4, // Pocket
+        M5 = 5, // Web
+        M6 = 6, // Internal Corner
+        M7 = 7, // External Corner
+        M8 = 8, // Line
+        M9 = 9, // 3-Point Plane
+        M10 = 10, // 5-Point Rectangle - Internal
+        M11 = 11, // 5-Point Rectangle - External
+        M12 = 12, // 3-Point Bore
+        M13 = 13, // 3-Point Boss
+        M14 = 14, // 3D Corner
+        M15 = 15, // Rotary Axis Update
+        // from Renishaw manual chapter 1 - cycle summary
+        M100 = 100, // Spindle Probe Check
+        M101 = 101, // Spindle Probe Calibration
+        M102 = 102, // Spindle Probe Calibration - ring gauge
+        M103 = 103, // Spindle Probe Length Calibration
+        M104 = 104, // Spindle Probe Standard Length Calibration
+        M105 = 105, // Spindle Probe Calibration - Sphere
+        M110 = 110 // SupaTouch Optimisation
+
+    }
+
+    // work coordinate system to update
+    // this is the same as the KFLOP Origin Index in the interpreter setup parameters
+    public enum WCS : int
+    {
+        S54,
+        S55,
+        S56,
+        S57,
+        S58,
+        S59,
+        S101,
+        S148        
+    }
+
+    // single line command components
+    public class RenProbeCommands
+    {
+        public int MCode { get; set; }  // Cycle number ie. M101 etc. - may have to change this to an enum...
+        public int C { get; set; } // End of Cycle Option C0 or C1
+        public double X { get; set; }   // position relative to the active WCS
+        public double Y { get; set; }
+        public double Z { get; set; }
+        public int A { get; set; }   // probe direction
+        public double D { get; set; }   // Primary Feature Size
+        public double E { get; set; }   // Secondary Feature Size
+        public double I { get; set; }   // feature location relative the active WCS
+        public double J { get; set; }
+        public double K { get; set; }
+        
+        public double W { get; set; }   // Depth - always negative 
+        public double S { get; set; }   // work offset
     }
 }

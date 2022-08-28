@@ -182,7 +182,8 @@ namespace KFLOP_Test3
         public const int SPINDLE_ENABLE = 153;  // 24V FET 1
         public const int RELAY3 = 154;      // 24V FET 2
         public const int Z_BRAKE = 155;     // 24V FET 3
-        public const int FET4 = 156;
+        public const int FET4 = 156;        // Mist Air Relay?
+        public const int MIST_SOLENOID = 156;        // Mist Air Relay?
         public const int FET5 = 157;
         public const int FET6 = 158;
         public const int FET7 = 159;
@@ -192,6 +193,7 @@ namespace KFLOP_Test3
         public const int RELAY3_MASK = 0x00000400;
         public const int Z_BRAKE_MASK = 0x00000800;
         public const int FET4_MASK = 0x00001000;
+        public const int MIST_COOLANT_MASK = 0x00001000;
         public const int FET5_MASK = 0x00002000;
         public const int FET6_MASK = 0x00004000;
         public const int FET7_MASK = 0x00008000;

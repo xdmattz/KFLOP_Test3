@@ -200,6 +200,9 @@
     <Compile Include="OffsetPanel.xaml.cs">
       <DependentUpon>OffsetPanel.xaml</DependentUpon>
     </Compile>
+    <Compile Include="ProbeButton.xaml.cs">
+      <DependentUpon>ProbeButton.xaml</DependentUpon>
+    </Compile>
     <Compile Include="ProbePanel.xaml.cs">
       <DependentUpon>ProbePanel.xaml</DependentUpon>
     </Compile>
@@ -284,6 +287,10 @@
       <Generator>MSBuild:Compile</Generator>
     </Page>
     <Page Include="OffsetPanel.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="ProbeButton.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
@@ -378,6 +385,9 @@
   </ItemGroup>
   <ItemGroup>
     <Resource Include="Small LED Green.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="SingleSurface.png" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

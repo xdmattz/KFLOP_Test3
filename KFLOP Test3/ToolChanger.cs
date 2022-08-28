@@ -2070,7 +2070,6 @@ namespace KFLOP_Test3
         static public MachineCoordinates TSCoord;   // last known Tool setter coordinate
         static public MachineCoordinates ProbeCoord;  // last known Probe coordinate
 
-
         #endregion
 
         public MachineMotion()
