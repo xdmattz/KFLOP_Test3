@@ -350,6 +350,10 @@ namespace KFLOP_Test3
         public const int T2_PROBE_A = 0x0704;
         public const int T2_PROBE_XYZ = 0x0707;
         public const int T2_TOOL_SET = 0x0710;
+        // Diagnostic commands - command byte 0x0900
+        public const int T2_DIAGNOSTIC = 0x0900;
+        public const int T2_ENCODERS = 0x0901;
+        public const int T2_DESTINATION = 0x0902;
 
     }
 

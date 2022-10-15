@@ -34,7 +34,8 @@ using ICSharpCode.AvalonEdit.Rendering;
 // for the Mutex
 using System.Threading;
 
-
+// the TESTBENCH macro is defined in ToolChanger.cs and ToolChangerPanel.xaml.cs
+// it must be defined in both of those places in order to run on the test bench
 
 namespace KFLOP_Test3
 {

@@ -435,14 +435,14 @@ namespace KFLOP_Test3
 
         private void btnFlood_Click(object sender, RoutedEventArgs e)
         {
-            // toggle the Oiler 
+            // toggle the Flood Coolant 
             KM_IO CtrlBit = KMx.GetIO(IOConst.FLOOD_MOTOR, IO_TYPE.DIGITAL_OUT, "Flood Coolant");
             CtrlBit.Toggle();
         }
 
         private void btnMist_Click(object sender, RoutedEventArgs e)
         {
-            // toggle the Oiler 
+            // toggle the Mist Coolant
             KM_IO CtrlBit = KMx.GetIO(IOConst.MIST_SOLENOID, IO_TYPE.DIGITAL_OUT, "Mist Coolant");
             CtrlBit.Toggle();
         }
@@ -455,6 +455,18 @@ namespace KFLOP_Test3
             else { // air is not on 
                 MessageBox.Show("Air Pressure is low!");
             }
+        }
+
+        private void EncBtn_Click(object sender, RoutedEventArgs e)
+        {
+            KMx.SetUserData(PVConst.P_NOTIFY, T2Const.T2_ENCODERS);
+            KMx.ExecuteProgram(2);
+        }
+
+        private void DestBtn_Click(object sender, RoutedEventArgs e)
+        {
+            KMx.SetUserData(PVConst.P_NOTIFY, T2Const.T2_DESTINATION);
+            KMx.ExecuteProgram(2);
         }
     }
 }
